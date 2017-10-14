@@ -27,4 +27,6 @@ export {
   readFixedBytes, readBytes,
 } from "./bytes";
 
+export { writeArray, readArray, sizeArray } from "./array";
+
 export { writeBitSet } from "./bitset";

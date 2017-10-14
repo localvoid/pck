@@ -19,7 +19,7 @@ export {
   writeUtf8, writeAscii,
   readFixedUtf8, readFixedAscii,
   readUtf8, readAscii,
-  sizeUtf8,
+  sizeUtf8, sizeAscii,
 } from "./string";
 
 export {

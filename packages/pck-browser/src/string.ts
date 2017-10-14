@@ -1,5 +1,5 @@
 import { PckBuffer } from "./buffer";
-import { readUVar, writeUVar } from "./number";
+import { readUVar, writeUVar, sizeUVar } from "./number";
 
 const fromCharCode = String.fromCharCode;
 
@@ -162,7 +162,7 @@ export function readFixedAscii(b: PckBuffer, length: number): string {
  * @param {string} s Javascript string.
  * @returns {number} Number of UTF8 bytes required to store a string.
  */
-export function sizeUtf8(s: string): number {
+export function sizeUtf8String(s: string): number {
   let n = 0;
   for (let i = 0; i < s.length; ++i) {
     const cc = s.charCodeAt(i);
@@ -182,7 +182,7 @@ export function sizeUtf8(s: string): number {
 }
 
 export function writeUtf8(b: PckBuffer, s: string): void {
-  writeUVar(b, sizeUtf8(s));
+  writeUVar(b, sizeUtf8String(s));
   writeFixedUtf8(b, s);
 }
 
@@ -197,4 +197,13 @@ export function writeAscii(b: PckBuffer, s: string): void {
 
 export function readAscii(b: PckBuffer): string {
   return readFixedAscii(b, readUVar(b));
+}
+
+export function sizeUtf8(s: string): number {
+  const size = sizeUtf8String(s);
+  return sizeUVar(size) + size;
+}
+
+export function sizeAscii(s: string): number {
+  return sizeUVar(s.length) + s.length;
 }

@@ -1,7 +1,7 @@
-import { PckBuffer } from "./buffer";
+import { WriteBuffer } from "./buffer";
 
-export function writeBitSet(b: PckBuffer, ...flags: boolean[]): void;
-export function writeBitSet(b: PckBuffer): void {
+export function writeBitSet(b: WriteBuffer, ...flags: boolean[]): void;
+export function writeBitSet(b: WriteBuffer): void {
   const u = b.u;
   let offset = b.o;
   let v = 0;

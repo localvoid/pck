@@ -1,3 +1,5 @@
+export { WriteBuffer, ReadBuffer } from "./buffer";
+
 export {
   writeU8, writeI8,
   writeU16, writeI16,

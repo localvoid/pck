@@ -1,14 +1,14 @@
-import { PckBuffer } from "./buffer";
+import { WriteBuffer, ReadBuffer } from "./buffer";
 import { writeUVar, readUVar, sizeUVar } from "./number";
 
-export function writeArray<T>(b: PckBuffer, array: T[], writer: (b: PckBuffer, v: T) => void): void {
+export function writeArray<T>(b: WriteBuffer, array: T[], writer: (b: WriteBuffer, v: T) => void): void {
   writeUVar(b, array.length);
   for (let i = 0; i < array.length; ++i) {
     writer(b, array[i]);
   }
 }
 
-export function readArray<T>(b: PckBuffer, reader: (b: PckBuffer) => T): T[] {
+export function readArray<T>(b: ReadBuffer, reader: (b: ReadBuffer) => T): T[] {
   const a: T[] = [];
   const length = readUVar(b);
   for (let i = 0; i < length; ++i) {
@@ -17,10 +17,10 @@ export function readArray<T>(b: PckBuffer, reader: (b: PckBuffer) => T): T[] {
   return a;
 }
 
-export function sizeArray<T>(array: T[], getSize: (v: T) => number): number {
+export function sizeArray<T>(sizeCache: number[], array: T[], getSize: (sizeCache: number[], v: T) => number): number {
   let size = sizeUVar(array.length);
   for (let i = 0; i < array.length; ++i) {
-    size += getSize(array[i]);
+    size += getSize(sizeCache, array[i]);
   }
   return size;
 }

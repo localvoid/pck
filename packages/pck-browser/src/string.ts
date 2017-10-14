@@ -1,4 +1,4 @@
-import { PckBuffer } from "./buffer";
+import { WriteBuffer, ReadBuffer } from "./buffer";
 import { readUVar, writeUVar, sizeUVar } from "./number";
 
 const fromCharCode = String.fromCharCode;
@@ -19,10 +19,10 @@ const enum C {
 /**
  * Writes an UTF8 string.
  *
- * @param {!PckBuffer} b Destination buffer.
+ * @param {!WriteBuffer} b Destination buffer.
  * @param {string} s String.
  */
-export function writeFixedUtf8(b: PckBuffer, s: string): void {
+export function writeFixedUtf8(b: WriteBuffer, s: string): void {
   const u = b.u;
   let offset = b.o;
   for (let i = 0; i < s.length; ++i) {
@@ -50,11 +50,11 @@ export function writeFixedUtf8(b: PckBuffer, s: string): void {
 /**
  * Reads an UTF8 string.
  *
- * @param {!PckBuffer} b Source buffer.
+ * @param {!ReadBuffer} b Source buffer.
  * @param {number} length UTF8 bytes length.
  * @returns String.
  */
-export function readFixedUtf8(b: PckBuffer, length: number): string {
+export function readFixedUtf8(b: ReadBuffer, length: number): string {
   const u = b.u;
   let offset = b.o;
   const end = offset + length;
@@ -115,10 +115,10 @@ export function readFixedUtf8(b: PckBuffer, length: number): string {
 /**
  * Writes an ASCII string.
  *
- * @param {!PckBuffer} b Destination buffer.
+ * @param {!WriteBuffer} b Destination buffer.
  * @param {string} s String.
  */
-export function writeFixedAscii(b: PckBuffer, s: string): void {
+export function writeFixedAscii(b: WriteBuffer, s: string): void {
   const d = b.u;
   const offset = b.o;
   let i = 0;
@@ -131,11 +131,11 @@ export function writeFixedAscii(b: PckBuffer, s: string): void {
 /**
  * Reads an ASCII string.
  *
- * @param {!PckBuffer} b Source buffer.
+ * @param {!ReadBuffer} b Source buffer.
  * @param {number} length ASCII bytes length.
  * @returns String.
  */
-export function readFixedAscii(b: PckBuffer, length: number): string {
+export function readFixedAscii(b: ReadBuffer, length: number): string {
   const u = b.u;
   let offset = b.o;
   const end = offset + length;
@@ -181,26 +181,27 @@ export function sizeUtf8String(s: string): number {
   return n;
 }
 
-export function writeUtf8(b: PckBuffer, s: string): void {
-  writeUVar(b, sizeUtf8String(s));
+export function writeUtf8(b: WriteBuffer, s: string): void {
+  writeUVar(b, b.c[b.i++]);
   writeFixedUtf8(b, s);
 }
 
-export function readUtf8(b: PckBuffer): string {
+export function readUtf8(b: ReadBuffer): string {
   return readFixedUtf8(b, readUVar(b));
 }
 
-export function writeAscii(b: PckBuffer, s: string): void {
+export function writeAscii(b: WriteBuffer, s: string): void {
   writeUVar(b, s.length);
   writeFixedAscii(b, s);
 }
 
-export function readAscii(b: PckBuffer): string {
+export function readAscii(b: ReadBuffer): string {
   return readFixedAscii(b, readUVar(b));
 }
 
-export function sizeUtf8(s: string): number {
+export function sizeUtf8(b: WriteBuffer, s: string): number {
   const size = sizeUtf8String(s);
+  b.c.push(size);
   return sizeUVar(size) + size;
 }
 

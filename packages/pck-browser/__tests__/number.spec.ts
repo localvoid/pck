@@ -107,7 +107,7 @@ describe("src/number.ts", () => {
     describe("encode", () => {
       for (const v of U8_VALUES) {
         it(`u8: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeU8(buf, v);
           expect(buf.o).toBe(1);
           expect(dv.getUint8(0)).toBe(v);
@@ -116,7 +116,7 @@ describe("src/number.ts", () => {
 
       for (const v of I8_VALUES) {
         it(`i8: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeI8(buf, v);
           expect(buf.o).toBe(1);
           expect(dv.getInt8(0)).toBe(v);
@@ -125,7 +125,7 @@ describe("src/number.ts", () => {
 
       for (const v of U8_VALUES) {
         it(`u16: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeU16(buf, v);
           expect(buf.o).toBe(2);
           expect(dv.getUint16(0, true)).toBe(v);
@@ -134,7 +134,7 @@ describe("src/number.ts", () => {
 
       for (const v of U8_VALUES) {
         it(`i16: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeI16(buf, v);
           expect(buf.o).toBe(2);
           expect(dv.getInt16(0, true)).toBe(v);
@@ -143,7 +143,7 @@ describe("src/number.ts", () => {
 
       for (const v of U8_VALUES) {
         it(`u32: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeU32(buf, v);
           expect(buf.o).toBe(4);
           expect(dv.getUint32(0, true)).toBe(v);
@@ -152,7 +152,7 @@ describe("src/number.ts", () => {
 
       for (const v of I32_VALUES) {
         it(`i32: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeI32(buf, v);
           expect(buf.o).toBe(4);
           expect(dv.getInt32(0, true)).toBe(v);
@@ -161,7 +161,7 @@ describe("src/number.ts", () => {
 
       for (const v of F32_VALUES) {
         it(`f32: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeF32(buf, v);
           expect(buf.o).toBe(4);
           expect(dv.getFloat32(0, true)).toBe(v);
@@ -170,7 +170,7 @@ describe("src/number.ts", () => {
 
       for (const v of F64_VALUES) {
         it(`f64: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeF64(buf, v);
           expect(buf.o).toBe(8);
           expect(dv.getFloat64(0, true)).toBe(v);
@@ -183,7 +183,7 @@ describe("src/number.ts", () => {
     describe("encode/decode", () => {
       for (const v of UVAR_VALUES) {
         it(`uvar: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeUVar(buf, v);
           expect(buf.o).toBe(sizeUVar(v));
           buf.o = 0;
@@ -193,7 +193,7 @@ describe("src/number.ts", () => {
 
       for (const v of IVAR_VALUES) {
         it(`ivar: ${v}`, () => {
-          const buf = { u: u8, o: 0 };
+          const buf = { u: u8, c: [], o: 0, i: 0 };
           writeIVar(buf, v);
           expect(buf.o).toBe(sizeIVar(v));
           buf.o = 0;

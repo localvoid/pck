@@ -1,4 +1,4 @@
-import { PckBuffer } from "./buffer";
+import { WriteBuffer, ReadBuffer } from "./buffer";
 
 const ab = new ArrayBuffer(8);
 const u8 = new Uint8Array(ab);
@@ -13,16 +13,16 @@ const f64 = new Float64Array(ab);
 i32[0] = 1;
 const LITTLE_ENDIAN_PLATFORM = !!u8[0];
 
-export function writeU8(b: PckBuffer, v: number): void {
+export function writeU8(b: WriteBuffer, v: number): void {
   b.u[b.o++] = v;
 }
 
-export function writeU16(b: PckBuffer, v: number): void {
+export function writeU16(b: WriteBuffer, v: number): void {
   b.u[b.o++] = v;
   b.u[b.o++] = v >>> 8;
 }
 
-export function writeU32(b: PckBuffer, v: number): void {
+export function writeU32(b: WriteBuffer, v: number): void {
   const u = b.u;
   let offset = b.o;
   u[offset++] = v;
@@ -37,7 +37,7 @@ export const writeI16 = writeU16;
 export const writeI32 = writeU32;
 
 export const writeF32 = LITTLE_ENDIAN_PLATFORM ?
-  function (b: PckBuffer, v: number): void {
+  function (b: WriteBuffer, v: number): void {
     const u = b.u;
     let offset = b.o;
     f32[0] = v;
@@ -47,7 +47,7 @@ export const writeF32 = LITTLE_ENDIAN_PLATFORM ?
     u[offset++] = u8[3];
     b.o = offset;
   } :
-  function (b: PckBuffer, v: number): void {
+  function (b: WriteBuffer, v: number): void {
     const d = b.u;
     let offset = b.o;
     f32[0] = v;
@@ -59,7 +59,7 @@ export const writeF32 = LITTLE_ENDIAN_PLATFORM ?
   };
 
 export const writeF64 = LITTLE_ENDIAN_PLATFORM ?
-  function (b: PckBuffer, v: number): void {
+  function (b: WriteBuffer, v: number): void {
     const u = b.u;
     let offset = b.o;
     f64[0] = v;
@@ -73,7 +73,7 @@ export const writeF64 = LITTLE_ENDIAN_PLATFORM ?
     u[offset++] = u8[7];
     b.o = offset;
   } :
-  function (b: PckBuffer, v: number): void {
+  function (b: WriteBuffer, v: number): void {
     const u = b.u;
     let offset = b.o;
     f64[0] = v;
@@ -88,43 +88,43 @@ export const writeF64 = LITTLE_ENDIAN_PLATFORM ?
     b.o = offset;
   };
 
-export function readU8(b: PckBuffer): number {
+export function readU8(b: ReadBuffer): number {
   return b.u[b.o++];
 }
 
-export function readI8(b: PckBuffer): number {
+export function readI8(b: ReadBuffer): number {
   u8[0] = b.u[b.o++];
   return i8[0];
 }
 
 export const readU16 = LITTLE_ENDIAN_PLATFORM ?
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     return b.u[b.o++] | (b.u[b.o++] << 8);
   } :
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     return (b.u[b.o++] << 8) | b.u[b.o++];
   };
 
 export const readI16 = LITTLE_ENDIAN_PLATFORM ?
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     u8[0] = b.u[b.o++];
     u8[1] = b.u[b.o++];
     return i16[0];
   } :
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     u8[1] = b.u[b.o++];
     u8[0] = b.u[b.o++];
     return i16[0];
   };
 
 export const readU32 = LITTLE_ENDIAN_PLATFORM ?
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     const u = b.u;
     const offset = b.o;
     b.o += 4;
     return ((u[offset + 3] << 24) >>> 0) + ((u[offset + 2] << 16) | (u[offset + 1] << 8) | (u[offset]));
   } :
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     const u = b.u;
     const offset = b.o;
     b.o += 4;
@@ -132,7 +132,7 @@ export const readU32 = LITTLE_ENDIAN_PLATFORM ?
   };
 
 export const readI32 = LITTLE_ENDIAN_PLATFORM ?
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     const u = b.u;
     let offset = b.o;
     u8[0] = u[offset++];
@@ -142,7 +142,7 @@ export const readI32 = LITTLE_ENDIAN_PLATFORM ?
     b.o = offset;
     return i32[0];
   } :
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     const u = b.u;
     let offset = b.o;
     u8[3] = u[offset++];
@@ -154,7 +154,7 @@ export const readI32 = LITTLE_ENDIAN_PLATFORM ?
   };
 
 export const readF32 = LITTLE_ENDIAN_PLATFORM ?
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     const u = b.u;
     let offset = b.o;
     u8[0] = u[offset++];
@@ -164,7 +164,7 @@ export const readF32 = LITTLE_ENDIAN_PLATFORM ?
     b.o = offset;
     return f32[0];
   } :
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     const u = b.u;
     let offset = b.o;
     u8[3] = u[offset++];
@@ -176,7 +176,7 @@ export const readF32 = LITTLE_ENDIAN_PLATFORM ?
   };
 
 export const readF64 = LITTLE_ENDIAN_PLATFORM ?
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     const u = b.u;
     let offset = b.o;
     u8[0] = u[offset++];
@@ -190,7 +190,7 @@ export const readF64 = LITTLE_ENDIAN_PLATFORM ?
     b.o = offset;
     return f64[0];
   } :
-  function (b: PckBuffer): number {
+  function (b: ReadBuffer): number {
     const u = b.u;
     let offset = b.o;
     u8[7] = u[offset++];
@@ -205,7 +205,7 @@ export const readF64 = LITTLE_ENDIAN_PLATFORM ?
     return f64[0];
   };
 
-export function writeUVar(b: PckBuffer, v: number): void {
+export function writeUVar(b: WriteBuffer, v: number): void {
   while (v > 0x7F) {
     b.u[b.o++] = (v & 0x7F) | 0x80;
     v >>= 7;
@@ -213,11 +213,11 @@ export function writeUVar(b: PckBuffer, v: number): void {
   b.u[b.o++] = v & 0x7F;
 }
 
-export function writeIVar(b: PckBuffer, v: number): void {
+export function writeIVar(b: WriteBuffer, v: number): void {
   writeUVar(b, (v << 1) ^ (v >> 31));
 }
 
-export function readUVar(b: PckBuffer): number {
+export function readUVar(b: ReadBuffer): number {
   const u = b.u;
   let x = u[b.o++];
   let v = x & 0x7F;
@@ -237,7 +237,7 @@ export function readUVar(b: PckBuffer): number {
   return v;
 }
 
-export function readIVar(b: PckBuffer): number {
+export function readIVar(b: ReadBuffer): number {
   const v = readUVar(b);
   return (v >>> 1) ^ -(v & 1);
 }

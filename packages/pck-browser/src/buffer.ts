@@ -1,8 +1,17 @@
-export interface PckBuffer {
+export interface WriteBuffer {
+  /**
+   * Data buffer.
+   */
   readonly u: Uint8Array;
-  o: number;
+  /**
+   * Cache is used to store precomputed sizes.
+   */
+  readonly c: number[];
+  o: number; // buffer offset
+  i: number; // cache offset
 }
 
-export function createPckBuffer(a: ArrayBuffer): PckBuffer {
-  return { u: new Uint8Array(a), o: 0 };
+export interface ReadBuffer {
+  readonly u: Uint8Array;
+  o: number;
 }

@@ -1,7 +1,7 @@
-import { PckBuffer } from "./buffer";
+import { WriteBuffer, ReadBuffer } from "./buffer";
 import { readUVar, writeUVar, sizeUVar } from "./number";
 
-export function writeFixedBytes(b: PckBuffer, bytes: Uint8Array, size: number): void {
+export function writeFixedBytes(b: WriteBuffer, bytes: Uint8Array, size: number): void {
   const u = b.u;
   let offset = b.o;
   for (let i = 0; i < size; ++i, ++offset) {
@@ -10,12 +10,12 @@ export function writeFixedBytes(b: PckBuffer, bytes: Uint8Array, size: number): 
   b.o = offset;
 }
 
-export function writeBytes(b: PckBuffer, bytes: Uint8Array): void {
+export function writeBytes(b: WriteBuffer, bytes: Uint8Array): void {
   writeUVar(b, bytes.length);
   writeFixedBytes(b, bytes, bytes.length);
 }
 
-export function readFixedBytes(b: PckBuffer, size: number): Uint8Array {
+export function readFixedBytes(b: ReadBuffer, size: number): Uint8Array {
   const a = new Uint8Array(size);
   const u = b.u;
   let offset = b.o;
@@ -25,7 +25,7 @@ export function readFixedBytes(b: PckBuffer, size: number): Uint8Array {
   return a;
 }
 
-export function readBytes(b: PckBuffer): Uint8Array {
+export function readBytes(b: ReadBuffer): Uint8Array {
   return readFixedBytes(b, readUVar(b));
 }
 

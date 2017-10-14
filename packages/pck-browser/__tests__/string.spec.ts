@@ -93,7 +93,7 @@ describe("src/string.ts", () => {
     describe("encode", () => {
       for (const t of DATA) {
         it(`U+${t.codePoint.toString(16).toUpperCase()}`, () => {
-          const a = { u: new Uint8Array(t.encoded.length), o: 0 };
+          const a = { u: new Uint8Array(t.encoded.length), c: [], o: 0, i: 0 };
           writeFixedUtf8(a, t.decoded);
           expect(Array.from(a.u)).toBeEqual(Array.from(createUint8Array(t.encoded)));
         });

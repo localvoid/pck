@@ -22,4 +22,9 @@ export {
   sizeUtf8,
 } from "./string";
 
+export {
+  writeFixedBytes, writeBytes,
+  readFixedBytes, readBytes,
+} from "./bytes";
+
 export { writeBitSet } from "./bitset";

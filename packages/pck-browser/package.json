@@ -1,0 +1,45 @@
+{
+  "name": "pck-browser",
+  "main": "dist/js/index.js",
+  "module": "dist/js/index.js",
+  "typings": "dist/typings/index.d.ts",
+  "version": "0.1.0",
+  "description": "pck helper functions for browser environment",
+  "license": "MIT",
+  "author": {
+    "name": "Boris Kaul",
+    "email": "localvoid@gmail.com",
+    "url": "https://github.com/localvoid"
+  },
+  "keywords": [
+    "pck",
+    "serialize"
+  ],
+  "homepage": "https://github.com/localvoid/pck",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/localvoid/pck"
+  },
+  "bugs": {
+    "url": "https://github.com/localvoid/pck/issues"
+  },
+  "github": "https://github.com/localvoid/pck",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepublish": "npm run dist",
+    "dist": "npm run dist:es2015",
+    "dist:es2015": "../../node_modules/.bin/tsc --project ./tsconfig.build.es2015.json",
+    "test": "../../node_modules/.bin/karma start --single-run",
+    "test:coverage": "../../node_modules/.bin/karma start ./karma.coverage.conf.js",
+    "test:watch": "../../node_modules/.bin/karma start",
+    "lint": "../../node_modules/.bin/tslint --project ./tsconfig.json"
+  },
+  "dependencies": {},
+  "peerDependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,201 @@
+import { Schema, SchemaFlags } from "./schema";
+
+export enum TypeId {
+  Bool = 0,
+  Int = 1,
+  Uint = 2,
+  Float = 3,
+  VarInt = 4,
+  VarUint = 5,
+  Bytes = 6,
+  UTF8 = 7,
+  ASCII = 8,
+  Ref = 9,
+  Array = 10,
+}
+
+export const enum TypeFlags {
+  DynamicSize = 1,
+}
+
+export class Type<T = null> {
+  readonly id: TypeId;
+  readonly size: number;
+  readonly flags: TypeFlags;
+  readonly props: T;
+
+  constructor(id: TypeId, size: number, flags: TypeFlags, props: T) {
+    this.id = id;
+    this.size = size;
+    this.flags = flags;
+    this.props = props;
+  }
+
+  toString(): string {
+    if (this.size > 0) {
+      return `<Type: ${TypeId[this.id]}[${this.size}]>`;
+    }
+    return `<Type: ${TypeId[this.id]}>`;
+  }
+
+  hasDynamicSize(): boolean {
+    return ((this.flags & TypeFlags.DynamicSize) !== 0);
+  }
+
+  isBoolean(): boolean {
+    return this.id === TypeId.Bool;
+  }
+
+  isFloat(): boolean {
+    return this.id === TypeId.Float;
+  }
+
+  isFixedInteger(): boolean {
+    return (
+      this.id === TypeId.Int ||
+      this.id === TypeId.Uint
+    );
+  }
+
+  isVariadicInteger(): boolean {
+    return (
+      this.id === TypeId.VarInt ||
+      this.id === TypeId.VarUint
+    );
+  }
+
+  isInteger(): boolean {
+    return (
+      this.isFixedInteger() ||
+      this.isVariadicInteger()
+    );
+  }
+
+  isNumber(): boolean {
+    return this.isInteger() || this.isFloat();
+  }
+
+  isSignedInteger(): boolean {
+    return this.id === TypeId.Int || this.id === TypeId.VarInt;
+  }
+
+  isUnsignedInteger(): boolean {
+    return this.id === TypeId.Uint || this.id === TypeId.VarUint;
+  }
+
+  isUtf8String(): boolean {
+    return this.id === TypeId.UTF8;
+  }
+
+  isAsciiString(): boolean {
+    return this.id === TypeId.ASCII;
+  }
+
+  isString(): boolean {
+    return this.id === TypeId.UTF8 || this.id === TypeId.ASCII;
+  }
+
+  isByteArray(): boolean {
+    return this.id === TypeId.Bool;
+  }
+
+  isArray(): this is Type<ArrayTypeProps> {
+    return this.id === TypeId.Array;
+  }
+
+  isRef(): this is Type<Schema> {
+    return this.id === TypeId.Ref;
+  }
+}
+
+export interface ArrayTypeProps {
+  readonly length: number;
+  readonly types: Type<any>[];
+}
+
+const _REFS = new WeakMap<Schema, Type<Schema>>();
+
+export function REF(schema: Schema): Type<Schema> {
+  let r = _REFS.get(schema);
+  if (r === void 0) {
+    const details = schema.details;
+    let size = details.size;
+    let flags = 0;
+    if ((details.flags & SchemaFlags.DynamicSize) !== 0) {
+      flags |= TypeFlags.DynamicSize;
+      size = 0;
+    }
+    _REFS.set(schema, r = new Type(TypeId.Ref, size, flags, schema));
+  }
+  return r;
+}
+
+export function ARRAY(types: Type<any> | Type<any>[], length = 0): Type<ArrayTypeProps> {
+  if (!Array.isArray(types)) {
+    types = [types];
+  }
+
+  let size = 0;
+  let flags = 0;
+
+  if (length === 0) {
+    flags |= TypeFlags.DynamicSize;
+  } else {
+    const typeSize = types[0].size;
+    for (const type of types) {
+      if ((typeSize !== type.size) || ((type.flags & TypeFlags.DynamicSize) !== 0)) {
+        flags |= TypeFlags.DynamicSize;
+        size = 0;
+        break;
+      }
+      size += type.size;
+    }
+    size *= length;
+  }
+
+  return new Type<ArrayTypeProps>(TypeId.Array, size, flags, { length, types });
+}
+
+function t(id: TypeId, size: number = 0, flags: TypeFlags = 0): Type {
+  return new Type(id, size, flags, null);
+}
+
+export const BOOL = t(TypeId.Bool, 0);
+export const I8 = t(TypeId.Int, 1);
+export const U8 = t(TypeId.Uint, 1);
+export const I16 = t(TypeId.Int, 2);
+export const U16 = t(TypeId.Uint, 2);
+export const I32 = t(TypeId.Int, 4);
+export const U32 = t(TypeId.Uint, 4);
+export const F32 = t(TypeId.Float, 4);
+export const F64 = t(TypeId.Float, 8);
+export const IVAR = t(TypeId.VarInt, 0, TypeFlags.DynamicSize);
+export const UVAR = t(TypeId.VarUint, 0, TypeFlags.DynamicSize);
+export const UTF8 = t(TypeId.UTF8, 0, TypeFlags.DynamicSize);
+
+const _BYTES = t(TypeId.Bytes, 0, TypeFlags.DynamicSize);
+const _ASCII = t(TypeId.ASCII, 0, TypeFlags.DynamicSize);
+const _DYNAMIC_BYTES = new Map<number, Type>();
+const _DYNAMIC_ASCII = new Map<number, Type>();
+
+export function BYTES(size: number = 0): Type {
+  if (size === 0) {
+    return _BYTES;
+  }
+  let r = _DYNAMIC_BYTES.get(size);
+  if (r === void 0) {
+    _DYNAMIC_BYTES.set(size, r = t(TypeId.Bytes, size));
+  }
+  return r;
+}
+
+export function ASCII(size: number = 0): Type {
+  if (size === 0) {
+    return _ASCII;
+  }
+  let r = _DYNAMIC_ASCII.get(size);
+  if (r === void 0) {
+    _DYNAMIC_ASCII.set(size, r = t(TypeId.ASCII, size));
+  }
+  return r;
+}

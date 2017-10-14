@@ -21,3 +21,5 @@ export {
   readUtf8, readAscii,
   sizeUtf8,
 } from "./string";
+
+export { writeBitSet } from "./bitset";

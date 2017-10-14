@@ -1,5 +1,5 @@
 import { PckBuffer } from "./buffer";
-import { readUVar, writeUVar } from "./number";
+import { readUVar, writeUVar, sizeUVar } from "./number";
 
 export function writeFixedBytes(b: PckBuffer, bytes: Uint8Array, size: number): void {
   const u = b.u;
@@ -27,4 +27,8 @@ export function readFixedBytes(b: PckBuffer, size: number): Uint8Array {
 
 export function readBytes(b: PckBuffer): Uint8Array {
   return readFixedBytes(b, readUVar(b));
+}
+
+export function sizeBytes(bytes: Uint8Array): number {
+  return sizeUVar(bytes.length) + bytes.length;
 }

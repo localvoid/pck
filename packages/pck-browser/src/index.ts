@@ -25,6 +25,7 @@ export {
 export {
   writeFixedBytes, writeBytes,
   readFixedBytes, readBytes,
+  sizeBytes,
 } from "./bytes";
 
 export { writeArray, readArray, sizeArray } from "./array";

@@ -85,29 +85,32 @@ export function readU32(b: ReadBuffer): number {
   const u = b.u;
   const offset = b.o;
   b.o += 4;
-  return ((u[offset + 3] << 24) >>> 0) + ((u[offset + 2] << 16) | (u[offset + 1] << 8) | (u[offset]));
+  return (
+    ((u[offset + 3] << 24) >>> 0) +
+    (
+      (u[offset + 2] << 16) |
+      (u[offset + 1] << 8) |
+      (u[offset])
+    )
+  );
+}
+
+function read4Bytes(b: ReadBuffer): void {
+  const u = b.u;
+  let offset = b.o;
+  u8[0] = u[offset++];
+  u8[1] = u[offset++];
+  u8[2] = u[offset++];
+  u8[3] = u[offset++];
+  b.o = offset;
 }
 
 export function readI32(b: ReadBuffer): number {
-  const u = b.u;
-  let offset = b.o;
-  u8[0] = u[offset++];
-  u8[1] = u[offset++];
-  u8[2] = u[offset++];
-  u8[3] = u[offset++];
-  b.o = offset;
-  return i32[0];
+  return (read4Bytes(b), i32[0]);
 }
 
 export function readF32(b: ReadBuffer): number {
-  const u = b.u;
-  let offset = b.o;
-  u8[0] = u[offset++];
-  u8[1] = u[offset++];
-  u8[2] = u[offset++];
-  u8[3] = u[offset++];
-  b.o = offset;
-  return f32[0];
+  return (read4Bytes(b), f32[0]);
 }
 
 export function readF64(b: ReadBuffer): number {

@@ -14,11 +14,13 @@ export function serialize(d: Uint8Array, first: WriteNode): void {
     if ((flags & (WriteNodeFlags.Int | WriteNodeFlags.Float | WriteNodeFlags.VarInt)) !== 0) {
       if ((flags & (WriteNodeFlags.Int | WriteNodeFlags.Float)) !== 0) {
         if ((flags & WriteNodeFlags.Int) !== 0) {
+          // Int
           do {
             d[offset++] = value;
             value >>>= 8;
           } while (--size > 0);
         } else {
+          // Float
           if (size === 8) {
             f64[0] = value;
           } else {
@@ -30,6 +32,7 @@ export function serialize(d: Uint8Array, first: WriteNode): void {
         }
       } else {
         if ((flags & WriteNodeFlags.VarInt) !== 0) {
+          // VarInt
           if ((flags & WriteNodeFlags.Signed) !== 0) {
             value = (value << 1) ^ (value >> 31);
           }
@@ -43,6 +46,7 @@ export function serialize(d: Uint8Array, first: WriteNode): void {
     } else {
       if ((flags & (WriteNodeFlags.UTF8 | WriteNodeFlags.ASCII)) !== 0) {
         if ((flags & WriteNodeFlags.UTF8) !== 0) {
+          // UTF8 String
           for (i = 0; i < value.length; ++i) {
             let cp = value.charCodeAt(i);
             if (cp < 0x80) {
@@ -63,12 +67,13 @@ export function serialize(d: Uint8Array, first: WriteNode): void {
             }
           }
         } else {
+          // Ascii String
           for (i = 0; i < value.length; ++i) {
             d[offset++] = value.charCodeAt(i);
           }
         }
       } else {
-        // bytes
+        // Bytes
         for (i = 0; i < value.length; ++i) {
           d[offset++] = value[i];
         }

@@ -1,8 +1,10 @@
 import { expect } from "iko";
+import { Writer } from "../src/writer";
+import { serialize } from "../src/serializer";
 import {
   readU8, readI8, readU16, readI16, readU32, readI32, writeU8, writeI8, writeU16, writeI16, writeU32, writeI32,
   readF32, readF64, writeF32, writeF64,
-  readUVar, readIVar, writeUVar, writeIVar, sizeUVar, sizeIVar,
+  readUVar, readIVar, writeUVar, writeIVar,
 } from "../src/number";
 
 const ab = new ArrayBuffer(8);
@@ -107,72 +109,80 @@ describe("src/number.ts", () => {
     describe("encode", () => {
       for (const v of U8_VALUES) {
         it(`u8: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeU8(buf, v);
-          expect(buf.o).toBe(1);
+          const w = new Writer();
+          writeU8(w, v);
+          expect(w.size).toBe(1);
+          serialize(u8, w.first.next!);
           expect(dv.getUint8(0)).toBe(v);
         });
       }
 
       for (const v of I8_VALUES) {
         it(`i8: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeI8(buf, v);
-          expect(buf.o).toBe(1);
+          const w = new Writer();
+          writeI8(w, v);
+          expect(w.size).toBe(1);
+          serialize(u8, w.first.next!);
           expect(dv.getInt8(0)).toBe(v);
         });
       }
 
       for (const v of U8_VALUES) {
         it(`u16: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeU16(buf, v);
-          expect(buf.o).toBe(2);
+          const w = new Writer();
+          writeU16(w, v);
+          expect(w.size).toBe(2);
+          serialize(u8, w.first.next!);
           expect(dv.getUint16(0, true)).toBe(v);
         });
       }
 
       for (const v of U8_VALUES) {
         it(`i16: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeI16(buf, v);
-          expect(buf.o).toBe(2);
+          const w = new Writer();
+          writeI16(w, v);
+          expect(w.size).toBe(2);
+          serialize(u8, w.first.next!);
           expect(dv.getInt16(0, true)).toBe(v);
         });
       }
 
       for (const v of U8_VALUES) {
         it(`u32: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeU32(buf, v);
-          expect(buf.o).toBe(4);
+          const w = new Writer();
+          writeU32(w, v);
+          expect(w.size).toBe(4);
+          serialize(u8, w.first.next!);
           expect(dv.getUint32(0, true)).toBe(v);
         });
       }
 
       for (const v of I32_VALUES) {
         it(`i32: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeI32(buf, v);
-          expect(buf.o).toBe(4);
+          const w = new Writer();
+          writeI32(w, v);
+          expect(w.size).toBe(4);
+          serialize(u8, w.first.next!);
           expect(dv.getInt32(0, true)).toBe(v);
         });
       }
 
       for (const v of F32_VALUES) {
         it(`f32: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeF32(buf, v);
-          expect(buf.o).toBe(4);
+          const w = new Writer();
+          writeF32(w, v);
+          expect(w.size).toBe(4);
+          serialize(u8, w.first.next!);
           expect(dv.getFloat32(0, true)).toBe(v);
         });
       }
 
       for (const v of F64_VALUES) {
         it(`f64: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeF64(buf, v);
-          expect(buf.o).toBe(8);
+          const w = new Writer();
+          writeF64(w, v);
+          expect(w.size).toBe(8);
+          serialize(u8, w.first.next!);
           expect(dv.getFloat64(0, true)).toBe(v);
         });
       }
@@ -181,41 +191,29 @@ describe("src/number.ts", () => {
 
   describe("variadic integers", () => {
     describe("encode/decode", () => {
-      for (const v of UVAR_VALUES) {
+      for (let i = 0; i < UVAR_VALUES.length; i++) {
+        const v = UVAR_VALUES[i];
+        const s = UVAR_SIZES[i];
         it(`uvar: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeUVar(buf, v);
-          expect(buf.o).toBe(sizeUVar(v));
-          buf.o = 0;
+          const w = new Writer();
+          writeUVar(w, v);
+          expect(w.size).toBe(s);
+          serialize(u8, w.first.next!);
+          const buf = { u: u8, o: 0 };
           expect(readUVar(buf)).toBe(v);
         });
       }
 
-      for (const v of IVAR_VALUES) {
-        it(`ivar: ${v}`, () => {
-          const buf = { u: u8, c: [], o: 0, i: 0 };
-          writeIVar(buf, v);
-          expect(buf.o).toBe(sizeIVar(v));
-          buf.o = 0;
-          expect(readIVar(buf)).toBe(v);
-        });
-      }
-    });
-
-    describe("size", () => {
-      for (let i = 0; i < UVAR_VALUES.length; ++i) {
-        const v = UVAR_VALUES[i];
-        const s = UVAR_SIZES[i];
-        it(`uvar: [${s}] ${v}`, () => {
-          expect(sizeUVar(v)).toBe(s);
-        });
-      }
-
-      for (let i = 0; i < IVAR_VALUES.length; ++i) {
+      for (let i = 0; i < IVAR_VALUES.length; i++) {
         const v = IVAR_VALUES[i];
         const s = IVAR_SIZES[i];
-        it(`uvar: [${s}] ${v}`, () => {
-          expect(sizeIVar(v)).toBe(s);
+        it(`ivar: ${v}`, () => {
+          const w = new Writer();
+          writeIVar(w, v);
+          expect(w.size).toBe(s);
+          serialize(u8, w.first.next!);
+          const buf = { u: u8, o: 0 };
+          expect(readIVar(buf)).toBe(v);
         });
       }
     });

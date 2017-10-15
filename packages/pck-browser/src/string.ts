@@ -1,9 +1,10 @@
-import { WriteBuffer, ReadBuffer } from "./buffer";
-import { readUVar, writeUVar, sizeUVar } from "./number";
+import { Writer, WriteNode, WriteNodeFlags, pushWriteNode } from "./writer";
+import { ReadBuffer } from "./buffer";
+import { readUVar, writeUVar } from "./number";
 
 const fromCharCode = String.fromCharCode;
 
-const enum C {
+export const enum Utf8Const {
   tx = 0x80, // 1000 0000
   t2 = 0xC0, // 1100 0000
   t3 = 0xE0, // 1110 0000
@@ -17,34 +18,47 @@ const enum C {
 }
 
 /**
- * Writes an UTF8 string.
+ * Calculates the size of UTF8 bytes required to store a string.
  *
- * @param {!WriteBuffer} b Destination buffer.
- * @param {string} s String.
+ * @param {string} s Javascript string.
+ * @returns {number} Number of UTF8 bytes required to store a string.
  */
-export function writeFixedUtf8(b: WriteBuffer, s: string): void {
-  const u = b.u;
-  let offset = b.o;
+function sizeUtf8String(s: string): number {
+  let n = 0;
   for (let i = 0; i < s.length; ++i) {
-    let cp = s.charCodeAt(i);
-    if (cp < 0x80) {
-      u[offset++] = cp;
-    } else if (cp < 0x800) {
-      u[offset++] = C.t2 | (cp >> 6);
-      u[offset++] = C.tx | (cp & C.maskx);
-    } else if (cp < 0xD800 || cp >= 0xE000) {
-      u[offset++] = C.t3 | (cp >> 12);
-      u[offset++] = C.tx | ((cp >> 6) & C.maskx);
-      u[offset++] = C.tx | (cp & C.maskx);
+    const cc = s.charCodeAt(i);
+    if (cc < 0x80) {
+      n += 1;
+    } else if (cc < 0x800) {
+      n += 2;
+    } else if (cc < 0xD800 || cc >= 0xE000) {
+      n += 3;
     } else {
-      cp = (((cp & 0x3FF) << 10) | (s.charCodeAt(++i) & 0x3FF)) + 0x10000;
-      u[offset++] = C.t4 | (cp >> 18);
-      u[offset++] = C.tx | ((cp >> 12) & C.maskx);
-      u[offset++] = C.tx | ((cp >> 6) & C.maskx);
-      u[offset++] = C.tx | (cp & C.maskx);
+      ++i;
+      n += 4;
     }
   }
-  b.o = offset;
+
+  return n;
+}
+
+export function writeFixedUtf8(w: Writer, s: string, size: number): void {
+  pushWriteNode(w, new WriteNode<string>(WriteNodeFlags.UTF8, size, s));
+}
+
+export function writeFixedAscii(w: Writer, s: string): void {
+  pushWriteNode(w, new WriteNode<string>(WriteNodeFlags.UTF8, s.length, s));
+}
+
+export function writeUtf8(w: Writer, s: string): void {
+  const size = sizeUtf8String(s);
+  writeUVar(w, size);
+  writeFixedUtf8(w, s, size);
+}
+
+export function writeAscii(w: Writer, s: string): void {
+  writeUVar(w, s.length);
+  writeFixedAscii(w, s);
 }
 
 /**
@@ -74,31 +88,31 @@ export function readFixedUtf8(b: ReadBuffer, length: number): string {
     }
 
     c1 = u[offset++];
-    if (c1 < C.tx) {
+    if (c1 < Utf8Const.tx) {
       codeUnits.push(c1);
-    } else if (c1 < C.t3) {
+    } else if (c1 < Utf8Const.t3) {
       c2 = u[offset++];
       codeUnits.push(
-        ((c1 & C.mask2) << 6) |
-        (c2 & C.maskx),
+        ((c1 & Utf8Const.mask2) << 6) |
+        (c2 & Utf8Const.maskx),
       );
-    } else if (c1 < C.t4) {
+    } else if (c1 < Utf8Const.t4) {
       c2 = u[offset++];
       c3 = u[offset++];
       codeUnits.push(
-        ((c1 & C.mask3) << 12) |
-        ((c2 & C.maskx) << 6) |
-        (c3 & C.maskx),
+        ((c1 & Utf8Const.mask3) << 12) |
+        ((c2 & Utf8Const.maskx) << 6) |
+        (c3 & Utf8Const.maskx),
       );
-    } else if (c1 < C.t5) {
+    } else if (c1 < Utf8Const.t5) {
       c2 = u[offset++];
       c3 = u[offset++];
       c4 = u[offset++];
       cp = (
-        ((c1 & C.mask4) << 0x12) |
-        ((c2 & C.maskx) << 12) |
-        ((c3 & C.maskx) << 6) |
-        (c4 & C.maskx)
+        ((c1 & Utf8Const.mask4) << 0x12) |
+        ((c2 & Utf8Const.maskx) << 12) |
+        ((c3 & Utf8Const.maskx) << 6) |
+        (c4 & Utf8Const.maskx)
       ) - 0x10000;
       codeUnits.push(
         ((cp >> 10) & 0x3FF) + 0xD800,
@@ -110,22 +124,6 @@ export function readFixedUtf8(b: ReadBuffer, length: number): string {
   b.o = offset;
 
   return result;
-}
-
-/**
- * Writes an ASCII string.
- *
- * @param {!WriteBuffer} b Destination buffer.
- * @param {string} s String.
- */
-export function writeFixedAscii(b: WriteBuffer, s: string): void {
-  const d = b.u;
-  const offset = b.o;
-  let i = 0;
-  for (; i < s.length; ++i) {
-    d[offset + i] = s.charCodeAt(i);
-  }
-  b.o += i;
 }
 
 /**
@@ -156,55 +154,10 @@ export function readFixedAscii(b: ReadBuffer, length: number): string {
   return result;
 }
 
-/**
- * Calculates the size of UTF8 bytes required to store a string.
- *
- * @param {string} s Javascript string.
- * @returns {number} Number of UTF8 bytes required to store a string.
- */
-export function sizeUtf8String(s: string): number {
-  let n = 0;
-  for (let i = 0; i < s.length; ++i) {
-    const cc = s.charCodeAt(i);
-    if (cc < 0x80) {
-      n += 1;
-    } else if (cc < 0x800) {
-      n += 2;
-    } else if (cc < 0xD800 || cc >= 0xE000) {
-      n += 3;
-    } else {
-      ++i;
-      n += 4;
-    }
-  }
-
-  return n;
-}
-
-export function writeUtf8(b: WriteBuffer, s: string): void {
-  writeUVar(b, b.c[b.i++]);
-  writeFixedUtf8(b, s);
-}
-
 export function readUtf8(b: ReadBuffer): string {
   return readFixedUtf8(b, readUVar(b));
 }
 
-export function writeAscii(b: WriteBuffer, s: string): void {
-  writeUVar(b, s.length);
-  writeFixedAscii(b, s);
-}
-
 export function readAscii(b: ReadBuffer): string {
   return readFixedAscii(b, readUVar(b));
-}
-
-export function sizeUtf8(b: WriteBuffer, s: string): number {
-  const size = sizeUtf8String(s);
-  b.c.push(size);
-  return sizeUVar(size) + size;
-}
-
-export function sizeAscii(s: string): number {
-  return sizeUVar(s.length) + s.length;
 }

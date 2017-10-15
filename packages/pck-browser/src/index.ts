@@ -1,4 +1,5 @@
-export { WriteBuffer, ReadBuffer } from "./buffer";
+export { ReadBuffer } from "./buffer";
+export { WriteNodeFlags, WriteNode, Writer, pushWriteNode } from "./writer";
 
 export {
   writeU8, writeI8,
@@ -12,8 +13,6 @@ export {
   readU32, readI32,
   readF32, readF64,
   readUVar, readIVar,
-
-  sizeUVar, sizeIVar,
 } from "./number";
 
 export {
@@ -21,15 +20,13 @@ export {
   writeUtf8, writeAscii,
   readFixedUtf8, readFixedAscii,
   readUtf8, readAscii,
-  sizeUtf8, sizeAscii,
 } from "./string";
 
 export {
   writeFixedBytes, writeBytes,
   readFixedBytes, readBytes,
-  sizeBytes,
 } from "./bytes";
 
-export { writeArray, readArray, sizeArray } from "./array";
+export { writeArray, readArray } from "./array";
 
 export { writeBitSet } from "./bitset";

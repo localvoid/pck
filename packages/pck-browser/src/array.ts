@@ -1,11 +1,14 @@
-import { WriteBuffer, ReadBuffer } from "./buffer";
-import { writeUVar, readUVar, sizeUVar } from "./number";
+import { Writer } from "./writer";
+import { ReadBuffer } from "./buffer";
+import { writeUVar, readUVar } from "./number";
 
-export function writeArray<T>(b: WriteBuffer, array: T[], writer: (b: WriteBuffer, v: T) => void): void {
-  writeUVar(b, array.length);
-  for (let i = 0; i < array.length; ++i) {
-    writer(b, array[i]);
-  }
+export function writeArray<T>(w: Writer, array: T[], writer: (w: Writer, v: T) => void): void {
+  writeUVar(w, array.length);
+  // polymorphic arrays
+  // https://v8project.blogspot.ru/2017/09/elements-kinds-in-v8.html
+  array.forEach((v) => {
+    writer(w, v);
+  });
 }
 
 export function readArray<T>(b: ReadBuffer, reader: (b: ReadBuffer) => T): T[] {
@@ -15,12 +18,4 @@ export function readArray<T>(b: ReadBuffer, reader: (b: ReadBuffer) => T): T[] {
     a.push(reader(b));
   }
   return a;
-}
-
-export function sizeArray<T>(sizeCache: number[], array: T[], getSize: (sizeCache: number[], v: T) => number): number {
-  let size = sizeUVar(array.length);
-  for (let i = 0; i < array.length; ++i) {
-    size += getSize(sizeCache, array[i]);
-  }
-  return size;
 }

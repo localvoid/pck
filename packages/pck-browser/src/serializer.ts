@@ -11,32 +11,21 @@ export function serialize(d: Uint8Array, first: WriteNode): void {
     const flags = n.flags;
     let size = n.size;
     let value = n.value;
-    if ((flags & (WriteNodeFlags.Int | WriteNodeFlags.Float | WriteNodeFlags.VarInt | WriteNodeFlags.BitSet)) !== 0) {
+    if ((flags & (WriteNodeFlags.Int | WriteNodeFlags.Float | WriteNodeFlags.VarInt)) !== 0) {
       if ((flags & (WriteNodeFlags.Int | WriteNodeFlags.Float)) !== 0) {
         if ((flags & WriteNodeFlags.Int) !== 0) {
-          d[offset++] = value;
-          if (size >= 2) {
-            d[offset++] = value >>> 8;
-            if (size === 4) {
-              d[offset++] = value >>> 16;
-              d[offset++] = value >>> 24;
-            }
-          }
+          do {
+            d[offset++] = value;
+            value >>>= 8;
+          } while (--size > 0);
         } else {
           if (size === 8) {
             f64[0] = value;
           } else {
             f32[0] = value;
           }
-          d[offset++] = u8[0];
-          d[offset++] = u8[1];
-          d[offset++] = u8[2];
-          d[offset++] = u8[3];
-          if (size === 8) {
-            d[offset++] = u8[4];
-            d[offset++] = u8[5];
-            d[offset++] = u8[6];
-            d[offset++] = u8[7];
+          for (i = 0; i < size; ++i) {
+            d[offset++] = u8[i];
           }
         }
       } else {
@@ -49,24 +38,6 @@ export function serialize(d: Uint8Array, first: WriteNode): void {
             value >>= 7;
           }
           d[offset++] = value & 0x7F;
-        } else {
-          // writeBitSet
-          if (size > 4) {
-            for (i = 0; i < value.length; ++i) {
-              let v = value[i];
-              let j = (size > 4) ? 4 : size;
-              size -= 4;
-              do {
-                d[offset++] = v;
-                v >>>= 8;
-              } while (--j > 0);
-            }
-          } else {
-            do {
-              d[offset++] = value;
-              value >>>= 8;
-            } while (--size > 0);
-          }
         }
       }
     } else {

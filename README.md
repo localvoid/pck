@@ -34,12 +34,12 @@ any additional steps
 | U32        | 4 bytes           | Uint32                            |
 | F32        | 4 bytes           | Float32                           |
 | F64        | 8 bytes           | Float64                           |
-| IVAR       | 1-4 bytes         | Variadic Int (ZigZag encoding)    |
-| UVAR       | 1-4 bytes         | Variadic Uint                     |
-| UTF8       | 1-4+N bytes       | UTF8 String                       |
-| ASCII      | 1-4+N bytes       | ASCII String                      |
-| BYTES      | 1-4+N bytes       | Byte Array                        |
-| ARRAY      | 1-4+N bytes       | Array                             |
+| IVAR       | 1-5 bytes         | Variadic Int32 (ZigZag encoding)  |
+| UVAR       | 1-5 bytes         | Variadic Uint32                   |
+| UTF8       | 1-5+N bytes       | UTF8 String                       |
+| ASCII      | 1-5+N bytes       | ASCII String                      |
+| BYTES      | 1-5+N bytes       | Byte Array                        |
+| ARRAY      | 1-5+N bytes       | Array                             |
 | ASCII(N)   | N bytes           | Fixed ASCII String                |
 | BYTES(N)   | N bytes           | Fixed Byte Array                  |
 | ARRAY(L)   | (M-N)*L bytes     | Fixed Array                       |

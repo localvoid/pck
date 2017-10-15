@@ -221,17 +221,11 @@ export function readUVar(b: ReadBuffer): number {
   const u = b.u;
   let x = u[b.o++];
   let v = x & 0x7F;
-  if ((x & 0x80) !== 0) {
+  let shift = 7;
+  while ((x & 0x80) !== 0) {
     x = u[b.o++];
-    v |= (x & 0x7F) << 7;
-    if ((x & 0x80) !== 0) {
-      x = u[b.o++];
-      v |= (x & 0x7F) << 14;
-      if ((x & 0x80) !== 0) {
-        x = u[b.o++];
-        v |= (x & 0x7F) << 21;
-      }
-    }
+    v |= (x & 0x7F) << shift;
+    shift += 7;
   }
 
   return v;

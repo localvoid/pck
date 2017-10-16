@@ -1,13 +1,12 @@
-import { WriteNodeFlags, WriteNode } from "./writer";
+import { WriteNodeFlags, Writer, WriteNode } from "./writer";
 import { u8, f32, f64 } from "./number";
 import { Utf8Const } from "./string";
 
-export function serialize(d: Uint8Array, first: WriteNode): void {
-  let n: WriteNode | null = first;
-  let offset = 0;
+export function serialize(w: Writer, d: Uint8Array, offset = 0): void {
+  let n: WriteNode | null = w.first.next;
   let i;
 
-  do {
+  while (n !== null) {
     const flags = n.flags;
     let size = n.size;
     let value = n.value;
@@ -31,54 +30,42 @@ export function serialize(d: Uint8Array, first: WriteNode): void {
           }
         }
       } else {
-        if ((flags & WriteNodeFlags.VarInt) !== 0) {
-          // VarInt
-          if ((flags & WriteNodeFlags.Signed) !== 0) {
-            value = (value << 1) ^ (value >> 31);
-          }
-          while (value > 0x7F) {
-            d[offset++] = (value & 0x7F) | 0x80;
-            value >>= 7;
-          }
-          d[offset++] = value & 0x7F;
+        // VarInt
+        while (value > 0x7F) {
+          d[offset++] = (value & 0x7F) | 0x80;
+          value >>= 7;
         }
+        d[offset++] = value & 0x7F;
       }
     } else {
-      if ((flags & (WriteNodeFlags.UTF8 | WriteNodeFlags.ASCII)) !== 0) {
-        if ((flags & WriteNodeFlags.UTF8) !== 0) {
-          // UTF8 String
-          for (i = 0; i < value.length; ++i) {
-            let cp = value.charCodeAt(i);
-            if (cp < 0x80) {
-              d[offset++] = cp;
-            } else if (cp < 0x800) {
-              d[offset++] = Utf8Const.t2 | (cp >> 6);
-              d[offset++] = Utf8Const.tx | (cp & Utf8Const.maskx);
-            } else if (cp < 0xD800 || cp >= 0xE000) {
-              d[offset++] = Utf8Const.t3 | (cp >> 12);
-              d[offset++] = Utf8Const.tx | ((cp >> 6) & Utf8Const.maskx);
-              d[offset++] = Utf8Const.tx | (cp & Utf8Const.maskx);
-            } else {
-              cp = (((cp & 0x3FF) << 10) | (value.charCodeAt(++i) & 0x3FF)) + 0x10000;
-              d[offset++] = Utf8Const.t4 | (cp >> 18);
-              d[offset++] = Utf8Const.tx | ((cp >> 12) & Utf8Const.maskx);
-              d[offset++] = Utf8Const.tx | ((cp >> 6) & Utf8Const.maskx);
-              d[offset++] = Utf8Const.tx | (cp & Utf8Const.maskx);
-            }
-          }
-        } else {
-          // Ascii String
-          for (i = 0; i < value.length; ++i) {
-            d[offset++] = value.charCodeAt(i);
+      if ((flags & WriteNodeFlags.UTF8) !== 0) {
+        // UTF8 String
+        for (i = 0; i < size; ++i) {
+          let cp = value.charCodeAt(i);
+          if (cp < 0x80) {
+            d[offset++] = cp;
+          } else if (cp < 0x800) {
+            d[offset++] = Utf8Const.t2 | (cp >> 6);
+            d[offset++] = Utf8Const.tx | (cp & Utf8Const.maskx);
+          } else if (cp < 0xD800 || cp >= 0xE000) {
+            d[offset++] = Utf8Const.t3 | (cp >> 12);
+            d[offset++] = Utf8Const.tx | ((cp >> 6) & Utf8Const.maskx);
+            d[offset++] = Utf8Const.tx | (cp & Utf8Const.maskx);
+          } else {
+            cp = (((cp & 0x3FF) << 10) | (value.charCodeAt(++i) & 0x3FF)) + 0x10000;
+            d[offset++] = Utf8Const.t4 | (cp >> 18);
+            d[offset++] = Utf8Const.tx | ((cp >> 12) & Utf8Const.maskx);
+            d[offset++] = Utf8Const.tx | ((cp >> 6) & Utf8Const.maskx);
+            d[offset++] = Utf8Const.tx | (cp & Utf8Const.maskx);
           }
         }
       } else {
         // Bytes
-        for (i = 0; i < value.length; ++i) {
+        for (i = 0; i < size; ++i) {
           d[offset++] = value[i];
         }
       }
     }
     n = n.next;
-  } while (n !== null);
+  }
 }

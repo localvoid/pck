@@ -1,4 +1,4 @@
-import { Writer, WriteNode, WriteNodeFlags, pushWriteNode } from "./writer";
+import { Writer, WriteNodeFlags, WriteNode, pushWriteNode } from "./writer";
 
 export function writeBitSet(w: Writer, ...flags: boolean[]): void;
 export function writeBitSet(w: Writer): void {

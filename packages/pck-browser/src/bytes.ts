@@ -1,4 +1,4 @@
-import { Writer, WriteNode, WriteNodeFlags, pushWriteNode } from "./writer";
+import { Writer, WriteNodeFlags, WriteNode, pushWriteNode } from "./writer";
 import { ReadBuffer } from "./buffer";
 import { readUVar, writeUVar } from "./number";
 

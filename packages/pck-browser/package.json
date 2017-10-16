@@ -1,6 +1,6 @@
 {
   "name": "pck-browser",
-  "main": "dist/js/index.js",
+  "main": "dist/cjs/index.js",
   "module": "dist/js/index.js",
   "typings": "dist/typings/index.d.ts",
   "version": "0.1.0",
@@ -32,8 +32,9 @@
   ],
   "scripts": {
     "prepublish": "npm run dist",
-    "dist": "npm run dist:es2015",
+    "dist": "npm run dist:es2015 && npm run dist:cjs",
     "dist:es2015": "../../node_modules/.bin/tsc --project ./tsconfig.build.es2015.json",
+    "dist:cjs": "../../node_modules/.bin/tsc --project ./tsconfig.build.cjs.json",
     "test": "../../node_modules/.bin/karma start --single-run",
     "test:coverage": "../../node_modules/.bin/karma start ./karma.coverage.conf.js",
     "test:watch": "../../node_modules/.bin/karma start",

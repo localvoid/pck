@@ -2,7 +2,7 @@ import { expect } from "iko";
 import { Writer } from "../src/writer";
 import { serialize } from "../src/serializer";
 import {
-  readU8, readI8, readU16, readI16, readU32, readI32, writeU8, writeI8, writeU16, writeI16, writeU32, writeI32,
+  readU8, readI8, readU16, readI16, readU32, readI32, writeI8, writeI16, writeI32,
   readF32, readF64, writeF32, writeF64,
   readUVar, readIVar, writeUVar, writeIVar,
 } from "../src/number";
@@ -110,9 +110,9 @@ describe("src/number.ts", () => {
       for (const v of U8_VALUES) {
         it(`u8: ${v}`, () => {
           const w = new Writer();
-          writeU8(w, v);
+          writeI8(w, v);
           expect(w.size).toBe(1);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           expect(dv.getUint8(0)).toBe(v);
         });
       }
@@ -122,7 +122,7 @@ describe("src/number.ts", () => {
           const w = new Writer();
           writeI8(w, v);
           expect(w.size).toBe(1);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           expect(dv.getInt8(0)).toBe(v);
         });
       }
@@ -130,9 +130,9 @@ describe("src/number.ts", () => {
       for (const v of U8_VALUES) {
         it(`u16: ${v}`, () => {
           const w = new Writer();
-          writeU16(w, v);
+          writeI16(w, v);
           expect(w.size).toBe(2);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           expect(dv.getUint16(0, true)).toBe(v);
         });
       }
@@ -142,7 +142,7 @@ describe("src/number.ts", () => {
           const w = new Writer();
           writeI16(w, v);
           expect(w.size).toBe(2);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           expect(dv.getInt16(0, true)).toBe(v);
         });
       }
@@ -150,9 +150,9 @@ describe("src/number.ts", () => {
       for (const v of U8_VALUES) {
         it(`u32: ${v}`, () => {
           const w = new Writer();
-          writeU32(w, v);
+          writeI32(w, v);
           expect(w.size).toBe(4);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           expect(dv.getUint32(0, true)).toBe(v);
         });
       }
@@ -162,7 +162,7 @@ describe("src/number.ts", () => {
           const w = new Writer();
           writeI32(w, v);
           expect(w.size).toBe(4);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           expect(dv.getInt32(0, true)).toBe(v);
         });
       }
@@ -172,7 +172,7 @@ describe("src/number.ts", () => {
           const w = new Writer();
           writeF32(w, v);
           expect(w.size).toBe(4);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           expect(dv.getFloat32(0, true)).toBe(v);
         });
       }
@@ -182,7 +182,7 @@ describe("src/number.ts", () => {
           const w = new Writer();
           writeF64(w, v);
           expect(w.size).toBe(8);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           expect(dv.getFloat64(0, true)).toBe(v);
         });
       }
@@ -198,7 +198,7 @@ describe("src/number.ts", () => {
           const w = new Writer();
           writeUVar(w, v);
           expect(w.size).toBe(s);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           const buf = { u: u8, o: 0 };
           expect(readUVar(buf)).toBe(v);
         });
@@ -211,7 +211,7 @@ describe("src/number.ts", () => {
           const w = new Writer();
           writeIVar(w, v);
           expect(w.size).toBe(s);
-          serialize(u8, w.first.next!);
+          serialize(w, u8);
           const buf = { u: u8, o: 0 };
           expect(readIVar(buf)).toBe(v);
         });

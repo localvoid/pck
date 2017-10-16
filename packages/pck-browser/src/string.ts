@@ -1,4 +1,4 @@
-import { Writer, WriteNode, WriteNodeFlags, pushWriteNode } from "./writer";
+import { Writer, WriteNodeFlags, WriteNode, pushWriteNode } from "./writer";
 import { ReadBuffer } from "./buffer";
 import { readUVar, writeUVar } from "./number";
 
@@ -126,38 +126,6 @@ export function readFixedUtf8(b: ReadBuffer, length: number): string {
   return result;
 }
 
-/**
- * Reads an ASCII string.
- *
- * @param {!ReadBuffer} b Source buffer.
- * @param {number} length ASCII bytes length.
- * @returns String.
- */
-export function readFixedAscii(b: ReadBuffer, length: number): string {
-  const u = b.u;
-  let offset = b.o;
-  const end = offset + length;
-  const codeUnits = [];
-  let result = "";
-
-  while (offset < end) {
-    if (codeUnits.length >= 8192) {
-      result += fromCharCode.apply(null, codeUnits);
-      codeUnits.length = 0;
-    }
-
-    codeUnits.push(u[offset++]);
-  }
-  result += fromCharCode.apply(null, codeUnits);
-  b.o = offset;
-
-  return result;
-}
-
 export function readUtf8(b: ReadBuffer): string {
   return readFixedUtf8(b, readUVar(b));
-}
-
-export function readAscii(b: ReadBuffer): string {
-  return readFixedAscii(b, readUVar(b));
 }

@@ -1,5 +1,5 @@
 import { ReadBuffer } from "./buffer";
-import { Writer, WriteNode, WriteNodeFlags, pushWriteNode } from "./writer";
+import { Writer, WriteNodeFlags, WriteNode, pushWriteNode } from "./writer";
 
 const ab = new ArrayBuffer(8);
 export const u8 = new Uint8Array(ab);
@@ -11,28 +11,16 @@ export const i32 = new Int32Array(ab);
 export const f32 = new Float32Array(ab);
 export const f64 = new Float64Array(ab);
 
-export function writeU8(w: Writer, v: number): void {
+export function writeI8(w: Writer, v: number): void {
   pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.Int, 1, v));
 }
 
-export function writeU16(w: Writer, v: number): void {
+export function writeI16(w: Writer, v: number): void {
   pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.Int, 2, v));
 }
 
-export function writeU32(w: Writer, v: number): void {
-  pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.Int, 4, v));
-}
-
-export function writeI8(w: Writer, v: number): void {
-  pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.Int | WriteNodeFlags.Signed, 1, v));
-}
-
-export function writeI16(w: Writer, v: number): void {
-  pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.Int | WriteNodeFlags.Signed, 2, v));
-}
-
 export function writeI32(w: Writer, v: number): void {
-  pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.Int | WriteNodeFlags.Signed, 4, v));
+  pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.Int, 4, v));
 }
 
 export function writeF32(w: Writer, v: number): void {
@@ -50,16 +38,13 @@ function sizeUVar(v: number): number {
   return Math.floor(Math.log(v) / Math.log(128)) + 1;
 }
 
-function sizeIVar(v: number): number {
-  return sizeUVar((v << 1) ^ (v >> 31));
-}
-
 export function writeUVar(w: Writer, v: number): void {
   pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.VarInt, sizeUVar(v), v));
 }
 
 export function writeIVar(w: Writer, v: number): void {
-  pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.VarInt | WriteNodeFlags.Signed, sizeIVar(v), v));
+  v = (v << 1) ^ (v >> 31);
+  pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.VarInt, sizeUVar(v), v));
 }
 
 export function readU8(b: ReadBuffer): number {

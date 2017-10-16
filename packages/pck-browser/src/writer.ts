@@ -2,11 +2,9 @@ export const enum WriteNodeFlags {
   Int = 1,
   Float = 1 << 1,
   VarInt = 1 << 2,
-  Signed = 1 << 3,
 
-  UTF8 = 1 << 4,
-  ASCII = 1 << 5,
-  Bytes = 1 << 6,
+  UTF8 = 1 << 3,
+  Bytes = 1 << 4,
 }
 
 export class WriteNode<T = any> {

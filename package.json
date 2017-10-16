@@ -9,11 +9,14 @@
     "email": "localvoid@gmail.com",
     "url": "https://github.com/localvoid"
   },
-  "dependencies": {},
+  "dependencies": {
+    "benchmark": "^2.1.4"
+  },
   "devDependencies": {
     "@types/lodash": "^4.14.77",
     "@types/mocha": "^2.2.43",
     "@types/node": "^8.0.34",
+    "@types/prettier": "^1.7.0",
     "core-js": "^2.5.1",
     "iko": "^0.4.0",
     "istanbul-instrumenter-loader": "^3.0.0",
@@ -30,6 +33,7 @@
     "mocha": "^4.0.1",
     "mocha-iko-reporter": "^0.1.1",
     "nyc": "^11.2.1",
+    "prettier": "^1.7.4",
     "routekit-resolver": "^0.1.0",
     "rtext": "^0.1.0",
     "rtext-writer": "^0.1.1",

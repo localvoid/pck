@@ -4,7 +4,7 @@ export {
 } from "./type";
 export {
   FieldFlags, Field,
-  optional, ref, array, bool, i8, u8, i16, u16, i32, u32, f32, f64, ivar, uvar, bytes, utf8, ascii,
+  optional, omitEmpty, ref, array, bool, i8, u8, i16, u16, i32, u32, f32, f64, ivar, uvar, bytes, utf8, ascii,
 } from "./field";
 export {
   SchemaFlags, BitFieldType, BitField, SchemaDetails, Schema, Fields, RecursiveFieldArray, KV, schema,

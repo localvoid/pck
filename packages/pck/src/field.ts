@@ -5,6 +5,7 @@ import { Schema } from "./schema";
 
 export const enum FieldFlags {
   Optional = 1,
+  OmitEmpty = 1 << 1,
 }
 
 export class Field<T = null> {
@@ -17,10 +18,22 @@ export class Field<T = null> {
     this.flags = flags;
     this.name = name;
   }
+
+  isOptional(): boolean {
+    return (this.flags & FieldFlags.Optional) !== 0;
+  }
+
+  isOmitEmpty(): boolean {
+    return (this.flags & FieldFlags.OmitEmpty) !== 0;
+  }
 }
 
 export function optional<T>(field: Field<T>): Field<T> {
   return new Field<T>(field.type, field.name, field.flags | FieldFlags.Optional);
+}
+
+export function omitEmpty<T>(field: Field<T>): Field<T> {
+  return new Field<T>(field.type, field.name, field.flags | FieldFlags.OmitEmpty);
 }
 
 export function ref(name: string, schema: Schema): Field<Schema> {

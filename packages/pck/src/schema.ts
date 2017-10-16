@@ -6,6 +6,7 @@ export const enum SchemaFlags {
   DynamicSize = 1 << 1,
   OptionalFields = 1 << 2,
   BooleanFields = 1 << 3,
+  RegularFields = 1 << 4,
 }
 
 export const enum BitFieldType {
@@ -43,6 +44,14 @@ export class Schema {
     return (this.details.flags & SchemaFlags.BitSet) !== 0;
   }
 
+  optionalBitSetIndex(field: Field): { index: number, position: number } {
+    return bitSetIndex(this.details.optionalFields, field);
+  }
+
+  booleanBitSetIndex(field: Field): { index: number, position: number } {
+    return bitSetIndex(this.details.booleanFields, field, this.details.optionalFields.length);
+  }
+
   hasDynamiSize(): boolean {
     return (this.details.flags & SchemaFlags.DynamicSize) !== 0;
   }
@@ -53,6 +62,10 @@ export class Schema {
 
   hasBooleanFields(): boolean {
     return (this.details.flags & SchemaFlags.BooleanFields) !== 0;
+  }
+
+  hasRegularFields(): boolean {
+    return (this.details.flags & SchemaFlags.RegularFields) !== 0;
   }
 
   bitSetSize(): number {
@@ -105,27 +118,30 @@ function analyzeFields(fields: Field[]): SchemaDetails {
   let size = 0;
 
   for (const field of fields) {
-    size += field.type.size;
     if ((field.type.flags & TypeFlags.DynamicSize) !== 0) {
       flags |= SchemaFlags.DynamicSize;
+    } else {
+      size += field.type.size;
     }
     if ((field.flags & FieldFlags.Optional) !== 0) {
+      flags |= SchemaFlags.OptionalFields;
       optionalFields.push(field);
     }
     if (field.type.id === TypeId.Bool) {
+      flags |= SchemaFlags.BooleanFields;
       booleanFields.push(field);
+    } else {
+      flags |= SchemaFlags.RegularFields;
     }
   }
 
   if (optionalFields.length > 0) {
-    flags |= SchemaFlags.OptionalFields;
     for (const field of optionalFields) {
       bitSet.push({ type: BitFieldType.Optional, field });
     }
   }
 
   if (booleanFields.length > 0) {
-    flags |= SchemaFlags.BooleanFields;
     for (const field of booleanFields) {
       bitSet.push({ type: BitFieldType.Boolean, field });
     }
@@ -133,7 +149,26 @@ function analyzeFields(fields: Field[]): SchemaDetails {
 
   if (bitSet.length > 0) {
     flags |= SchemaFlags.BitSet;
+    size += Math.ceil(bitSet.length / 8);
   }
 
   return { flags, size, optionalFields, booleanFields, bitSet };
+}
+
+function bitSetIndex(fields: Field[], field: Field, offset = 0): { index: number, position: number } {
+  let position = offset + fields.indexOf(field);
+  let index = 0;
+  while (position > 0) {
+    if (position > 32) {
+      position -= 32;
+    } else if (position > 16) {
+      position -= 16;
+    } else if (position > 8) {
+      position -= 8;
+    } else {
+      break;
+    }
+    index++;
+  }
+  return { index, position };
 }

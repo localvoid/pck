@@ -46,10 +46,6 @@ export function writeFixedUtf8(w: Writer, s: string, size: number): void {
   pushWriteNode(w, new WriteNode<string>(WriteNodeFlags.UTF8, size, s));
 }
 
-export function writeFixedAscii(w: Writer, s: string): void {
-  pushWriteNode(w, new WriteNode<string>(WriteNodeFlags.UTF8, s.length, s));
-}
-
 export function writeUtf8(w: Writer, s: string): void {
   const size = sizeUtf8String(s);
   writeUVar(w, size);
@@ -58,7 +54,7 @@ export function writeUtf8(w: Writer, s: string): void {
 
 export function writeAscii(w: Writer, s: string): void {
   writeUVar(w, s.length);
-  writeFixedAscii(w, s);
+  writeFixedUtf8(w, s, s.length);
 }
 
 /**

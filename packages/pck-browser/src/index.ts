@@ -14,7 +14,7 @@ export {
 
 export {
   writeFixedUtf8, writeUtf8,
-  writeFixedAscii, writeAscii,
+  writeAscii,
   readFixedUtf8, readUtf8,
 } from "./string";
 

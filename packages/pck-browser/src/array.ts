@@ -11,11 +11,14 @@ export function writeArray<T>(w: Writer, array: T[], writer: (w: Writer, v: T) =
   });
 }
 
-export function readArray<T>(b: ReadBuffer, reader: (b: ReadBuffer) => T): T[] {
+export function readFixedArray<T>(b: ReadBuffer, reader: (b: ReadBuffer) => T, length: number): T[] {
   const a: T[] = [];
-  const length = readUVar(b);
   for (let i = 0; i < length; ++i) {
     a.push(reader(b));
   }
   return a;
+}
+
+export function readArray<T>(b: ReadBuffer, reader: (b: ReadBuffer) => T): T[] {
+  return readFixedArray(b, reader, readUVar(b));
 }

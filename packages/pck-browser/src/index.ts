@@ -28,3 +28,4 @@ export { writeArray, readArray, readFixedArray } from "./array";
 export { writeBitSet } from "./bitset";
 
 export { serialize } from "./serializer";
+export { Serializable } from "./interface";

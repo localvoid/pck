@@ -18,6 +18,7 @@ export function readFixedBytes(b: ReadBuffer, size: number): Uint8Array {
   for (let i = 0; i < size; ++i, ++offset) {
     a[i] = u[offset];
   }
+  b.o = offset;
   return a;
 }
 

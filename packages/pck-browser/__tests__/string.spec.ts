@@ -1,7 +1,7 @@
 import { expect } from "iko";
 import { Writer } from "../src/writer";
 import { serialize } from "../src/serializer";
-import { readFixedString, writeFixedString } from "../src/string";
+import { readFixedUtf8, writeFixedUtf8 } from "../src/string";
 
 const DATA = [
   // 1-byte
@@ -87,7 +87,7 @@ describe("src/string.ts", () => {
       for (const t of DATA) {
         it(`U+${t.codePoint.toString(16).toUpperCase()}`, () => {
           const a = { u: createUint8Array(t.encoded), o: 0 };
-          expect(readFixedString(a, t.encoded.length)).toBe(t.decoded);
+          expect(readFixedUtf8(a, t.encoded.length)).toBe(t.decoded);
         });
       }
     });
@@ -96,7 +96,7 @@ describe("src/string.ts", () => {
       for (const t of DATA) {
         it(`U+${t.codePoint.toString(16).toUpperCase()}`, () => {
           const w = new Writer();
-          writeFixedString(w, t.decoded, t.encoded.length);
+          writeFixedUtf8(w, t.decoded, t.encoded.length);
           expect(w.size).toBe(t.encoded.length);
           const a = new Uint8Array(t.encoded.length);
           serialize(w, a);

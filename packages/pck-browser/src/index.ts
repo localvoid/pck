@@ -2,7 +2,8 @@ export { ReadBuffer } from "./buffer";
 export { WriteNodeFlags, WriteNode, Writer } from "./writer";
 
 export {
-  writeI8, writeI16, writeI32, writeF64,
+  writeI8, writeI16, writeI32,
+  writeF32, writeF64,
   writeUVar, writeIVar,
 
   readU8, readI8,

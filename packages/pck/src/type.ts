@@ -1,4 +1,4 @@
-import { Schema, SchemaFlags } from "./schema";
+import { Schema } from "./schema";
 
 export enum TypeId {
   Bool = 0,
@@ -118,10 +118,9 @@ const _REFS = new WeakMap<Schema, Type<Schema>>();
 export function REF(schema: Schema): Type<Schema> {
   let r = _REFS.get(schema);
   if (r === void 0) {
-    const details = schema.details;
-    let size = details.size;
+    let size = schema.size;
     let flags = 0;
-    if ((details.flags & SchemaFlags.DynamicSize) !== 0) {
+    if (schema.hasDynamicSize()) {
       flags |= TypeFlags.DynamicSize;
       size = 0;
     }

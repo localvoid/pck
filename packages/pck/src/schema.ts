@@ -30,46 +30,54 @@ export interface SchemaDetails {
 export class Schema {
   readonly name: string;
   readonly fields: Field<any>[];
-  readonly details: SchemaDetails;
+  readonly flags: SchemaFlags;
+  readonly size: number;
+  readonly optionalFields: Field[];
+  readonly booleanFields: Field[];
+  readonly bitSet: BitField[];
   readonly meta: Map<symbol, any>;
 
   constructor(name: string, fields: Field<any>[], details: SchemaDetails, meta: Map<symbol, any>) {
     this.name = name;
     this.fields = fields;
-    this.details = details;
+    this.flags = details.flags;
+    this.size = details.size;
+    this.optionalFields = details.optionalFields;
+    this.booleanFields = details.booleanFields;
+    this.bitSet = details.bitSet;
     this.meta = meta;
   }
 
   hasBitSet(): boolean {
-    return (this.details.flags & SchemaFlags.BitSet) !== 0;
+    return (this.flags & SchemaFlags.BitSet) !== 0;
   }
 
   optionalBitSetIndex(field: Field): { index: number, position: number } {
-    return bitSetIndex(this.details.optionalFields, field);
+    return bitSetIndex(this.optionalFields, field);
   }
 
   booleanBitSetIndex(field: Field): { index: number, position: number } {
-    return bitSetIndex(this.details.booleanFields, field, this.details.optionalFields.length);
+    return bitSetIndex(this.booleanFields, field, this.optionalFields.length);
   }
 
-  hasDynamiSize(): boolean {
-    return (this.details.flags & SchemaFlags.DynamicSize) !== 0;
+  hasDynamicSize(): boolean {
+    return (this.flags & SchemaFlags.DynamicSize) !== 0;
   }
 
   hasOptionalFields(): boolean {
-    return (this.details.flags & SchemaFlags.OptionalFields) !== 0;
+    return (this.flags & SchemaFlags.OptionalFields) !== 0;
   }
 
   hasBooleanFields(): boolean {
-    return (this.details.flags & SchemaFlags.BooleanFields) !== 0;
+    return (this.flags & SchemaFlags.BooleanFields) !== 0;
   }
 
   hasRegularFields(): boolean {
-    return (this.details.flags & SchemaFlags.RegularFields) !== 0;
+    return (this.flags & SchemaFlags.RegularFields) !== 0;
   }
 
   bitSetSize(): number {
-    return Math.ceil(this.details.bitSet.length / 8);
+    return Math.ceil(this.bitSet.length / 8);
   }
 }
 

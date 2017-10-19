@@ -1,5 +1,5 @@
 import { Type } from "./type";
-import { Schema, SchemaFlags } from "./schema";
+import { Schema } from "./schema";
 
 export class Bundle {
   readonly schemas: Schema[];
@@ -41,7 +41,7 @@ function analyzeSchemas(schemas: Schema[]): AnalyzeResult {
   const fixedSizeSchemas = new Set<Schema>();
 
   for (const schema of schemas) {
-    if ((schema.details.flags & SchemaFlags.DynamicSize) === 0) {
+    if (!schema.hasDynamicSize()) {
       fixedSizeSchemas.add(schema);
     }
 

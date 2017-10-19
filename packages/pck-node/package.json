@@ -32,8 +32,8 @@
   ],
   "scripts": {
     "prepublish": "npm run dist",
-    "dist": "npm run dist:es6 && npm run dist:cjs",
-    "dist:es6": "../../node_modules/.bin/tsc --project ./tsconfig.build.es6.json",
+    "dist": "npm run dist:es2015 && npm run dist:cjs",
+    "dist:es2015": "../../node_modules/.bin/tsc --project ./tsconfig.build.es2015.json",
     "dist:cjs": "../../node_modules/.bin/tsc --project ./tsconfig.build.cjs.json",
     "lint": "../../node_modules/.bin/tslint --project ./tsconfig.json",
     "test": "../../node_modules/.bin/mocha --reporter mocha-iko-reporter -r ../../node_modules/ts-node/register __tests__/index.ts",

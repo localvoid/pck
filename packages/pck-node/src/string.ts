@@ -1,7 +1,8 @@
+import { StringDecoder } from "string_decoder";
 import { Writer, WriteNodeFlags, WriteNode, pushWriteNode } from "./writer";
 import { ReadBuffer } from "./buffer";
 import { readUVar, writeUVar } from "./number";
-import { StringDecoder } from "string_decoder";
+import { writeFixedBytes } from "./bytes";
 
 const fromCharCode = String.fromCharCode;
 
@@ -48,9 +49,16 @@ export function writeFixedUtf8(w: Writer, s: string, size: number): void {
 }
 
 export function writeUtf8(w: Writer, s: string): void {
-  const size = sizeUtf8String(s);
-  writeUVar(w, size);
-  writeFixedUtf8(w, s, size);
+  if (s.length > 16) {
+    const b = Buffer.from(s);
+    const size = b.length;
+    writeUVar(w, size);
+    writeFixedBytes(w, b, size);
+  } else {
+    const size = sizeUtf8String(s);
+    writeUVar(w, size);
+    writeFixedUtf8(w, s, size);
+  }
 }
 
 export function writeAscii(w: Writer, s: string): void {

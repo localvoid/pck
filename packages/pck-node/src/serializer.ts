@@ -65,8 +65,13 @@ export function serialize(w: Writer, d: Buffer, offset = 0): void {
         }
       } else {
         // Bytes
-        for (i = 0; i < size; ++i) {
-          d[offset++] = value[i];
+        if (size > 16) {
+          value.copy(d, offset);
+          offset += size;
+        } else {
+          for (i = 0; i < size; ++i) {
+            d[offset++] = value[i];
+          }
         }
       }
     }

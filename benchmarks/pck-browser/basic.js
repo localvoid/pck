@@ -1,7 +1,8 @@
 "use strict"
 
 const benchmark = require("benchmark");
-const pck = require("pck-browser");
+const pckBrowser = require("pck-browser");
+const pckNode = require("pck-node");
 
 const DATA = {
   health: 100,
@@ -14,32 +15,33 @@ const DATA = {
   },
 };
 
-const PCK_DATA = encodePck();
+const PCK_BROWSER_DATA = encodePckBrowser();
+const PCK_NODE_DATA = encodePckNode();
 const JSON_DATA = JSON.stringify(DATA);
 
-function writeData(w, v) {
-  pck.writeBitSet(w,
+function writeBrowserData(w, v) {
+  pckBrowser.writeBitSet(w,
     w.jumping,
   );
 
-  pck.writeI32(w, v.health);
-  pck.writeArray(w, v.position, pck.writeI32);
-  writeNested(w, v.attributes);
+  pckBrowser.writeI32(w, v.health);
+  pckBrowser.writeArray(w, v.position, pckBrowser.writeI32);
+  writeBrowserNested(w, v.attributes);
 }
 
-function writeNested(w, v) {
-  pck.writeI32(w, v.str);
-  pck.writeI32(w, v.agi);
-  pck.writeI32(w, v.int);
+function writeBrowserNested(w, v) {
+  pckBrowser.writeI32(w, v.str);
+  pckBrowser.writeI32(w, v.agi);
+  pckBrowser.writeI32(w, v.int);
 }
 
-function readData(b) {
-  const bitSet1 = pck.readU8(b);
+function readBrowserData(b) {
+  const bitSet1 = pckBrowser.readU8(b);
   const jumping = (bitSet1 & 1) !== 0;
 
-  const health = pck.readI32(b);
-  const position = pck.readArray(b, pck.readI32);
-  const attributes = readNested(b);
+  const health = pckBrowser.readI32(b);
+  const position = pckBrowser.readArray(b, pckBrowser.readI32);
+  const attributes = readBrowserNested(b);
 
   return {
     health,
@@ -49,24 +51,76 @@ function readData(b) {
   };
 }
 
-function readNested(b) {
+function readBrowserNested(b) {
   return {
-    str: pck.readI32(b),
-    agi: pck.readI32(b),
-    int: pck.readI32(b),
+    str: pckBrowser.readI32(b),
+    agi: pckBrowser.readI32(b),
+    int: pckBrowser.readI32(b),
   };
 }
 
-function encodePck() {
-  const w = new pck.Writer();
-  writeData(w, DATA);
+function writeNodeData(w, v) {
+  pckNode.writeBitSet(w,
+    w.jumping,
+  );
+
+  pckNode.writeI32(w, v.health);
+  pckNode.writeArray(w, v.position, pckBrowser.writeI32);
+  writeNodeNested(w, v.attributes);
+}
+
+function writeNodeNested(w, v) {
+  pckNode.writeI32(w, v.str);
+  pckNode.writeI32(w, v.agi);
+  pckNode.writeI32(w, v.int);
+}
+
+function readNodeData(b) {
+  const bitSet1 = pckNode.readU8(b);
+  const jumping = (bitSet1 & 1) !== 0;
+
+  const health = pckNode.readI32(b);
+  const position = pckNode.readArray(b, pckNode.readI32);
+  const attributes = readNodeNested(b);
+
+  return {
+    health,
+    jumping,
+    position,
+    attributes,
+  };
+}
+
+function readNodeNested(b) {
+  return {
+    str: pckNode.readI32(b),
+    agi: pckNode.readI32(b),
+    int: pckNode.readI32(b),
+  };
+}
+
+function encodePckBrowser() {
+  const w = new pckBrowser.Writer();
+  writeBrowserData(w, DATA);
   const a = new Uint8Array(w.size);
-  pck.serialize(w, a);
+  pckBrowser.serialize(w, a);
   return a;
 }
 
-function decodePck() {
-  return readData({ u: PCK_DATA, o: 0 });
+function decodePckBrowser() {
+  return readBrowserData({ u: PCK_BROWSER_DATA, o: 0 });
+}
+
+function encodePckNode() {
+  const w = new pckNode.Writer();
+  writeNodeData(w, DATA);
+  const a = Buffer.allocUnsafe(w.size);
+  pckNode.serialize(w, a);
+  return a;
+}
+
+function decodePckNode() {
+  return readNodeData({ u: PCK_NODE_DATA, o: 0 });
 }
 
 function encodeJson() {
@@ -78,11 +132,17 @@ function decodeJson() {
 }
 
 new benchmark.Suite()
-  .add("encodePck", () => {
-    encodePck();
+  .add("encodePckBrowser", () => {
+    encodePckBrowser();
   })
-  .add("decodePck", () => {
-    decodePck();
+  .add("decodePckBrowser", () => {
+    decodePckBrowser();
+  })
+  .add("encodePckNode", () => {
+    encodePckNode();
+  })
+  .add("decodePckNode", () => {
+    decodePckNode();
   })
   .add("encodeJson", () => {
     encodeJson();

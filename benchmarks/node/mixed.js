@@ -1,7 +1,8 @@
 "use strict"
 
 const benchmark = require("benchmark");
-const pck = require("pck-browser");
+const pckBrowser = require("pck-browser");
+const pckNode = require("pck-node");
 
 const DATA = {
   id: "123456789012345678901234",
@@ -9,98 +10,122 @@ const DATA = {
   health: 100,
   jumping: true,
   position: [10, 20],
-  attributes: {
-    str: 100,
-    agi: 50,
-    int: 10,
-  },
+  attributes: { str: 100, agi: 50, int: 10 },
 };
 
-const PCK_DATA = encodePck();
-const JSON_DATA = JSON.stringify(DATA);
+const PCK = pckBrowserEncode();
+const JSON_DATA = jsonEncode();
 
-function writeData(w, v) {
-  pck.writeBitSet(w,
-    v.jumping,
-  );
-
-  pck.writeFixedAscii(w, v.id, 24);
-  pck.writeUtf8(w, v.name);
-  pck.writeI32(w, v.health);
-  pck.writeArray(w, v.position, pck.writeI32);
-  writeNested(w, v.attributes);
+function browserWriteData(w, v) {
+  pckBrowser.writeBitSet(w, v.jumping);
+  pckBrowser.writeFixedUtf8(w, v.id);
+  pckBrowser.writeUtf8(w, v.name);
+  pckBrowser.writeI32(w, v.health);
+  pckBrowser.writeFixedArray(w, v.position, pckBrowser.writeI32);
+  browserWriteNested(w, v.attributes);
 }
 
-function writeNested(w, v) {
-  pck.writeI32(w, v.str);
-  pck.writeI32(w, v.agi);
-  pck.writeI32(w, v.int);
+function browserWriteNested(w, v) {
+  pckBrowser.writeI8(w, v.str);
+  pckBrowser.writeI8(w, v.agi);
+  pckBrowser.writeI8(w, v.int);
 }
 
-function readData(b) {
-  const bitSet1 = pck.readU8(b);
+function browserReadData(b) {
+  const bitSet1 = pckBrowser.readU8(b);
   const jumping = (bitSet1 & 1) !== 0;
 
-  const id = pck.readFixedUtf8(b, 24);
-  const name = pck.readUtf8(b);
-  const health = pck.readI32(b);
-  const position = pck.readArray(b, pck.readI32);
-  const attributes = readNested(b);
+  const id = pckBrowser.readFixedUtf8(b, 24);
+  const name = pckBrowser.readUtf8(b);
+  const health = pckBrowser.readI32(b);
+  const position = pckBrowser.readFixedArray(b, pckBrowser.readI32, 2);
+  const attributes = browserReadNested(b);
 
+  return { id, name, health, jumping, position, attributes };
+}
+
+function browserReadNested(b) {
   return {
-    id,
-    name,
-    health,
-    jumping,
-    position,
-    attributes,
+    str: pckBrowser.readU8(b),
+    agi: pckBrowser.readU8(b),
+    int: pckBrowser.readU8(b),
   };
 }
 
-function readNested(b) {
+function nodeWriteData(w, v) {
+  pckNode.writeBitSet(w, v.jumping);
+  pckNode.writeFixedUtf8(w, v.id, 24);
+  pckNode.writeUtf8(w, v.name);
+  pckNode.writeI32(w, v.health);
+  pckNode.writeFixedArray(w, v.position, pckBrowser.writeI32);
+  nodeWriteNested(w, v.attributes);
+}
+
+function nodeWriteNested(w, v) {
+  pckNode.writeI8(w, v.str);
+  pckNode.writeI8(w, v.agi);
+  pckNode.writeI8(w, v.int);
+}
+
+function nodeReadData(b) {
+  const bitSet1 = pckNode.readU8(b);
+  const jumping = (bitSet1 & 1) !== 0;
+
+  const id = pckNode.readFixedUtf8(b, 24);
+  const name = pckNode.readUtf8(b);
+  const health = pckNode.readI32(b);
+  const position = pckNode.readFixedArray(b, pckNode.readI32, 2);
+  const attributes = nodeReadNested(b);
+
+  return { id, name, health, jumping, position, attributes };
+}
+
+function nodeReadNested(b) {
   return {
-    str: pck.readI32(b),
-    agi: pck.readI32(b),
-    int: pck.readI32(b),
+    str: pckNode.readU8(b),
+    agi: pckNode.readU8(b),
+    int: pckNode.readU8(b),
   };
 }
 
-function encodePck() {
-  const w = new pck.Writer();
-  writeData(w, DATA);
+function pckBrowserEncode() {
+  const w = new pckBrowser.Writer();
+  browserWriteData(w, DATA);
   const a = new Uint8Array(w.size);
-  pck.serialize(w, a);
+  pckBrowser.serialize(w, a);
   return a;
 }
 
-function decodePck() {
-  return readData({ u: PCK_DATA, o: 0 });
+function pckBrowserDecode() {
+  return browserReadData({ u: PCK, o: 0 });
 }
 
-function encodeJson() {
+function pckNodeEncode() {
+  const w = new pckNode.Writer();
+  nodeWriteData(w, DATA);
+  const a = Buffer.allocUnsafe(w.size);
+  pckNode.serialize(w, a);
+  return a;
+}
+
+function pckNodeDecode() {
+  return nodeReadData({ u: PCK, o: 0 });
+}
+
+function jsonEncode() {
   return JSON.stringify(DATA);
 }
 
-function decodeJson() {
+function jsonDecode() {
   return JSON.parse(JSON_DATA);
 }
 
 new benchmark.Suite()
-  .add("encodePck", () => {
-    encodePck();
-  })
-  .add("decodePck", () => {
-    decodePck();
-  })
-  .add("encodeJson", () => {
-    encodeJson();
-  })
-  .add("decodeJson", () => {
-    decodeJson();
-  })
-  .on("complete", function () {
-    for (let i = 0; i < this.length; i++) {
-      console.log(this[i].toString());
-    }
-  })
+  .add("pck:browser:encode", () => { pckBrowserEncode(); })
+  .add("pck:browser:decode", () => { pckBrowserDecode(); })
+  .add("pck:node:encode", () => { pckNodeEncode(); })
+  .add("pck:node:decode", () => { pckNodeDecode(); })
+  .add("json:encode", () => { jsonEncode(); })
+  .add("json:decode", () => { jsonDecode(); })
+  .on("cycle", (e) => { console.log(String(e.target)); })
   .run();

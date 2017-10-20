@@ -25,14 +25,14 @@ function writeData(w: __pck.Writer, v: any): void {
   __pck.writeFixedUtf8(w, v["id"], 24);
   __pck.writeUtf8(w, v["name"]);
   __pck.writeI32(w, v["health"]);
-  __pck.writeArray(w, v["position"], __pck.writeI32);
+  __pck.writeFixedArray(w, v["position"], __pck.writeI32);
   writeNested(w, v["attributes"]);
 }
 
 function writeNested(w: __pck.Writer, v: any): void {
-  __pck.writeI32(w, v["str"]);
-  __pck.writeI32(w, v["agi"]);
-  __pck.writeI32(w, v["int"]);
+  __pck.writeI8(w, v["str"]);
+  __pck.writeI8(w, v["agi"]);
+  __pck.writeI8(w, v["int"]);
 }
 
 function readData(b: __pck.ReadBuffer): any {
@@ -42,7 +42,7 @@ function readData(b: __pck.ReadBuffer): any {
   const id = __pck.readFixedUtf8(b, 24);
   const name = __pck.readUtf8(b);
   const health = __pck.readI32(b);
-  const position = __pck.readArray(b, __pck.readI32);
+  const position = __pck.readFixedArray(b, __pck.readI32, 2);
   const attributes = readNested(b);
 
   return {
@@ -57,9 +57,9 @@ function readData(b: __pck.ReadBuffer): any {
 
 function readNested(b: __pck.ReadBuffer): any {
   return {
-    "str": __pck.readI32(b),
-    "agi": __pck.readI32(b),
-    "int": __pck.readI32(b),
+    "str": __pck.readU8(b),
+    "agi": __pck.readU8(b),
+    "int": __pck.readU8(b),
   };
 }
 

@@ -12,6 +12,7 @@ export enum TypeId {
   ASCII = 8,
   Ref = 9,
   Array = 10,
+  OneOf = 11,
 }
 
 export const enum TypeFlags {
@@ -106,11 +107,15 @@ export class Type<T = null> {
   isRef(): this is Type<Schema> {
     return this.id === TypeId.Ref;
   }
+
+  isOneOf(): this is Type<Type[]> {
+    return this.id === TypeId.OneOf;
+  }
 }
 
 export interface ArrayTypeProps {
   readonly length: number;
-  readonly types: Type<any>[];
+  readonly type: Type<any>;
 }
 
 const _REFS = new WeakMap<Schema, Type<Schema>>();
@@ -129,30 +134,29 @@ export function REF(schema: Schema): Type<Schema> {
   return r;
 }
 
-export function ARRAY(types: Type<any> | Type<any>[], length = 0): Type<ArrayTypeProps> {
-  if (!Array.isArray(types)) {
-    types = [types];
-  }
-
+export function ARRAY(type: Type<any>, length = 0): Type<ArrayTypeProps> {
   let size = 0;
   let flags = 0;
 
   if (length === 0) {
     flags |= TypeFlags.DynamicSize;
   } else {
-    const typeSize = types[0].size;
-    for (const type of types) {
-      if ((typeSize !== type.size) || ((type.flags & TypeFlags.DynamicSize) !== 0)) {
-        flags |= TypeFlags.DynamicSize;
-        size = 0;
-        break;
-      }
-      size += type.size;
+    if (type.hasDynamicSize()) {
+      flags |= TypeFlags.DynamicSize;
     }
     size *= length;
   }
 
-  return new Type<ArrayTypeProps>(TypeId.Array, size, flags, { length, types });
+  return new Type<ArrayTypeProps>(TypeId.Array, size, flags, { length, type });
+}
+
+export function ONE_OF(types: Type<any>[]): Type<Type<any>[]> {
+  for (const type of types) {
+    if (!type.isRef()) {
+      throw new Error("ONE_OF type doesn't work with basic types");
+    }
+  }
+  return new Type<Type<any>[]>(TypeId.OneOf, 0, TypeFlags.DynamicSize, types);
 }
 
 function t(id: TypeId, size: number = 0, flags: TypeFlags = 0): Type {

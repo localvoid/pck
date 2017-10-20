@@ -1,5 +1,5 @@
 import {
-  Type, ArrayTypeProps, ARRAY, REF, BOOL, I8, U8, I16, U16, I32, U32, F32, F64, IVAR, UVAR, BYTES, UTF8, ASCII,
+  Type, ArrayTypeProps, ARRAY, REF, ONE_OF, BOOL, I8, U8, I16, U16, I32, U32, F32, F64, IVAR, UVAR, BYTES, UTF8, ASCII,
 } from "./type";
 import { Schema } from "./schema";
 
@@ -40,8 +40,12 @@ export function ref(name: string, schema: Schema): Field<Schema> {
   return new Field<Schema>(REF(schema), name);
 }
 
-export function array(name: string, types: Type<any> | Type<any>[], length?: number): Field<ArrayTypeProps> {
-  return new Field<ArrayTypeProps>(ARRAY(types, length), name);
+export function array(name: string, type: Type<any>, length?: number): Field<ArrayTypeProps> {
+  return new Field<ArrayTypeProps>(ARRAY(type, length), name);
+}
+
+export function oneOf(name: string, types: Type<any>[]): Field<Type<any>[]> {
+  return new Field<Type<any>[]>(ONE_OF(types), name);
 }
 
 export function bool(name: string): Field {

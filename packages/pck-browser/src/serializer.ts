@@ -61,9 +61,8 @@ export function serialize(w: Writer, d: Uint8Array, offset = 0): void {
         }
       } else {
         // Bytes
-        for (i = 0; i < size; ++i) {
-          d[offset++] = value[i];
-        }
+        d.set(value, offset);
+        offset += size;
       }
     }
     n = n.next;

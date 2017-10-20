@@ -5,6 +5,7 @@ import { readUVar, writeUVar } from "./number";
 import { writeFixedBytes } from "./bytes";
 
 const fromCharCode = String.fromCharCode;
+export const utf8Decoder = new StringDecoder("utf8");
 
 export const enum Utf8Const {
   tx = 0x80, // 1000 0000
@@ -49,13 +50,14 @@ export function writeFixedUtf8(w: Writer, s: string, size: number): void {
 }
 
 export function writeUtf8(w: Writer, s: string): void {
+  let size;
   if (s.length > 16) {
     const b = Buffer.from(s);
-    const size = b.length;
+    size = b.length;
     writeUVar(w, size);
     writeFixedBytes(w, b, size);
   } else {
-    const size = sizeUtf8String(s);
+    size = sizeUtf8String(s);
     writeUVar(w, size);
     writeFixedUtf8(w, s, size);
   }
@@ -66,7 +68,9 @@ export function writeAscii(w: Writer, s: string): void {
   writeFixedUtf8(w, s, s.length);
 }
 
-const utf8Decoder = new StringDecoder("utf8");
+export function writeLongFixedAscii(w: Writer, s: string, length: number): void {
+  writeFixedBytes(w, Buffer.from(s), length);
+}
 
 /**
  * Reads an UTF8 string.

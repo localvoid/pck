@@ -14,8 +14,9 @@ export {
 } from "./number";
 
 export {
+  utf8Decoder,
   writeFixedUtf8, writeUtf8,
-  writeAscii,
+  writeAscii, writeLongFixedAscii,
   readFixedUtf8, readUtf8,
 } from "./string";
 

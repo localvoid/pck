@@ -25,17 +25,25 @@ declare global {
   }
 }
 
+const results = document.getElementById("results")!;
+
+function printResult(s: string): void {
+  const div = document.createElement("div");
+  div.textContent = s;
+  results.appendChild(div);
+}
+
 function bench(names: string[], fns: Array<() => void>): void {
   const b = new window["Benchmark"]["Suite"]()
   ["on"]("cycle", function (e: any) {
-    console.log(String(e.target));
+    printResult(String(e.target));
   });
 
   for (let i = 0; i < names.length; i++) {
     b["add"](names[i], fns[i]);
   }
 
-  b["run"]();
+  b["run"]({ "async": true });
 }
 
 function add(name: string, names: string[], fns: Array<() => void>) {
@@ -79,8 +87,8 @@ add(
 );
 
 if (__pck.utf8Decoder !== null) {
-  console.log("TextDecoder detected");
+  printResult("TextDecoder detected");
 }
 if (__pck.utf8Encoder !== null) {
-  console.log("TextEncoder detected");
+  printResult("TextEncoder detected");
 }

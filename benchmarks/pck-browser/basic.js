@@ -61,7 +61,7 @@ function readBrowserNested(b) {
 
 function writeNodeData(w, v) {
   pckNode.writeBitSet(w,
-    w.jumping,
+    v.jumping,
   );
 
   pckNode.writeI32(w, v.health);

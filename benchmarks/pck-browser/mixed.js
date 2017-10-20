@@ -21,7 +21,7 @@ const JSON_DATA = JSON.stringify(DATA);
 
 function writeData(w, v) {
   pck.writeBitSet(w,
-    w.jumping,
+    v.jumping,
   );
 
   pck.writeFixedAscii(w, v.id, 24);

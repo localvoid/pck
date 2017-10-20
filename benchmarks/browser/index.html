@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>pck benchmark</title>
+</head>
+
+<body>
+  <h2>Encode</h2>
+  <button id="encodeBasic">Basic</button>
+  <button id="encodeMixed">Mixed</button>
+  <h3>UTF8 Strings</h3>
+  <button id="encodeUTF20k">String (20kb)</button>
+  <button id="encodeUTF1k">String (1kb)</button>
+  <button id="encodeUTF32">String (32b)</button>
+  <button id="encodeUTF8">String (8b)</button>
+  <h3>ASCII Strings</h3>
+  <button id="encodeASCII20k">String (20kb)</button>
+  <button id="encodeASCII1k">String (1kb)</button>
+  <button id="encodeASCII32">String (32b)</button>
+  <button id="encodeASCII8">String (8b)</button>
+
+  <h2>Decode</h2>
+  <button id="decodeBasic">Basic</button>
+  <button id="decodeMixed">Mixed</button>
+  <h3>UTF8 Strings</h3>
+  <button id="decodeUTF20k">String (20kb)</button>
+  <button id="decodeUTF1k">String (1kb)</button>
+  <button id="decodeUTF32">String (32b)</button>
+  <button id="decodeUTF8">String (8b)</button>
+  <h3>ASCII Strings</h3>
+  <button id="decodeASCII20k">String (20kb)</button>
+  <button id="decodeASCII1k">String (1kb)</button>
+  <button id="decodeASCII32">String (32b)</button>
+  <button id="decodeASCII8">String (8b)</button>
+
+  <script src="lodash.min.js"></script>
+  <script src="benchmark.js"></script>
+  <script src="./dist/bundle.js"></script>
+</body>
+
+</html>

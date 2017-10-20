@@ -1,0 +1,38 @@
+{
+  "private": true,
+  "name": "pck-benchmark-browser",
+  "main": "dist/bundle.js",
+  "version": "0.1.0",
+  "description": "pck benchmark: browser",
+  "license": "MIT",
+  "author": {
+    "name": "Boris Kaul",
+    "email": "localvoid@gmail.com",
+    "url": "https://github.com/localvoid"
+  },
+  "keywords": [
+    "pck",
+    "serialize"
+  ],
+  "homepage": "https://github.com/localvoid/pck",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/localvoid/pck"
+  },
+  "bugs": {
+    "url": "https://github.com/localvoid/pck/issues"
+  },
+  "github": "https://github.com/localvoid/pck",
+  "files": [],
+  "scripts": {
+    "dist": "./node_modules/.bin/webpack",
+    "lint": "../../node_modules/.bin/tslint --project ./tsconfig.json"
+  },
+  "dependencies": {},
+  "peerDependencies": {},
+  "devDependencies": {
+    "ts-loader": "^3.0.3",
+    "webpack": "^3.8.1",
+    "webpack-closure-compiler": "^2.1.5"
+  }
+}

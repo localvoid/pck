@@ -10,6 +10,7 @@ import {
   jsonDecodeUTF1k, jsonDecodeUTF20k, jsonDecodeUTF32, jsonDecodeUTF8, jsonEncodeUTF1k, jsonEncodeUTF20k,
   jsonEncodeUTF32, jsonEncodeUTF8,
 } from "./string";
+import { DECODE_STRING_EXPERIMENTS, ENCODE_STRING_EXPERIMENTS } from "./experiments/string";
 import * as __pck from "pck-browser";
 
 declare global {
@@ -65,6 +66,17 @@ add("decodeASCII20k", ["PCK", "JSON"], [pckDecodeASCII20k, jsonDecodeUTF20k]);
 add("decodeASCII1k", ["PCK", "JSON"], [pckDecodeASCII1k, jsonDecodeUTF1k]);
 add("decodeASCII32", ["PCK", "JSON"], [pckDecodeASCII32, jsonDecodeUTF32]);
 add("decodeASCII8", ["PCK", "JSON"], [pckDecodeASCII8, jsonDecodeUTF8]);
+
+add(
+  "encodeStringExperiments",
+  ENCODE_STRING_EXPERIMENTS.map((x) => x.name),
+  ENCODE_STRING_EXPERIMENTS.map((x) => x.fn),
+);
+add(
+  "decodeStringExperiments",
+  DECODE_STRING_EXPERIMENTS.map((x) => x.name),
+  DECODE_STRING_EXPERIMENTS.map((x) => x.fn),
+);
 
 if (__pck.utf8Decoder !== null) {
   console.log("TextDecoder detected");

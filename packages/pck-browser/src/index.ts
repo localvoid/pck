@@ -31,7 +31,7 @@ export {
 } from "./array";
 
 export { writeBitSet } from "./bitset";
+export { readOneOf } from "./one_of";
 
 export { serialize } from "./serializer";
 export { Serializable } from "./interface";
-export { readOneOf } from "./one_of";

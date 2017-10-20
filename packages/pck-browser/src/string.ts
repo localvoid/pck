@@ -22,8 +22,8 @@ declare global {
   }
 }
 
-export const utf8Decoder = window.TextDecoder !== undefined ? new TextDecoder("utf-8") : null;
-export const utf8Encoder = window.TextEncoder !== undefined ? new TextEncoder("utf-8") : null;
+export const utf8Decoder = typeof TextDecoder === "undefined" ? null : new TextDecoder("utf-8");
+export const utf8Encoder = typeof TextEncoder === "undefined" ? null : new TextEncoder("utf-8");
 
 export const enum Utf8Const {
   tx = 0x80, // 1000 0000

@@ -68,10 +68,6 @@ export function writeAscii(w: Writer, s: string): void {
   writeFixedUtf8(w, s, s.length);
 }
 
-export function writeLongFixedAscii(w: Writer, s: string, length: number): void {
-  writeFixedBytes(w, Buffer.from(s), length);
-}
-
 /**
  * Reads an UTF8 string.
  *
@@ -84,7 +80,7 @@ export function readFixedUtf8(b: ReadBuffer, length: number): string {
   let offset = b.o;
   b.o += length;
 
-  if (length > 16) {
+  if (length > 32) {
     return utf8Decoder.end(Buffer.from(u.buffer, offset, length));
   }
   const end = offset + length;

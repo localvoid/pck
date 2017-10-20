@@ -40,7 +40,7 @@ export function serialize(w: Writer, d: Buffer, offset = 0): void {
     } else {
       if ((flags & WriteNodeFlags.UTF8) !== 0) {
         // UTF8 String
-        if (size > 16) {
+        if (size > 8) {
           offset += d.write(value, offset);
         } else {
           for (i = 0; i < size; ++i) {
@@ -65,7 +65,7 @@ export function serialize(w: Writer, d: Buffer, offset = 0): void {
         }
       } else {
         // Bytes
-        if (size > 16) {
+        if (size > 32) {
           offset += (value as Buffer).copy(d, offset);
         } else {
           for (i = 0; i < size; ++i) {

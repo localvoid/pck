@@ -25,9 +25,13 @@ export {
   readFixedBytes, readBytes,
 } from "./bytes";
 
-export { writeArray, readArray, readFixedArray } from "./array";
+export {
+  writeFixedArray, writeArray, writeOneOfArray,
+  readArray, readFixedArray, readOneOfArray,
+} from "./array";
 
 export { writeBitSet } from "./bitset";
+export { readOneOf } from "./one_of";
 
 export { serialize } from "./serializer";
 export { Serializable } from "./interface";

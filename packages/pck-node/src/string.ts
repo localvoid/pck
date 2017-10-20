@@ -1,11 +1,11 @@
-import { StringDecoder } from "string_decoder";
+import { StringDecoder, NodeStringDecoder } from "string_decoder";
 import { Writer, WriteNodeFlags, WriteNode, pushWriteNode } from "./writer";
 import { ReadBuffer } from "./buffer";
 import { readUVar, writeUVar } from "./number";
 import { writeFixedBytes } from "./bytes";
 
 const fromCharCode = String.fromCharCode;
-export const utf8Decoder = new StringDecoder("utf8");
+export const utf8Decoder: NodeStringDecoder = new StringDecoder("utf8");
 
 export const enum Utf8Const {
   tx = 0x80, // 1000 0000

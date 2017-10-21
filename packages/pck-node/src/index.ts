@@ -20,18 +20,21 @@ export {
   readFixedUtf8, readUtf8,
 } from "./string";
 
+export { objectWriter, objectTaggedWriter } from "./object";
+
 export {
   writeFixedBytes, writeBytes,
   readFixedBytes, readBytes,
 } from "./bytes";
 
 export {
-  writeFixedArray, writeArray, writeOneOfArray,
-  readArray, readFixedArray, readOneOfArray,
+  writeFixedArray, writeArray,
+  readArray, readFixedArray,
 } from "./array";
+export { writeMap, readMap } from "./map";
 
 export { writeBitSet } from "./bitset";
-export { readOneOf } from "./one_of";
+export { readOneOf, createOneOfReader } from "./one_of";
 
 export { serialize } from "./serializer";
 export { Serializable } from "./interface";

@@ -1,5 +1,6 @@
 import {
-  Type, ArrayTypeProps, ARRAY, REF, ONE_OF, BOOL, I8, U8, I16, U16, I32, U32, F32, F64, IVAR, UVAR, BYTES, UTF8, ASCII,
+  Type, ArrayTypeProps, MapTypeProps,
+  ARRAY, MAP, REF, ONE_OF, BOOL, I8, U8, I16, U16, I32, U32, F32, F64, IVAR, UVAR, BYTES, UTF8, ASCII,
 } from "./type";
 import { Schema } from "./schema";
 
@@ -42,6 +43,10 @@ export function ref(name: string, schema: Schema): Field<Schema> {
 
 export function array(name: string, type: Type<any>, length?: number): Field<ArrayTypeProps> {
   return new Field<ArrayTypeProps>(ARRAY(type, length), name);
+}
+
+export function map(name: string, key: Type<any>, value: Type<any>): Field<MapTypeProps> {
+  return new Field<MapTypeProps>(MAP(key, value), name);
 }
 
 export function oneOf(name: string, types: Type<any>[]): Field<Type<any>[]> {

@@ -12,7 +12,8 @@ export enum TypeId {
   ASCII = 8,
   Ref = 9,
   Array = 10,
-  OneOf = 11,
+  Map = 11,
+  OneOf = 12,
 }
 
 export const enum TypeFlags {
@@ -118,6 +119,11 @@ export interface ArrayTypeProps {
   readonly type: Type<any>;
 }
 
+export interface MapTypeProps {
+  readonly key: Type<any>;
+  readonly value: Type<any>;
+}
+
 const _REFS = new WeakMap<Schema, Type<Schema>>();
 
 export function REF(schema: Schema): Type<Schema> {
@@ -148,6 +154,10 @@ export function ARRAY(type: Type<any>, length = 0): Type<ArrayTypeProps> {
   }
 
   return new Type<ArrayTypeProps>(TypeId.Array, size, flags, { length, type });
+}
+
+export function MAP(key: Type<any>, value: Type<any>): Type<MapTypeProps> {
+  return new Type<MapTypeProps>(TypeId.Map, 0, TypeFlags.DynamicSize, { key, value });
 }
 
 export function ONE_OF(types: Type<any>[]): Type<Type<any>[]> {

@@ -3,7 +3,7 @@
   "main": "dist/cjs/index.js",
   "module": "dist/js/index.js",
   "typings": "dist/typings/index.d.ts",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Binary data serialization format",
   "license": "MIT",
   "author": {
@@ -13,6 +13,7 @@
   },
   "keywords": [
     "pck",
+    "binary",
     "serialize"
   ],
   "homepage": "https://github.com/localvoid/pck",

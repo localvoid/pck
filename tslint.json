@@ -1,6 +1,3 @@
 {
-  "extends": "ivi-tslint-rules",
-  "rules": {
-    "no-conditional-assignment": false
-  }
+  "extends": "ivi-tslint-rules"
 }

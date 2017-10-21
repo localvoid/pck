@@ -1,2 +1,3 @@
 export { JSMeta, jsMeta } from "./meta";
-export { Emitter, createEmitter } from "./emitter";
+export { EmitData, emit } from "./emit";
+export { inject } from "./inject";

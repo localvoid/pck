@@ -42,7 +42,11 @@
   "peerDependencies": {
     "pck": "^0.1.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "lodash": "^4.17.4",
+    "osh": "^0.1.1",
+    "osh-code": "^0.1.1"
+  },
   "devDependencies": {
     "pck": "^0.1.0"
   },

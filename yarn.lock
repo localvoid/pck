@@ -590,6 +590,14 @@ chalk@^2.0.0, chalk@^2.0.1:
     escape-string-regexp "^1.0.5"
     supports-color "^4.0.0"
 
+chalk@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-2.2.0.tgz#477b3bf2f9b8fd5ca9e429747e37f724ee7af240"
+  dependencies:
+    ansi-styles "^3.1.0"
+    escape-string-regexp "^1.0.5"
+    supports-color "^4.0.0"
+
 chokidar@^1.4.1, chokidar@^1.7.0:
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-1.7.0.tgz#798e689778151c8076b4b360e5edd28cda2bb468"
@@ -1816,8 +1824,8 @@ istanbul-reports@^1.1.1, istanbul-reports@^1.1.2:
     handlebars "^4.0.3"
 
 ivi-tslint-rules@^0.1.3:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/ivi-tslint-rules/-/ivi-tslint-rules-0.1.2.tgz#303123b176ab0317b1a35847e1921c32456ce72d"
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/ivi-tslint-rules/-/ivi-tslint-rules-0.1.3.tgz#ed9cb4aa7d1ac9ef5fe6bcfa7ec5fc3e4d5bf387"
 
 js-tokens@^3.0.0, js-tokens@^3.0.2:
   version "3.0.2"
@@ -2439,6 +2447,14 @@ osenv@^0.1.4:
     os-homedir "^1.0.0"
     os-tmpdir "^1.0.0"
 
+osh-code@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/osh-code/-/osh-code-0.1.0.tgz#6173fc987238e97e1f93875d521e6f36d41c3782"
+
+osh@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/osh/-/osh-0.1.0.tgz#cb14d5cfb3f55c603d9d2a43b9975d841cf79663"
+
 p-finally@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/p-finally/-/p-finally-1.0.0.tgz#3fbcfb15b899a44123b34b6dcc18b724336a2cae"
@@ -2887,10 +2903,6 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     hash-base "^2.0.0"
     inherits "^2.0.1"
 
-routekit-resolver@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/routekit-resolver/-/routekit-resolver-0.1.0.tgz#a59f7415ed59336f117af3fc91c3a403187b07d9"
-
 rtext-render@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/rtext-render/-/rtext-render-0.1.0.tgz#bb71efa83f39ece9c373f4570c8959c0a593da73"
@@ -3297,11 +3309,11 @@ trim-right@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
 
-ts-loader@^2.3.7:
-  version "2.3.7"
-  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-2.3.7.tgz#a9028ced473bee12f28a75f9c5b139979d33f2fc"
+ts-loader@^3.0.2:
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/ts-loader/-/ts-loader-3.0.5.tgz#a22a50eda4258de6fcbd9ed4e7a356130a64cfa0"
   dependencies:
-    chalk "^2.0.1"
+    chalk "^2.2.0"
     enhanced-resolve "^3.0.0"
     loader-utils "^1.0.2"
     semver "^5.0.1"

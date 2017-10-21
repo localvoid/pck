@@ -30,6 +30,8 @@ export {
   readArray, readFixedArray, readOneOfArray,
 } from "./array";
 
+export { writeMap, readMap } from "./map";
+
 export { writeBitSet } from "./bitset";
 export { readOneOf } from "./one_of";
 

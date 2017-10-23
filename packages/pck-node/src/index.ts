@@ -20,7 +20,7 @@ export {
   readFixedUtf8, readUtf8,
 } from "./string";
 
-export { objectWriter, objectTaggedWriter } from "./object";
+export { writeObject, writeTaggedObject } from "./object";
 
 export {
   writeFixedBytes, writeBytes,

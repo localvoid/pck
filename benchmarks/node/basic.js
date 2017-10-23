@@ -7,7 +7,7 @@ const pckNode = require("pck-node");
 const DATA = {
   health: 100,
   jumping: true,
-  position: [10, 20],
+  position: { x: 10, y: 20 },
   attributes: { str: 100, agi: 50, int: 10 },
 };
 
@@ -16,12 +16,17 @@ const JSON_DATA = jsonEncode();
 
 function browserWriteData(w, v) {
   pckBrowser.writeBitSet(w, v.jumping);
-  pckBrowser.writeI32(w, v.health);
-  pckBrowser.writeFixedArray(w, v.position, pckBrowser.writeI32);
-  browserWriteNested(w, v.attributes);
+  pckBrowser.writeIVar(w, v.health);
+  browserWritePosition(w, v.position);
+  browserWriteAttributes(w, v.attributes);
 }
 
-function browserWriteNested(w, v) {
+function browserWritePosition(w, v) {
+  pckBrowser.writeIVar(w, v.x);
+  pckBrowser.writeIVar(w, v.y);
+}
+
+function browserWriteAttributes(w, v) {
   pckBrowser.writeI8(w, v.str);
   pckBrowser.writeI8(w, v.agi);
   pckBrowser.writeI8(w, v.int);
@@ -31,14 +36,21 @@ function browserReadData(b) {
   const bitSet1 = pckBrowser.readU8(b);
   const jumping = (bitSet1 & 1) !== 0;
 
-  const health = pckBrowser.readI32(b);
-  const position = pckBrowser.readFixedArray(b, pckBrowser.readI32, 2);
-  const attributes = browserReadNested(b);
+  const health = pckBrowser.readIVar(b);
+  const position = browserReadPosition(b);
+  const attributes = browserReadAttributes(b);
 
   return { health, jumping, position, attributes };
 }
 
-function browserReadNested(b) {
+function browserReadPosition(b) {
+  return {
+    x: pckBrowser.readIVar(b),
+    y: pckBrowser.readIVar(b),
+  };
+}
+
+function browserReadAttributes(b) {
   return {
     str: pckBrowser.readU8(b),
     agi: pckBrowser.readU8(b),
@@ -48,12 +60,17 @@ function browserReadNested(b) {
 
 function nodeWriteData(w, v) {
   pckNode.writeBitSet(w, v.jumping);
-  pckNode.writeI32(w, v.health);
-  pckNode.writeFixedArray(w, v.position, pckBrowser.writeI32);
-  nodeWriteNested(w, v.attributes);
+  pckNode.writeIVar(w, v.health);
+  nodeWritePosition(w, v.position);
+  nodeWriteAttributes(w, v.attributes);
 }
 
-function nodeWriteNested(w, v) {
+function nodeWritePosition(w, v) {
+  pckNode.writeIVar(w, v.x);
+  pckNode.writeIVar(w, v.y);
+}
+
+function nodeWriteAttributes(w, v) {
   pckNode.writeI8(w, v.str);
   pckNode.writeI8(w, v.agi);
   pckNode.writeI8(w, v.int);
@@ -63,14 +80,21 @@ function nodeReadData(b) {
   const bitSet1 = pckNode.readU8(b);
   const jumping = (bitSet1 & 1) !== 0;
 
-  const health = pckNode.readI32(b);
-  const position = pckNode.readFixedArray(b, pckNode.readI32, 2);
-  const attributes = nodeReadNested(b);
+  const health = pckNode.readIVar(b);
+  const position = nodeReadPosition(b);
+  const attributes = nodeReadAttributes(b);
 
   return { health, jumping, position, attributes };
 }
 
-function nodeReadNested(b) {
+function nodeReadPosition(b) {
+  return {
+    x: pckNode.readIVar(b),
+    y: pckNode.readIVar(b),
+  };
+}
+
+function nodeReadAttributes(b) {
   return {
     str: pckNode.readU8(b),
     agi: pckNode.readU8(b),
@@ -103,7 +127,7 @@ function pckNodeDecode() {
 }
 
 function jsonEncode() {
-  return JSON.stringify(DATA);
+  return Buffer.from(JSON.stringify(DATA));
 }
 
 function jsonDecode() {

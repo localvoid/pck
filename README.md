@@ -21,6 +21,46 @@
 - Compact javascript serializers and deserializers that can immediately generate objects with appropriate types without
 any additional steps
 
+## Performance
+
+Basic benchmarks that encode and decode simple data structure:
+
+```js
+const DATA = {
+  health: 100,
+  jumping: true,
+  position: { x: 10, y: 20 },
+  attributes: { str: 100, agi: 50, int: 10 },
+};
+```
+
+### Node v8.7.0 (i5 4570k, Linux)
+
+```txt
+pck:node:encode x 2,646,640 ops/sec ±0.85% (87 runs sampled)
+pck:node:decode x 20,181,498 ops/sec ±0.39% (94 runs sampled)
+json:encode x 492,673 ops/sec ±1.64% (92 runs sampled)
+json:decode x 493,627 ops/sec ±0.45% (92 runs sampled)
+```
+
+### Browser (iPad 2017, iOS 11.0.3)
+
+```txt
+pck:encode x 1,154,161 ops/sec ±18.16% (24 runs sampled)
+pck:decode x 28,425,812 ops/sec ±0.40% (64 runs sampled)
+json:encode x 629,975 ops/sec ±0.76% (60 runs sampled)
+json:decode x 617,485 ops/sec ±0.76% (60 runs sampled)
+```
+
+### Browser (Nexus 5, Chrome 61)
+
+```txt
+pck:encode x 384,855 ops/sec ±5.11% (54 runs sampled)
+pck:decode x 3,066,241 ops/sec ±4.17% (48 runs sampled)
+json:encode x 130,336 ops/sec ±3.17% (56 runs sampled)
+json:decode x 126,887 ops/sec ±3.34% (54 runs sampled)
+```
+
 ## Data Types
 
 | Type         | Storage Size         | Description                       |

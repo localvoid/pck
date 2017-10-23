@@ -9,23 +9,32 @@ const DATA = {
   name: "Test Name",
   health: 100,
   jumping: true,
-  position: [10, 20],
+  position: { x: 10, y: 20 },
   attributes: { str: 100, agi: 50, int: 10 },
 };
 
-const PCK = pckBrowserEncode();
+const PCK_BROWSER = pckBrowserEncode();
+const PCK_NODE = pckNodeEncode();
 const JSON_DATA = jsonEncode();
+
+console.log(`PCK Buffer Size: ${PCK_BROWSER.length}`);
+console.log(`JSON Buffer Size: ${JSON_DATA.length}`);
 
 function browserWriteData(w, v) {
   pckBrowser.writeBitSet(w, v.jumping);
-  pckBrowser.writeFixedUtf8(w, v.id);
+  pckBrowser.writeFixedUtf8(w, v.id, 24);
   pckBrowser.writeUtf8(w, v.name);
-  pckBrowser.writeI32(w, v.health);
-  pckBrowser.writeFixedArray(w, v.position, pckBrowser.writeI32);
-  browserWriteNested(w, v.attributes);
+  pckBrowser.writeIVar(w, v.health);
+  browserWritePosition(w, v.position);
+  browserWriteAttributes(w, v.attributes);
 }
 
-function browserWriteNested(w, v) {
+function browserWritePosition(w, v) {
+  pckBrowser.writeIVar(w, v.x);
+  pckBrowser.writeIVar(w, v.y);
+}
+
+function browserWriteAttributes(w, v) {
   pckBrowser.writeI8(w, v.str);
   pckBrowser.writeI8(w, v.agi);
   pckBrowser.writeI8(w, v.int);
@@ -37,14 +46,21 @@ function browserReadData(b) {
 
   const id = pckBrowser.readFixedUtf8(b, 24);
   const name = pckBrowser.readUtf8(b);
-  const health = pckBrowser.readI32(b);
-  const position = pckBrowser.readFixedArray(b, pckBrowser.readI32, 2);
-  const attributes = browserReadNested(b);
+  const health = pckBrowser.readIVar(b);
+  const position = browserReadPosition(b);
+  const attributes = browserReadAttributes(b);
 
   return { id, name, health, jumping, position, attributes };
 }
 
-function browserReadNested(b) {
+function browserReadPosition(b) {
+  return {
+    x: pckBrowser.readIVar(b),
+    y: pckBrowser.readIVar(b),
+  };
+}
+
+function browserReadAttributes(b) {
   return {
     str: pckBrowser.readU8(b),
     agi: pckBrowser.readU8(b),
@@ -56,12 +72,17 @@ function nodeWriteData(w, v) {
   pckNode.writeBitSet(w, v.jumping);
   pckNode.writeFixedUtf8(w, v.id, 24);
   pckNode.writeUtf8(w, v.name);
-  pckNode.writeI32(w, v.health);
-  pckNode.writeFixedArray(w, v.position, pckBrowser.writeI32);
-  nodeWriteNested(w, v.attributes);
+  pckNode.writeIVar(w, v.health);
+  nodeWritePosition(w, v.position);
+  nodeWriteAttributes(w, v.attributes);
 }
 
-function nodeWriteNested(w, v) {
+function nodeWritePosition(w, v) {
+  pckNode.writeIVar(w, v.x);
+  pckNode.writeIVar(w, v.y);
+}
+
+function nodeWriteAttributes(w, v) {
   pckNode.writeI8(w, v.str);
   pckNode.writeI8(w, v.agi);
   pckNode.writeI8(w, v.int);
@@ -73,14 +94,21 @@ function nodeReadData(b) {
 
   const id = pckNode.readFixedUtf8(b, 24);
   const name = pckNode.readUtf8(b);
-  const health = pckNode.readI32(b);
-  const position = pckNode.readFixedArray(b, pckNode.readI32, 2);
-  const attributes = nodeReadNested(b);
+  const health = pckNode.readIVar(b);
+  const position = nodeReadPosition(b);
+  const attributes = nodeReadAttributes(b);
 
   return { id, name, health, jumping, position, attributes };
 }
 
-function nodeReadNested(b) {
+function nodeReadPosition(b) {
+  return {
+    x: pckNode.readIVar(b),
+    y: pckNode.readIVar(b),
+  };
+}
+
+function nodeReadAttributes(b) {
   return {
     str: pckNode.readU8(b),
     agi: pckNode.readU8(b),
@@ -97,7 +125,7 @@ function pckBrowserEncode() {
 }
 
 function pckBrowserDecode() {
-  return browserReadData({ u: PCK, o: 0 });
+  return browserReadData({ u: PCK_BROWSER, o: 0 });
 }
 
 function pckNodeEncode() {
@@ -109,15 +137,15 @@ function pckNodeEncode() {
 }
 
 function pckNodeDecode() {
-  return nodeReadData({ u: PCK, o: 0 });
+  return nodeReadData({ u: PCK_NODE, o: 0 });
 }
 
 function jsonEncode() {
-  return JSON.stringify(DATA);
+  return Buffer.from(JSON.stringify(DATA));
 }
 
 function jsonDecode() {
-  return JSON.parse(JSON_DATA);
+  return JSON.parse(JSON_DATA.toString());
 }
 
 new benchmark.Suite()

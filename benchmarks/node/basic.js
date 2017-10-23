@@ -11,8 +11,12 @@ const DATA = {
   attributes: { str: 100, agi: 50, int: 10 },
 };
 
-const PCK = pckBrowserEncode();
+const PCK_BROWSER = pckBrowserEncode();
+const PCK_NODE = pckBrowserEncode();
 const JSON_DATA = jsonEncode();
+
+console.log(`PCK Buffer Size: ${PCK_BROWSER.length}`);
+console.log(`JSON Buffer Size: ${JSON_DATA.length}`);
 
 function browserWriteData(w, v) {
   pckBrowser.writeBitSet(w, v.jumping);
@@ -111,7 +115,7 @@ function pckBrowserEncode() {
 }
 
 function pckBrowserDecode() {
-  return browserReadData({ u: PCK, o: 0 });
+  return browserReadData({ u: PCK_BROWSER, o: 0 });
 }
 
 function pckNodeEncode() {
@@ -123,7 +127,7 @@ function pckNodeEncode() {
 }
 
 function pckNodeDecode() {
-  return nodeReadData({ u: PCK, o: 0 });
+  return nodeReadData({ u: PCK_NODE, o: 0 });
 }
 
 function jsonEncode() {
@@ -131,7 +135,7 @@ function jsonEncode() {
 }
 
 function jsonDecode() {
-  return JSON.parse(JSON_DATA);
+  return JSON.parse(JSON_DATA.toString());
 }
 
 new benchmark.Suite()

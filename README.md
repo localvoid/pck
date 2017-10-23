@@ -1,4 +1,5 @@
-`pck` is a binary format specifically designed for generating efficient serializers and deserializers in javascript.
+PCK is a binary format and a set of tools specifically designed for generating efficient serializers and deserializers
+in javascript.
 
 ## Current Status
 
@@ -21,7 +22,7 @@
 - Compact javascript serializers and deserializers that can immediately generate objects with appropriate types without
 any additional steps
 
-## Performance
+## Benchmarks
 
 Basic benchmarks that encode and decode simple data structure:
 
@@ -34,13 +35,45 @@ const DATA = {
 };
 ```
 
+PCK schema:
+
+```js
+const Position = schema(
+  "Position",
+  ivar("x"),
+  ivar("y"),
+);
+
+const Attributes = schema(
+  "Attributes",
+  u8("str"),
+  u8("agi"),
+  u8("int"),
+);
+
+const Player = schema(
+  "Player",
+  ivar("health"),
+  bool("jumping"),
+  ref(Position),
+  ref(Attributes),
+);
+```
+
+PCK storage size: 8 bytes
+
+JSON storage size: 99 bytes
+
+In real applications, JSON deserialization should be even slower because it usually requires additional transformation
+step after `JSON.parse` invocation.
+
 ### Node v8.7.0 (i5 4570k, Linux)
 
 ```txt
-pck:node:encode x 2,646,640 ops/sec ±0.85% (87 runs sampled)
-pck:node:decode x 20,181,498 ops/sec ±0.39% (94 runs sampled)
-json:encode x 492,673 ops/sec ±1.64% (92 runs sampled)
-json:decode x 493,627 ops/sec ±0.45% (92 runs sampled)
+pck:encode x 2,644,196 ops/sec ±0.97% (90 runs sampled)
+pck:decode x 19,933,122 ops/sec ±0.36% (93 runs sampled)
+json:encode x 493,391 ops/sec ±1.09% (93 runs sampled)
+json:decode x 625,069 ops/sec ±0.41% (94 runs sampled)
 ```
 
 ### Browser (iPad 2017, iOS 11.0.3)

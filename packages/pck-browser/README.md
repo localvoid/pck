@@ -1,4 +1,8 @@
-[pck](https://github.com/localvoid/pck) serialization and deserialization helper functions for Node environment.
+[pck](https://github.com/localvoid/pck) serialization and deserialization helper functions for Browser environment.
+
+## Endianness
+
+Big-endian platforms aren't supported by this library.
 
 ## API
 

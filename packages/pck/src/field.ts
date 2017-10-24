@@ -45,14 +45,14 @@ export function optional<T>(field: Field<T>): Field<T> {
 
 export function omitEmpty<T>(field: Field<T>): Field<T> {
   if (field.type.isString() || field.type.isArray() || field.type.isByteArray()) {
-    return new Field<T>(field.type, field.name, field.flags | FieldFlags.OmitEmpty);
+    return new Field<T>(field.type, field.name, field.flags | FieldFlags.OmitEmpty | FieldFlags.Optional);
   }
   throw new InvalidFieldError(`Unable to create omitEmpty field, invalid field type: ${TypeId[field.type.id]}`);
 }
 
 export function omitZero<T>(field: Field<T>): Field<T> {
   if (field.type.isNumber()) {
-    return new Field<T>(field.type, field.name, field.flags | FieldFlags.OmitZero);
+    return new Field<T>(field.type, field.name, field.flags | FieldFlags.OmitZero | FieldFlags.Optional);
   }
   throw new InvalidFieldError(`Unable to create omitZero field, invalid field type: ${TypeId[field.type.id]}`);
 }

@@ -3,6 +3,7 @@ import { Context, TChildren, component, ComponentNode } from "osh";
 
 export const VARS = Symbol("Vars");
 export const TYPED = Symbol("Typed");
+export const TARGET = Symbol("Target");
 
 export function isNotNull(...children: TChildren[]) {
   return ["((", children, ") !== null)"];
@@ -41,6 +42,14 @@ export function and(...children: TChildren[]) {
 
 export function isTyped(ctx: Context): boolean {
   return ctx[TYPED] === true;
+}
+
+export function getTarget(ctx: Context): string {
+  const target = ctx[TARGET];
+  if (target === void 0) {
+    return "browser";
+  }
+  return "node";
 }
 
 const has = Object.prototype.hasOwnProperty;

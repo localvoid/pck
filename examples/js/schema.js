@@ -13,12 +13,16 @@ const User = pck.schema(
 );
 
 const CODE = `
-LINE1
-  // pck:assign({"schema": "User"})
+import * as __pck from "pck-browser";
+
+// pck:assign({"schema": "User"})
+class User implements __pck.Serializable {
   // pck:emit("pck")
-  asdasdsd
   // pck:end
-END
+}
+
+// pck:emit("unpck")
+// pck:end
 `;
 
-console.log(jsEmit.inject(pck.bundle([User]), CODE));
+console.log(jsEmit.inject({ bundle: pck.bundle([User]), mode: "ts" }, CODE));

@@ -1,14 +1,46 @@
-import { Bundle } from "pck";
-import { extractRegions } from "./directives";
-import { EmitData, emit } from "./emit";
+import { createDirectiveMatcher, inject as _inject } from "incode";
+import { EmitType, EmitOptions, emit } from "./emit";
 
-export function inject(bundle: Bundle, s: string): string {
-  let r = "";
-  let start = 0;
-  for (const region of extractRegions(s)) {
-    r += s.substring(start, region.start);
-    r += emit(bundle, region.data as EmitData, region.type, region.offset);
-    start = region.end;
+interface InjectableData {
+  readonly schema: string;
+}
+
+const DIRECTIVE_MATCHER = createDirectiveMatcher("pck");
+
+export function inject(options: EmitOptions, text: string): string {
+  const bundle = options.bundle;
+
+  return _inject(
+    text,
+    DIRECTIVE_MATCHER,
+    (region) => {
+      const data = region.data as InjectableData;
+
+      const schemaName = data.schema;
+      if (typeof schemaName !== "string") {
+        throw new Error(`Invalid schema name type: ${typeof schemaName}`);
+      }
+
+      const schema = bundle.findSchemaByName(schemaName);
+      if (schema === void 0) {
+        throw new Error(`Unable to find schema with a name "${schemaName}"`);
+      }
+
+      const type = emitTypeFromString(region.type);
+
+      return emit({ ...options, ...{ padding: region.padding } }, schema, type);
+    },
+  );
+}
+
+function emitTypeFromString(type: string): EmitType {
+  switch (type) {
+    case "pck":
+      return EmitType.Pck;
+    case "unpck":
+      return EmitType.Unpck;
+    case "tagged-readers":
+      return EmitType.TaggedReaders;
   }
-  return r += s.substring(start);
+  throw new Error(`Invalid emit type "${type}"`);
 }

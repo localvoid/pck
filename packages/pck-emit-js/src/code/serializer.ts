@@ -221,7 +221,7 @@ export const serializeMethod = componentFactory((ctx: Context) => {
 
   return [
     docComment(
-      line("pck is an automatically generated serialization method by pck library."),
+      line("pck is an automatically generated serialization method."),
       line(),
       line("@param ", v("writer"), " Writer object."),
       shouldSupportTagging ?
@@ -234,7 +234,8 @@ export const serializeMethod = componentFactory((ctx: Context) => {
       shouldSupportTagging ?
         [", ", v("tagged"), type("?: boolean")] :
         null,
-      ")", type(": void"), " {"),
+      ")", type(": void"), " {",
+    ),
     indent(serializeBody()),
     line("}"),
   ];

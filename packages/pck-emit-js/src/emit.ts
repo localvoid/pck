@@ -1,27 +1,45 @@
-import { Bundle } from "pck";
+import { Bundle, Schema } from "pck";
 import { renderToString, context } from "osh";
 import { PADDING, jsCode, line } from "osh-code";
-import { VARS, TYPED } from "./code/utils";
+import { VARS, TYPED, TARGET } from "./code/utils";
 import { BUNDLE } from "./code/bundle";
 import { SCHEMA } from "./code/schema";
 import { moduleResolvers } from "./code/modules";
 import { serializeMethod } from "./code/serializer";
+import { deserializeFunction } from "./code/deserializer";
 
-export interface EmitData {
-  readonly schema: string;
-  readonly padding: string;
+export interface EmitOptions {
+  readonly bundle: Bundle;
+  readonly padding?: string;
+  readonly mode?: "js" | "ts";
+  readonly target?: "browser" | "node";
 }
 
-function emitType(type: string) {
+export enum EmitType {
+  Pck = 0,
+  Unpck = 1,
+  TaggedReaders = 2,
+}
+
+function emitByType(type: EmitType) {
   switch (type) {
-    case "pck":
+    case EmitType.Pck:
       return serializeMethod();
+    case EmitType.Unpck:
+      return deserializeFunction();
   }
-  throw new Error("Invalid emit type");
+  throw new Error(`Invalid emit type "${EmitType[type]}"`);
 }
 
-export function emit(bundle: Bundle, data: EmitData, type: string, padding: string): string {
-  const schema = bundle.findSchemaByName(data.schema);
+export function emit(options: EmitOptions, schema: Schema, type: EmitType): string {
+  options = {
+    ...{
+      padding: "",
+      mode: "js",
+      target: "browser",
+    },
+    ...options,
+  };
 
   return renderToString(
     jsCode(
@@ -31,10 +49,11 @@ export function emit(bundle: Bundle, data: EmitData, type: string, padding: stri
         },
         context(
           {
-            [BUNDLE]: bundle,
+            [BUNDLE]: options.bundle,
             [SCHEMA]: schema,
-            [PADDING]: padding,
-            [TYPED]: true,
+            [PADDING]: options.padding,
+            [TYPED]: options.mode === "ts",
+            [TARGET]: options.target,
             [VARS]: {
               "writer": "__w",
               "reader": "__r",
@@ -42,7 +61,7 @@ export function emit(bundle: Bundle, data: EmitData, type: string, padding: stri
             },
           },
           line(),
-          emitType(type),
+          emitByType(type),
         ),
       ),
     ),

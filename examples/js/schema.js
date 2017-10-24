@@ -1,28 +1,27 @@
 const pck = require("pck");
 const jsEmit = require("pck-emit-js");
-const prettier = require("prettier");
+
+const Attributes = pck.schema(
+  "Attributes",
+  [
+    pck.u8("str"),
+    pck.u8("agi"),
+    pck.u8("int"),
+  ],
+);
 
 const User = pck.schema(
   "User",
   [
     pck.utf8("name"),
-    pck.optional(pck.u8("age")),
-    pck.optional(pck.bool("jumping")),
-    pck.omitEmpty(pck.optional(pck.array("items", pck.U32))),
+    pck.u8("age"),
+    pck.bool("jumping"),
+    pck.omitEmpty(pck.array("items", pck.U32)),
+    pck.ref("attributes", Attributes),
   ],
 );
 
-const CODE = `
-import * as __pck from "pck-browser";
-
-// pck:assign({"schema": "User"})
-class User implements __pck.Serializable {
-  // pck:emit("pck")
-  // pck:end
-}
-
-// pck:emit("unpck")
-// pck:end
-`;
-
-console.log(jsEmit.inject({ bundle: pck.bundle([User]), mode: "ts" }, CODE));
+module.exports = {
+  Attributes,
+  User,
+};

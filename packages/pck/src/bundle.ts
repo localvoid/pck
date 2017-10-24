@@ -5,19 +5,19 @@ export class Bundle {
   readonly schemas: Schema[];
   readonly types: Set<Type>;
   readonly fixedSizeSchemas: Set<Schema>;
-  readonly oneOfSchemas: Map<Schema, number>;
+  readonly taggedSchemas: Map<Schema, number>;
   readonly index: Map<string, Schema>;
 
   constructor(
     schemas: Schema[],
     types: Set<Type>,
     fixedSizeSchemas: Set<Schema>,
-    oneOfSchemas: Map<Schema, number>,
+    taggedSchemas: Map<Schema, number>,
   ) {
     this.schemas = schemas;
     this.types = types;
     this.fixedSizeSchemas = fixedSizeSchemas;
-    this.oneOfSchemas = oneOfSchemas;
+    this.taggedSchemas = taggedSchemas;
     this.index = new Map<string, Schema>();
 
     for (const schema of schemas) {
@@ -32,8 +32,8 @@ export class Bundle {
     return this.index.get(name);
   }
 
-  isOneOfSchema(schema: Schema): number | undefined {
-    return this.oneOfSchemas.get(schema);
+  schemaTag(schema: Schema): number | undefined {
+    return this.taggedSchemas.get(schema);
   }
 }
 
@@ -43,21 +43,21 @@ export function bundle(schemas: Schema[]): Bundle {
     schemas,
     analyzeResult.types,
     analyzeResult.fixedSizeSchemas,
-    analyzeResult.oneOfSchemas,
+    analyzeResult.taggedSchemas,
   );
 }
 
 interface AnalyzeResult {
   readonly types: Set<Type>;
   readonly fixedSizeSchemas: Set<Schema>;
-  readonly oneOfSchemas: Map<Schema, number>;
+  readonly taggedSchemas: Map<Schema, number>;
 }
 
 function analyzeSchemas(schemas: Schema[]): AnalyzeResult {
   const types = new Set<Type>();
   const fixedSizeSchemas = new Set<Schema>();
-  const oneOfSchemas = new Map<Schema, number>();
-  let oneOfIndex = 0;
+  const taggedSchemas = new Map<Schema, number>();
+  let tagIndex = 0;
 
   for (const schema of schemas) {
     if (!schema.hasDynamicSize()) {
@@ -70,7 +70,7 @@ function analyzeSchemas(schemas: Schema[]): AnalyzeResult {
       if (field.type.isOneOf()) {
         for (const oneOfType of field.type.props) {
           if (oneOfType.isRef()) {
-            oneOfSchemas.set(oneOfType.props, oneOfIndex++);
+            taggedSchemas.set(oneOfType.props, tagIndex++);
           }
         }
       }
@@ -80,6 +80,6 @@ function analyzeSchemas(schemas: Schema[]): AnalyzeResult {
   return {
     types,
     fixedSizeSchemas,
-    oneOfSchemas,
+    taggedSchemas,
   };
 }

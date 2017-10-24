@@ -7,6 +7,7 @@ import { SCHEMA } from "./code/schema";
 import { moduleResolvers } from "./code/modules";
 import { serializeMethod } from "./code/serializer";
 import { deserializeFunction } from "./code/deserializer";
+import { taggedReaders } from "./code/tagged_readers";
 
 export interface EmitOptions {
   readonly bundle: Bundle;
@@ -27,6 +28,8 @@ function emitByType(type: EmitType) {
       return serializeMethod();
     case EmitType.Unpck:
       return deserializeFunction();
+    case EmitType.TaggedReaders:
+      return taggedReaders();
   }
   throw new Error(`Invalid emit type "${EmitType[type]}"`);
 }

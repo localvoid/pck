@@ -1,12 +1,15 @@
 import {
-  Type, ArrayTypeProps, MapTypeProps,
+  TypeId, Type, ArrayTypeProps, MapTypeProps,
   ARRAY, MAP, REF, ONE_OF, BOOL, I8, U8, I16, U16, I32, U32, F32, F64, IVAR, UVAR, BYTES, UTF8, ASCII,
 } from "./type";
 import { Schema } from "./schema";
 
+export class InvalidFieldError extends Error { }
+
 export const enum FieldFlags {
   Optional = 1,
   OmitEmpty = 1 << 1,
+  OmitZero = 1 << 2,
 }
 
 export class Field<T = null> {
@@ -27,14 +30,31 @@ export class Field<T = null> {
   isOmitEmpty(): boolean {
     return (this.flags & FieldFlags.OmitEmpty) !== 0;
   }
+
+  isOmitZero(): boolean {
+    return (this.flags & FieldFlags.OmitZero) !== 0;
+  }
 }
 
 export function optional<T>(field: Field<T>): Field<T> {
-  return new Field<T>(field.type, field.name, field.flags | FieldFlags.Optional);
+  if (field.type.isRef() || field.type.isArray()) {
+    return new Field<T>(field.type, field.name, field.flags | FieldFlags.Optional);
+  }
+  throw new InvalidFieldError(`Unable to create optional field, invalid field type: ${TypeId[field.type.id]}`);
 }
 
 export function omitEmpty<T>(field: Field<T>): Field<T> {
-  return new Field<T>(field.type, field.name, field.flags | FieldFlags.OmitEmpty);
+  if (field.type.isString() || field.type.isArray() || field.type.isByteArray()) {
+    return new Field<T>(field.type, field.name, field.flags | FieldFlags.OmitEmpty);
+  }
+  throw new InvalidFieldError(`Unable to create omitEmpty field, invalid field type: ${TypeId[field.type.id]}`);
+}
+
+export function omitZero<T>(field: Field<T>): Field<T> {
+  if (field.type.isNumber()) {
+    return new Field<T>(field.type, field.name, field.flags | FieldFlags.OmitZero);
+  }
+  throw new InvalidFieldError(`Unable to create omitZero field, invalid field type: ${TypeId[field.type.id]}`);
 }
 
 export function ref(name: string, schema: Schema): Field<Schema> {
@@ -50,6 +70,13 @@ export function map(name: string, key: Type<any>, value: Type<any>): Field<MapTy
 }
 
 export function oneOf(name: string, types: Type<any>[]): Field<Type<any>[]> {
+  types.forEach((t) => {
+    if (!t.isRef()) {
+      throw new InvalidFieldError(
+        `Unable to create oneOf field, one of the types is refering to an invalid type: ${TypeId[t.id]}`,
+      );
+    }
+  });
   return new Field<Type<any>[]>(ONE_OF(types), name);
 }
 

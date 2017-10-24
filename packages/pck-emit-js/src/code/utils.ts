@@ -150,5 +150,8 @@ export function fieldToString(field: Field): string {
   if (field.isOmitEmpty()) {
     t = `omitEmpty(${t})`;
   }
+  if (field.isOmitZero()) {
+    t = `omitZero(${t})`;
+  }
   return `${field.name}: ${t}`;
 }

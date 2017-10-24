@@ -159,26 +159,27 @@ export const serializeField: (field: Field<any>) => ComponentNode<Field<any>>
 export const serializeBitSet = componentFactory((ctx: Context) => {
   const schema = getSchema(ctx);
 
-  return [
-    line(pck("writeBitSet"), "("),
-    indent(
-      line(v("writer"), ","),
-      schema.hasOptionalFields() ?
-        [
-          comment("Optional Fields: "),
-          schema.optionalFields.map((f) => f.isOmitEmpty() ?
-            line(and(isNotNull(getter(f)), isNotEmpty(getter(f))), ", ", comment(fieldToString(f))) :
-            line(isNotNull(getter(f)), ", ", comment(fieldToString(f))),
-          ),
-        ] : null,
-      schema.hasBooleanFields() ?
-        [
-          comment("Boolean Fields: "),
-          schema.booleanFields.map((f) => line(isTrue(getter(f)), ", ", comment(fieldToString(f)))),
-        ] : null,
-    ),
-    line(");"),
-  ];
+  return schema.hasBitSet() ?
+    [
+      line(pck("writeBitSet"), "("),
+      indent(
+        line(v("writer"), ","),
+        schema.hasOptionalFields() ?
+          [
+            comment("Optional Fields:"),
+            schema.optionalFields.map((f) => f.isOmitEmpty() ?
+              line(and(isNotNull(getter(f)), isNotEmpty(getter(f))), ", ", comment(fieldToString(f))) :
+              line(isNotNull(getter(f)), ", ", comment(fieldToString(f))),
+            ),
+          ] : null,
+        schema.hasBooleanFields() ?
+          [
+            comment("Boolean Fields:"),
+            schema.booleanFields.map((f) => line(isTrue(getter(f)), ", ", comment(fieldToString(f)))),
+          ] : null,
+      ),
+      line(");"),
+    ] : null;
 });
 
 export const serializeRegularFields = componentFactory((ctx: Context) => {
@@ -217,7 +218,7 @@ export const serializeMethod = componentFactory((ctx: Context) => {
   const bundle = getBundle(ctx);
   const schema = getSchema(ctx);
 
-  const shouldSupportTagging = bundle.isOneOfSchema(schema) !== undefined;
+  const shouldSupportTagging = bundle.schemaTag(schema) !== undefined;
 
   return [
     docComment(

@@ -160,7 +160,7 @@ export const deserializer: (field: Field<any>) => ComponentNode<Field<any>> =
       }
     }
     if (t.isRef()) {
-      return call(["read", schemaType(t.props)], [v("reader")]);
+      return call(["unpck", schemaType(t.props)], [v("reader")]);
     }
 
     throw new Error(`Unable to emit reader callsite for a field: ${field}. Invalid field type.`);
@@ -187,11 +187,11 @@ function bitSetSizes(size: number): number[] {
 }
 
 function checkBitSetOptional(f: Field): TChildren {
-  return ["(bitSet", bitSetOptionalIndex(f), " & (1 << ", bitSetOptionalPosition(f), ")) !== 0"];
+  return ["(__bitSet", bitSetOptionalIndex(f), " & (1 << ", bitSetOptionalPosition(f), ")) !== 0"];
 }
 
 function checkBitSetBoolean(f: Field): TChildren {
-  return ["(bitSet", bitSetBooleanIndex(f), " & (1 << ", bitSetBooleanPosition(f), ")) !== 0"];
+  return ["(__bitSet", bitSetBooleanIndex(f), " & (1 << ", bitSetBooleanPosition(f), ")) !== 0"];
 }
 
 export const deserializeBitSet = componentFactory((ctx: Context) => {
@@ -200,7 +200,7 @@ export const deserializeBitSet = componentFactory((ctx: Context) => {
   return [
     comment("BitSet:"),
     bitSetSizes(schema.bitSetSize()).map((s, i) => (
-      line(`const bitSet${i} = `, call(pck(`readU${s * 8}`), [v("reader")]), ";")),
+      line(`const __bitSet${i} = `, call(pck(`readU${s * 8}`), [v("reader")]), ";")),
     ),
     line(),
     schema.hasBooleanFields() ?
@@ -208,13 +208,7 @@ export const deserializeBitSet = componentFactory((ctx: Context) => {
         comment("Boolean Fields:"),
         schema.booleanFields.map((f) => [
           comment(fieldToString(f)),
-          line(
-            "const ", fieldName(f), " = ",
-            f.isOptional() ?
-              [checkBitSetOptional(f), " ? ", checkBitSetBoolean(f), " : null"] :
-              checkBitSetBoolean(f),
-            ";",
-          ),
+          line("const ", fieldName(f), " = ", checkBitSetBoolean(f), ";"),
         ]),
       ] : null,
   ];
@@ -256,7 +250,7 @@ export const deserializeFunction = componentFactory((ctx: Context) => {
     docComment(
       line("unpck", schemaType(schema), " is an automatically generated deserialization function."),
       line(),
-      line("@param ", v("reader"), "Read buffer."),
+      line("@param ", v("reader"), " Read buffer."),
       line("@returns Deserialized object."),
     ),
     line(

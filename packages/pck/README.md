@@ -1,4 +1,5 @@
-`pck` is a binary format specifically designed for generating efficient serializers and deserializers in javascript.
+PCK is a binary format and a set of tools specifically designed for generating efficient serializers and deserializers
+in javascript.
 
 ## Current Status
 
@@ -20,6 +21,66 @@
 - Efficient serialization and deserialization in javascript
 - Compact javascript serializers and deserializers that can immediately generate objects with appropriate types without
 any additional steps
+
+## Benchmarks
+
+Basic benchmarks that encode and decode simple data structure:
+
+```js
+const DATA = {
+  health: 100,
+  jumping: true,
+  position: { x: 10, y: 20 },
+  attributes: { str: 100, agi: 50, int: 10 },
+};
+```
+
+PCK schema:
+
+```js
+const Position = schema(ivar("x"), ivar("y"));
+const Attributes = schema(u8("str"), u8("agi"), u8("int"));
+const Player = schema(
+  ivar("health"),
+  bool("jumping"),
+  ref(Position),
+  ref(Attributes),
+);
+```
+
+PCK storage size: 8 bytes
+
+JSON storage size: 99 bytes
+
+In real applications, JSON deserialization should be even slower because it usually requires additional transformation
+step after `JSON.parse` invocation.
+
+### Node v8.7.0 (i5 4570k, Linux)
+
+```txt
+pck:encode x 2,644,196 ops/sec ±0.97% (90 runs sampled)
+pck:decode x 19,933,122 ops/sec ±0.36% (93 runs sampled)
+json:encode x 493,391 ops/sec ±1.09% (93 runs sampled)
+json:decode x 625,069 ops/sec ±0.41% (94 runs sampled)
+```
+
+### Browser (iPad 2017, iOS 11.0.3)
+
+```txt
+pck:encode x 1,154,161 ops/sec ±18.16% (24 runs sampled)
+pck:decode x 28,425,812 ops/sec ±0.40% (64 runs sampled)
+json:encode x 629,975 ops/sec ±0.76% (60 runs sampled)
+json:decode x 617,485 ops/sec ±0.76% (60 runs sampled)
+```
+
+### Browser (Nexus 5, Chrome 61)
+
+```txt
+pck:encode x 384,855 ops/sec ±5.11% (54 runs sampled)
+pck:decode x 3,066,241 ops/sec ±4.17% (48 runs sampled)
+json:encode x 130,336 ops/sec ±3.17% (56 runs sampled)
+json:decode x 126,887 ops/sec ±3.34% (54 runs sampled)
+```
 
 ## Data Types
 

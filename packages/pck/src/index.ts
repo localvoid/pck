@@ -10,4 +10,4 @@ export {
 export {
   SchemaFlags, BitFieldType, BitField, SchemaDetails, Schema, Fields, RecursiveFieldArray, KV, schema,
 } from "./schema";
-export { Bundle, bundle } from "./bundle";
+export { SchemaImport, Bundle, importSchema, bundle } from "./bundle";

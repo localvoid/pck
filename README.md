@@ -38,21 +38,9 @@ const DATA = {
 PCK schema:
 
 ```js
-const Position = schema(
-  "Position",
-  ivar("x"),
-  ivar("y"),
-);
-
-const Attributes = schema(
-  "Attributes",
-  u8("str"),
-  u8("agi"),
-  u8("int"),
-);
-
+const Position = schema(ivar("x"), ivar("y"));
+const Attributes = schema(u8("str"), u8("agi"), u8("int"));
 const Player = schema(
-  "Player",
   ivar("health"),
   bool("jumping"),
   ref(Position),

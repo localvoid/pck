@@ -28,24 +28,20 @@ export interface SchemaDetails {
 }
 
 export class Schema {
-  readonly name: string;
   readonly fields: Field<any>[];
   readonly flags: SchemaFlags;
   readonly size: number;
   readonly optionalFields: Field[];
   readonly booleanFields: Field[];
   readonly bitSet: BitField[];
-  readonly meta: Map<symbol, any>;
 
-  constructor(name: string, fields: Field<any>[], details: SchemaDetails, meta: Map<symbol, any>) {
-    this.name = name;
+  constructor(fields: Field<any>[], details: SchemaDetails) {
     this.fields = fields;
     this.flags = details.flags;
     this.size = details.size;
     this.optionalFields = details.optionalFields;
     this.booleanFields = details.booleanFields;
     this.bitSet = details.bitSet;
-    this.meta = meta;
   }
 
   hasBitSet(): boolean {
@@ -91,16 +87,12 @@ export interface KV<T> {
   value: T;
 }
 
-export function schema(name: string, fields: RecursiveFieldArray, ...meta: KV<any>[]): Schema {
+export function schema(...fields: Fields[]): Schema {
   const normalizedFields = normalizeFields(fields);
-  const m = new Map<symbol, any>();
-  for (const kv of meta) {
-    m.set(kv.key, kv.value);
-  }
-  return new Schema(name, normalizedFields, analyzeFields(normalizedFields), m);
+  return new Schema(normalizedFields, analyzeFields(normalizedFields));
 }
 
-function _normalizeFields(result: Field[], fields: RecursiveFieldArray): void {
+function _normalizeFields(result: Field[], fields: Fields[]): void {
   for (const f of fields) {
     if (f !== null) {
       if (Array.isArray(f)) {
@@ -112,7 +104,7 @@ function _normalizeFields(result: Field[], fields: RecursiveFieldArray): void {
   }
 }
 
-function normalizeFields(fields: RecursiveFieldArray): Field[] {
+function normalizeFields(fields: Fields[]): Field[] {
   const result: Field[] = [];
   _normalizeFields(result, fields);
   return result;

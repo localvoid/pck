@@ -1,31 +1,40 @@
 import { Type } from "./type";
 import { Schema } from "./schema";
 
+export class SchemaImport {
+  readonly name: string;
+  readonly schema: Schema;
+
+  constructor(name: string, schema: Schema) {
+    this.name = name;
+    this.schema = schema;
+  }
+}
+
+export function importSchema(name: string, schema: Schema): SchemaImport {
+  return new SchemaImport(name, schema);
+}
+
 export class Bundle {
   readonly schemas: Schema[];
+  readonly index: Map<string, Schema>;
   readonly types: Set<Type>;
   readonly fixedSizeSchemas: Set<Schema>;
   readonly taggedSchemas: Map<Schema, number>;
-  readonly index: Map<string, Schema>;
 
   constructor(
     schemas: Schema[],
+    index: Map<string, Schema>,
     types: Set<Type>,
     fixedSizeSchemas: Set<Schema>,
     taggedSchemas: Map<Schema, number>,
   ) {
     this.schemas = schemas;
+    this.index = index;
     this.types = types;
     this.fixedSizeSchemas = fixedSizeSchemas;
     this.taggedSchemas = taggedSchemas;
     this.index = new Map<string, Schema>();
-
-    for (const schema of schemas) {
-      if (this.index.has(schema.name)) {
-        throw new Error(`Failed to bundle, found two schemas with the name ${schema.name}`);
-      }
-      this.index.set(schema.name, schema);
-    }
   }
 
   findSchemaByName(name: string): Schema | undefined {
@@ -37,10 +46,12 @@ export class Bundle {
   }
 }
 
-export function bundle(schemas: Schema[]): Bundle {
-  const analyzeResult = analyzeSchemas(schemas);
+export function bundle(imports: SchemaImport[]): Bundle {
+  const analyzeResult = analyzeSchemas(imports);
+
   return new Bundle(
-    schemas,
+    analyzeResult.schemas,
+    analyzeResult.index,
     analyzeResult.types,
     analyzeResult.fixedSizeSchemas,
     analyzeResult.taggedSchemas,
@@ -48,16 +59,27 @@ export function bundle(schemas: Schema[]): Bundle {
 }
 
 interface AnalyzeResult {
+  readonly schemas: Schema[];
+  readonly index: Map<string, Schema>;
   readonly types: Set<Type>;
   readonly fixedSizeSchemas: Set<Schema>;
   readonly taggedSchemas: Map<Schema, number>;
 }
 
-function analyzeSchemas(schemas: Schema[]): AnalyzeResult {
+function analyzeSchemas(imports: SchemaImport[]): AnalyzeResult {
+  const schemas = imports.map((i) => i.schema);
+  const index = new Map<string, Schema>();
   const types = new Set<Type>();
   const fixedSizeSchemas = new Set<Schema>();
   const taggedSchemas = new Map<Schema, number>();
   let tagIndex = 0;
+
+  for (const i of imports) {
+    if (index.has(i.name)) {
+      throw new Error(`Failed to bundle, found two schemas with the name "${i.name}"`);
+    }
+    index.set(i.name, i.schema);
+  }
 
   for (const schema of schemas) {
     if (!schema.hasDynamicSize()) {
@@ -77,9 +99,5 @@ function analyzeSchemas(schemas: Schema[]): AnalyzeResult {
     }
   }
 
-  return {
-    types,
-    fixedSizeSchemas,
-    taggedSchemas,
-  };
+  return { schemas, index, types, fixedSizeSchemas, taggedSchemas };
 }

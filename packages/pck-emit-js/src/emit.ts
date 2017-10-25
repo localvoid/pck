@@ -1,13 +1,9 @@
 import { Bundle, Schema } from "pck";
 import { renderToString, context } from "osh";
 import { PADDING, jsCode, line } from "osh-code";
-import { VARS, TYPED, TARGET } from "./code/utils";
-import { BUNDLE } from "./code/bundle";
-import { SCHEMA } from "./code/schema";
-import { moduleResolvers } from "./code/modules";
-import { serializeMethod } from "./code/serializer";
-import { deserializeFunction } from "./code/deserializer";
-import { taggedReaders } from "./code/tagged_readers";
+import { BUNDLE, SCHEMA, VARS, TYPED, TARGET, moduleResolvers } from "./codegen/utils";
+import { serializeMethod } from "./codegen/serialize";
+import { deserializeFunction, taggedReaders } from "./codegen/deserialize";
 
 export interface EmitOptions {
   readonly bundle: Bundle;

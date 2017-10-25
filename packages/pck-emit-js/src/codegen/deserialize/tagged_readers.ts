@@ -1,8 +1,7 @@
 import { Context, TChildren, ComponentNode, component } from "osh";
 import { docComment, line, indent } from "osh-code";
 import { Schema } from "pck";
-import { getBundle } from "./bundle";
-import { schemaName } from "./schema";
+import { getBundle, schemaName } from "../utils";
 
 export function TaggedReaders(ctx: Context): TChildren {
   const bundle = getBundle(ctx);

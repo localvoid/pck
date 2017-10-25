@@ -1,5 +1,4 @@
 const pck = require("pck");
-const jsEmit = require("pck-emit-js");
 
 const Attributes = pck.schema(
   "Attributes",

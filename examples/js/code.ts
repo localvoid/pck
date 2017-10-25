@@ -15,7 +15,7 @@ export class Attributes implements __pck.Serializable {
   // pck:emit("pck")
   /**
    * pck is an automatically generated serialization method.
-   * 
+   *
    * @param __w Writer object.
    */
   pck(__w: __pck.Writer): void {
@@ -32,7 +32,7 @@ export class Attributes implements __pck.Serializable {
 // pck:emit("unpck")
 /**
  * unpckAttributes is an automatically generated deserialization function.
- * 
+ *
  * @param __r Read buffer.
  * @returns Deserialized object.
  */
@@ -72,7 +72,7 @@ export class User implements __pck.Serializable {
   // pck:emit("pck")
   /**
    * pck is an automatically generated serialization method.
-   * 
+   *
    * @param __w Writer object.
    */
   pck(__w: __pck.Writer): void {
@@ -100,7 +100,7 @@ export class User implements __pck.Serializable {
 // pck:emit("unpck")
 /**
  * unpckUser is an automatically generated deserialization function.
- * 
+ *
  * @param __r Read buffer.
  * @returns Deserialized object.
  */

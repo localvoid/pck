@@ -17,7 +17,7 @@ export function schemaName(schema: Schema): ComponentNode<Schema> {
 }
 
 export function SchemaType(ctx: Context, schema: Schema) {
-  return schema.name;
+  return getBundle(ctx).getSchemaName(schema);
 }
 
 export function schemaType(schema: Schema) {

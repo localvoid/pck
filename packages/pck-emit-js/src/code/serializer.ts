@@ -1,7 +1,7 @@
 import { Field, Type } from "pck";
 import { Context, componentFactory, ComponentNode, TChildren } from "osh";
-import { line, indent, comment, docComment } from "osh-code";
-import { isNotEmpty, isNotNull, isNotZero, isTrue, call, and, v, getter, fieldToString, type } from "./utils";
+import { line, indent, docComment } from "osh-code";
+import { isNotEmpty, isNotNull, isNotZero, isTrue, call, and, v, getter, type } from "./utils";
 import { pck } from "./modules";
 import { getBundle } from "./bundle";
 import { getSchema } from "./schema";
@@ -166,50 +166,29 @@ export const serializeBitSet = componentFactory((ctx: Context) => {
         line(v("writer"), ","),
         schema.hasOptionalFields() ?
           [
-            comment("Optional Fields:"),
-            schema.optionalFields.map((f) => f.isOmitEmpty() ?
-              line(and(isNotNull(getter(f)), isNotEmpty(getter(f))), ", ", comment(fieldToString(f))) :
-              line(isNotNull(getter(f)), ", ", comment(fieldToString(f))),
-            ),
+            schema.optionalFields.map((f) => line(checkOptionalField(f), ", ")),
           ] : null,
         schema.hasBooleanFields() ?
           [
-            comment("Boolean Fields:"),
-            schema.booleanFields.map((f) => line(isTrue(getter(f)), ", ", comment(fieldToString(f)))),
+            schema.booleanFields.map((f) => line(isTrue(getter(f)), ", ")),
           ] : null,
       ),
       line(");"),
     ] : null;
 });
 
-function optionalField(f: Field): TChildren {
+function checkOptionalField(f: Field): TChildren {
   if (f.isOmitNull()) {
     if (f.isOmitEmpty()) {
-      return [
-        line("if ", and(isNotNull(getter(f)), isNotEmpty(getter(f))), " {"),
-        indent(line(serializeField(f), ";")),
-        line("}"),
-      ];
+      return and(isNotNull(getter(f)), isNotEmpty(getter(f)));
     }
-    return [
-      line("if ", isNotNull(getter(f)), " {"),
-      indent(line(serializeField(f), ";")),
-      line("}"),
-    ];
+    return isNotNull(getter(f));
   }
   if (f.isOmitEmpty()) {
-    return [
-      line("if ", isNotEmpty(getter(f)), " {"),
-      indent(line(serializeField(f), ";")),
-      line("}"),
-    ];
+    return isNotEmpty(getter(f));
   }
   if (f.isOmitZero()) {
-    return [
-      line("if ", isNotZero(getter(f)), " {"),
-      indent(line(serializeField(f), ";")),
-      line("}"),
-    ];
+    return isNotZero(getter(f));
   }
   throw new Error("Invalid optional field");
 }
@@ -219,12 +198,14 @@ export const serializeRegularFields = componentFactory((ctx: Context) => {
 
   return [
     schema.fields.map((f) => f.type.isBoolean() ?
-      null : [
-        comment(fieldToString(f)),
-        f.isOptional() ?
-          optionalField(f) :
-          line(serializeField(f), ";"),
-      ],
+      null :
+      f.isOptional() ?
+        [
+          line("if ", checkOptionalField(f), " {"),
+          indent(line(serializeField(f), ";")),
+          line("}"),
+        ] :
+        line(serializeField(f), ";"),
     ),
   ];
 });
@@ -240,7 +221,7 @@ export const serializeMethod = componentFactory((ctx: Context) => {
   const bundle = getBundle(ctx);
   const schema = getSchema(ctx);
 
-  const shouldSupportTagging = bundle.schemaTag(schema) !== undefined;
+  const shouldSupportTagging = bundle.getSchemaTag(schema) !== void 0;
 
   return [
     docComment(

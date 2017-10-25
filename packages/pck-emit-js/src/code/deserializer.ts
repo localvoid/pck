@@ -1,7 +1,7 @@
 import { Field, Type } from "pck";
 import { Context, componentFactory, ComponentNode, TChildren } from "osh";
-import { line, indent, comment, docComment } from "osh-code";
-import { call, v, type, fieldToString } from "./utils";
+import { line, indent, docComment } from "osh-code";
+import { call, v, type } from "./utils";
 import { pck } from "./modules";
 import {
   getSchema, schemaType, bitSetOptionalIndex, bitSetOptionalPosition, bitSetBooleanIndex,
@@ -198,21 +198,35 @@ export const deserializeBitSet = componentFactory((ctx: Context) => {
   const schema = getSchema(ctx);
 
   return [
-    comment("BitSet:"),
     bitSetSizes(schema.bitSetSize()).map((s, i) => (
       line(`const __bitSet${i} = `, call(pck(`readU${s * 8}`), [v("reader")]), ";")),
     ),
     line(),
     schema.hasBooleanFields() ?
       [
-        comment("Boolean Fields:"),
-        schema.booleanFields.map((f) => [
-          comment(fieldToString(f)),
-          line("const ", fieldName(f), " = ", checkBitSetBoolean(f), ";"),
-        ]),
+        schema.booleanFields.map((f) => line("const ", fieldName(f), " = ", checkBitSetBoolean(f), ";")),
       ] : null,
   ];
 });
+
+function defaultValue(f: Field) {
+  if (f.isOmitNull()) {
+    return "null";
+  }
+  if (f.isOmitEmpty()) {
+    if (f.type.isArray()) {
+      return "[]";
+    }
+    if (f.type.isString()) {
+      return "";
+    }
+    return "null"; // ByteArray
+  }
+  if (f.isOmitZero()) {
+    return "0";
+  }
+  throw new Error("Field cannot have default value");
+}
 
 export const deserializeBody = componentFactory((ctx: Context) => {
   const schema = getSchema(ctx);
@@ -221,15 +235,13 @@ export const deserializeBody = componentFactory((ctx: Context) => {
     schema.hasBitSet() ? deserializeBitSet() : null,
     schema.hasRegularFields() ?
       [
-        comment("Regular Fields:"),
         schema.fields.map((f) => f.type.isBoolean() ?
           null :
           [
-            comment(fieldToString(f)),
             line(
               "const ", fieldName(f), " = ",
               f.isOptional() ?
-                [checkBitSetOptional(f), " ? ", deserializer(f), " : null"] :
+                [checkBitSetOptional(f), " ? ", deserializer(f), " : ", defaultValue(f)] :
                 deserializer(f),
               ";",
             ),

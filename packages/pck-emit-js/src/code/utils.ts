@@ -1,4 +1,4 @@
-import { Type as pckType, Field } from "pck";
+import { Field } from "pck";
 import { Context, TChildren, component, ComponentNode } from "osh";
 
 export const VARS = Symbol("Vars");
@@ -90,72 +90,4 @@ export function Getter(ctx: Context, field: Field) {
 
 export function getter(field: Field) {
   return component(Getter, field);
-}
-
-export function typeToString(t: pckType): string {
-  if (t.isBoolean()) {
-    return `bool`;
-  }
-  if (t.isNumber()) {
-    if (t.isVariadicInteger()) {
-      if (t.isSignedInteger()) {
-        return `ivar`;
-      } else {
-        return `uvar`;
-      }
-    }
-    if (t.isInteger()) {
-      if (t.isSignedInteger()) {
-        return `i${t.size * 8}`;
-      } else {
-        return `u${t.size * 8}`;
-      }
-    }
-    if (t.isFloat()) {
-      return `f${t.size * 8}`;
-    }
-  }
-  if (t.isString()) {
-    if (t.isUtf8String()) {
-      return `utf8`;
-    } else {
-      if (t.hasDynamicSize()) {
-        return `ascii`;
-      } else {
-        return `ascii[${t.size}]`;
-      }
-    }
-  }
-  if (t.isByteArray()) {
-    if (t.hasDynamicSize()) {
-      return `bytes`;
-    } else {
-      return `bytes[${t.size}]`;
-    }
-  }
-  if (t.isArray()) {
-    if (t.hasDynamicSize()) {
-      return `array`;
-    } else {
-      return `array[${t.props.length}]`;
-    }
-  }
-  if (t.isRef()) {
-    return `ref[${t.props.name}]`;
-  }
-  return `UNKNOWN`;
-}
-
-export function fieldToString(field: Field): string {
-  let t = typeToString(field.type);
-  if (field.isOptional()) {
-    t = `optional(${t})`;
-  }
-  if (field.isOmitEmpty()) {
-    t = `omitEmpty(${t})`;
-  }
-  if (field.isOmitZero()) {
-    t = `omitZero(${t})`;
-  }
-  return `${field.name}: ${t}`;
 }

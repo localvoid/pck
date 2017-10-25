@@ -12,7 +12,7 @@ export function TaggedReaders(ctx: Context): TChildren {
       line("TAGGED_READERS is an automatically generated list of tagged readers"),
     ),
     line("export const TAGGED_READERS = ["),
-    indent(orderedTaggedSchemas(bundle.taggedSchemas).map((s) => line("read", schemaName(s), ","))),
+    indent(orderedTaggedSchemas(bundle.taggedSchemas).map((s) => line("unpck", schemaName(s), ","))),
     line("];"),
   ];
 }

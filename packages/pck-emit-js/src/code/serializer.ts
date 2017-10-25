@@ -159,22 +159,15 @@ export const serializeField: (field: Field<any>) => ComponentNode<Field<any>>
 export const serializeBitSet = componentFactory((ctx: Context) => {
   const schema = getSchema(ctx);
 
-  return schema.hasBitSet() ?
-    [
-      line(pck("writeBitSet"), "("),
-      indent(
-        line(v("writer"), ","),
-        schema.hasOptionalFields() ?
-          [
-            schema.optionalFields.map((f) => line(checkOptionalField(f), ", ")),
-          ] : null,
-        schema.hasBooleanFields() ?
-          [
-            schema.booleanFields.map((f) => line(isTrue(getter(f)), ", ")),
-          ] : null,
-      ),
-      line(");"),
-    ] : null;
+  return [
+    line(pck("writeBitSet"), "("),
+    indent(
+      line(v("writer"), ","),
+      schema.optionalFields.map((f) => line(checkOptionalField(f), ", ")),
+      schema.booleanFields.map((f) => line(isTrue(getter(f)), ", ")),
+    ),
+    line(");"),
+  ];
 });
 
 function checkOptionalField(f: Field): TChildren {
@@ -210,9 +203,18 @@ export const serializeRegularFields = componentFactory((ctx: Context) => {
   ];
 });
 
+function serializeTag(tag: number) {
+  return call(pck("writeUVar"), [tag]);
+}
+
 export const serializeBody = componentFactory((ctx: Context) => {
+  const bundle = getBundle(ctx);
+  const schema = getSchema(ctx);
+  const tag = bundle.getSchemaTag(schema);
+
   return [
-    serializeBitSet(),
+    tag !== void 0 ? serializeTag(tag) : null,
+    schema.hasBitSet() ? serializeBitSet() : null,
     serializeRegularFields(),
   ];
 });

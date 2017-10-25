@@ -18,6 +18,7 @@ export function importSchema(name: string, schema: Schema): SchemaImport {
 export class Bundle {
   readonly schemas: Schema[];
   readonly index: Map<string, Schema>;
+  readonly schemaNames: Map<Schema, string>;
   readonly types: Set<Type>;
   readonly fixedSizeSchemas: Set<Schema>;
   readonly taggedSchemas: Map<Schema, number>;
@@ -31,18 +32,31 @@ export class Bundle {
   ) {
     this.schemas = schemas;
     this.index = index;
+    this.schemaNames = new Map<Schema, string>();
     this.types = types;
     this.fixedSizeSchemas = fixedSizeSchemas;
     this.taggedSchemas = taggedSchemas;
     this.index = new Map<string, Schema>();
+
+    this.index.forEach((schema, name) => {
+      this.schemaNames.set(schema, name);
+    });
   }
 
   findSchemaByName(name: string): Schema | undefined {
     return this.index.get(name);
   }
 
-  schemaTag(schema: Schema): number | undefined {
+  getSchemaTag(schema: Schema): number | undefined {
     return this.taggedSchemas.get(schema);
+  }
+
+  getSchemaName(schema: Schema): string {
+    const name = this.schemaNames.get(schema);
+    if (name === void 0) {
+      throw new Error("Unable to find schema name");
+    }
+    return name;
   }
 }
 

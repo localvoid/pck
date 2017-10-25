@@ -1,5 +1,6 @@
 import { Schema, Field } from "pck";
 import { Context, component, ComponentNode } from "osh";
+import { getBundle } from "./bundle";
 
 export const SCHEMA = Symbol("Schema");
 
@@ -8,7 +9,7 @@ export function getSchema(ctx: Context): Schema {
 }
 
 export function SchemaName(ctx: Context, schema: Schema) {
-  return schema.name;
+  return getBundle(ctx).getSchemaName(schema);
 }
 
 export function schemaName(schema: Schema): ComponentNode<Schema> {

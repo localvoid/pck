@@ -1,7 +1,7 @@
 import { Field, Type } from "pck";
-import { Context, componentFactory, ComponentNode } from "osh";
+import { Context, componentFactory, ComponentNode, TChildren } from "osh";
 import { line, indent, comment, docComment } from "osh-code";
-import { isNotEmpty, isNotNull, isTrue, call, and, v, getter, fieldToString, type } from "./utils";
+import { isNotEmpty, isNotNull, isNotZero, isTrue, call, and, v, getter, fieldToString, type } from "./utils";
 import { pck } from "./modules";
 import { getBundle } from "./bundle";
 import { getSchema } from "./schema";
@@ -182,6 +182,38 @@ export const serializeBitSet = componentFactory((ctx: Context) => {
     ] : null;
 });
 
+function optionalField(f: Field): TChildren {
+  if (f.isOmitNull()) {
+    if (f.isOmitEmpty()) {
+      return [
+        line("if ", and(isNotNull(getter(f)), isNotEmpty(getter(f))), " {"),
+        indent(line(serializeField(f), ";")),
+        line("}"),
+      ];
+    }
+    return [
+      line("if ", isNotNull(getter(f)), " {"),
+      indent(line(serializeField(f), ";")),
+      line("}"),
+    ];
+  }
+  if (f.isOmitEmpty()) {
+    return [
+      line("if ", isNotEmpty(getter(f)), " {"),
+      indent(line(serializeField(f), ";")),
+      line("}"),
+    ];
+  }
+  if (f.isOmitZero()) {
+    return [
+      line("if ", isNotZero(getter(f)), " {"),
+      indent(line(serializeField(f), ";")),
+      line("}"),
+    ];
+  }
+  throw new Error("Invalid optional field");
+}
+
 export const serializeRegularFields = componentFactory((ctx: Context) => {
   const schema = getSchema(ctx);
 
@@ -190,17 +222,7 @@ export const serializeRegularFields = componentFactory((ctx: Context) => {
       null : [
         comment(fieldToString(f)),
         f.isOptional() ?
-          f.isOmitEmpty() ?
-            [
-              line("if ", and(isNotNull(getter(f)), isNotEmpty(getter(f))), " {"),
-              indent(line(serializeField(f), ";")),
-              line("}"),
-            ] :
-            [
-              line("if ", isNotNull(getter(f)), " {"),
-              indent(line(serializeField(f), ";")),
-              line("}"),
-            ] :
+          optionalField(f) :
           line(serializeField(f), ";"),
       ],
     ),

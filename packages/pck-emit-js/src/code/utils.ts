@@ -13,6 +13,10 @@ export function isNotEmpty(...children: TChildren[]) {
   return ["((", children, ").length > 0)"];
 }
 
+export function isNotZero(...children: TChildren[]) {
+  return ["((", children, ") !== 0)"];
+}
+
 export function isTrue(...children: TChildren[]) {
   return ["((", children, ") === true)"];
 }

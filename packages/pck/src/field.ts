@@ -8,8 +8,9 @@ export class InvalidFieldError extends Error { }
 
 export const enum FieldFlags {
   Optional = 1,
-  OmitEmpty = 1 << 1,
-  OmitZero = 1 << 2,
+  OmitNull = 1 << 1,
+  OmitEmpty = 1 << 2,
+  OmitZero = 1 << 3,
 }
 
 export class Field<T = null> {
@@ -27,6 +28,10 @@ export class Field<T = null> {
     return (this.flags & FieldFlags.Optional) !== 0;
   }
 
+  isOmitNull(): boolean {
+    return (this.flags & FieldFlags.OmitNull) !== 0;
+  }
+
   isOmitEmpty(): boolean {
     return (this.flags & FieldFlags.OmitEmpty) !== 0;
   }
@@ -36,11 +41,11 @@ export class Field<T = null> {
   }
 }
 
-export function optional<T>(field: Field<T>): Field<T> {
+export function omitNull<T>(field: Field<T>): Field<T> {
   if (field.type.isRef() || field.type.isArray()) {
-    return new Field<T>(field.type, field.name, field.flags | FieldFlags.Optional);
+    return new Field<T>(field.type, field.name, field.flags | FieldFlags.OmitNull | FieldFlags.Optional);
   }
-  throw new InvalidFieldError(`Unable to create optional field, invalid field type: ${TypeId[field.type.id]}`);
+  throw new InvalidFieldError(`Unable to create omitNull field, invalid field type: ${TypeId[field.type.id]}`);
 }
 
 export function omitEmpty<T>(field: Field<T>): Field<T> {

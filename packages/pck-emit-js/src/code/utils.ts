@@ -13,6 +13,10 @@ export function isNotEmpty(...children: TChildren[]) {
   return ["((", children, ").length > 0)"];
 }
 
+export function isNotEmptyString(...children: TChildren[]) {
+  return [`((`, children, `) !== "")`];
+}
+
 export function isNotZero(...children: TChildren[]) {
   return ["((", children, ") !== 0)"];
 }

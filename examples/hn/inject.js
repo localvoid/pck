@@ -1,7 +1,6 @@
 const fs = require("fs");
-const pck = require("pck");
 const jsEmit = require("pck-emit-js");
-const schema = require("./schema");
+const bundle = require("./schema");
 
 const FILE = "./pck.js";
 
@@ -9,7 +8,7 @@ fs.writeFileSync(
   FILE,
   jsEmit.inject(
     {
-      bundle: pck.bundle([schema.Item]),
+      bundle: bundle,
       mode: "js",
     },
     fs.readFileSync(FILE).toString(),

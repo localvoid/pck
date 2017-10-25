@@ -218,7 +218,7 @@ function defaultValue(f: Field) {
       return "[]";
     }
     if (f.type.isString()) {
-      return "";
+      return `""`;
     }
     return "null"; // ByteArray
   }

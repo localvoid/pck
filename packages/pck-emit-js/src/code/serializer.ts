@@ -1,7 +1,7 @@
 import { Field, Type } from "pck";
 import { Context, componentFactory, ComponentNode, TChildren } from "osh";
 import { line, indent, docComment } from "osh-code";
-import { isNotEmpty, isNotNull, isNotZero, isTrue, call, and, v, getter, type } from "./utils";
+import { isNotEmpty, isNotEmptyString, isNotNull, isNotZero, isTrue, call, and, v, getter, type } from "./utils";
 import { pck } from "./modules";
 import { getBundle } from "./bundle";
 import { getSchema } from "./schema";
@@ -173,11 +173,17 @@ export const serializeBitSet = componentFactory((ctx: Context) => {
 function checkOptionalField(f: Field): TChildren {
   if (f.isOmitNull()) {
     if (f.isOmitEmpty()) {
+      if (f.type.isString()) {
+        return and(isNotNull(getter(f)), isNotEmptyString(getter(f)));
+      }
       return and(isNotNull(getter(f)), isNotEmpty(getter(f)));
     }
     return isNotNull(getter(f));
   }
   if (f.isOmitEmpty()) {
+    if (f.type.isString()) {
+      return isNotEmptyString(getter(f));
+    }
     return isNotEmpty(getter(f));
   }
   if (f.isOmitZero()) {

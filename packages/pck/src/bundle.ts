@@ -36,7 +36,6 @@ export class Bundle {
     this.types = types;
     this.fixedSizeSchemas = fixedSizeSchemas;
     this.taggedSchemas = taggedSchemas;
-    this.index = new Map<string, Schema>();
 
     this.index.forEach((schema, name) => {
       this.schemaNames.set(schema, name);

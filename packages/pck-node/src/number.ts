@@ -32,10 +32,11 @@ export function writeF64(w: Writer, v: number): void {
 }
 
 function sizeUVar(v: number): number {
-  if (v <= 0) {
-    return 1;
-  }
-  return Math.floor(Math.log(v) / Math.log(128)) + 1;
+  let n = 0;
+  do {
+    n++;
+  } while ((v >>= 7) !== 0);
+  return n;
 }
 
 export function writeUVar(w: Writer, v: number): void {

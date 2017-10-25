@@ -43,8 +43,8 @@ const Attributes = schema(u8("str"), u8("agi"), u8("int"));
 const Player = schema(
   ivar("health"),
   bool("jumping"),
-  ref(Position),
-  ref(Attributes),
+  ref("position", Position),
+  ref("attributes", Attributes),
 );
 ```
 

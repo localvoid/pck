@@ -13,7 +13,7 @@ export enum TypeId {
   Ref = 9,
   Array = 10,
   Map = 11,
-  OneOf = 12,
+  Union = 12,
 }
 
 export const enum TypeFlags {
@@ -109,8 +109,8 @@ export class Type<T = null> {
     return this.id === TypeId.Ref;
   }
 
-  isOneOf(): this is Type<Type[]> {
-    return this.id === TypeId.OneOf;
+  isUnion(): this is Type<Type[]> {
+    return this.id === TypeId.Union;
   }
 }
 
@@ -160,13 +160,13 @@ export function MAP(key: Type<any>, value: Type<any>): Type<MapTypeProps> {
   return new Type<MapTypeProps>(TypeId.Map, 0, TypeFlags.DynamicSize, { key, value });
 }
 
-export function ONE_OF(types: Type<any>[]): Type<Type<any>[]> {
+export function UNION(types: Type<any>[]): Type<Type<any>[]> {
   for (const type of types) {
     if (!type.isRef()) {
-      throw new Error("ONE_OF type doesn't work with basic types");
+      throw new Error("UNION type doesn't work with basic types");
     }
   }
-  return new Type<Type<any>[]>(TypeId.OneOf, 0, TypeFlags.DynamicSize, types);
+  return new Type<Type<any>[]>(TypeId.Union, 0, TypeFlags.DynamicSize, types);
 }
 
 function t(id: TypeId, size: number = 0, flags: TypeFlags = 0): Type {

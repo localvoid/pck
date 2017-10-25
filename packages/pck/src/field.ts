@@ -1,6 +1,6 @@
 import {
   TypeId, Type, ArrayTypeProps, MapTypeProps,
-  ARRAY, MAP, REF, ONE_OF, BOOL, I8, U8, I16, U16, I32, U32, F32, F64, IVAR, UVAR, BYTES, UTF8, ASCII,
+  ARRAY, MAP, REF, UNION, BOOL, I8, U8, I16, U16, I32, U32, F32, F64, IVAR, UVAR, BYTES, UTF8, ASCII,
 } from "./type";
 import { Schema } from "./schema";
 
@@ -74,7 +74,7 @@ export function map(name: string, key: Type<any>, value: Type<any>): Field<MapTy
   return new Field<MapTypeProps>(MAP(key, value), name);
 }
 
-export function oneOf(name: string, types: Type<any>[]): Field<Type<any>[]> {
+export function union(name: string, types: Type<any>[]): Field<Type<any>[]> {
   types.forEach((t) => {
     if (!t.isRef()) {
       throw new InvalidFieldError(
@@ -82,7 +82,7 @@ export function oneOf(name: string, types: Type<any>[]): Field<Type<any>[]> {
       );
     }
   });
-  return new Field<Type<any>[]>(ONE_OF(types), name);
+  return new Field<Type<any>[]>(UNION(types), name);
 }
 
 export function bool(name: string): Field {

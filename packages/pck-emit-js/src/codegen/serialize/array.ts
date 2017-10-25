@@ -61,7 +61,7 @@ export function arrayWriterFromType(type: Type): TChildren {
   if (type.isRef()) {
     return pck("writeObject");
   }
-  if (type.isOneOf()) {
+  if (type.isUnion()) {
     return pck("writeTaggedObject");
   }
   throw new Error("Invalid type");

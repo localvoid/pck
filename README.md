@@ -106,7 +106,7 @@ json:decode x 126,887 ops/sec ±3.34% (54 runs sampled)
 | BYTES(N)     | N bytes              | Fixed Byte Array                  |
 | ARRAY(N)     | NV bytes             | Fixed Array                       |
 | REF(T)       | size(T) bytes        | Reference to an Object            |
-| ONE_OF(T...) | 1-5+size(...T) bytes | One of Object types               |
+| UNION(T...)  | 1-5+size(...T) bytes | Tagged Union                      |
 
 ## Object Structure
 

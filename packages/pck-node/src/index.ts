@@ -34,7 +34,7 @@ export {
 export { writeMap, readMap } from "./map";
 
 export { writeBitSet } from "./bitset";
-export { readOneOf, createOneOfReader } from "./one_of";
+export { readUnion, createUnionReader } from "./union";
 
 export { serialize } from "./serializer";
 export { Serializable } from "./interface";

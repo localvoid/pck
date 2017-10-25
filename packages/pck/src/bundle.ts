@@ -102,10 +102,10 @@ function analyzeSchemas(imports: SchemaImport[]): AnalyzeResult {
     for (const field of schema.fields) {
       types.add(field.type);
 
-      if (field.type.isOneOf()) {
-        for (const oneOfType of field.type.props) {
-          if (oneOfType.isRef()) {
-            taggedSchemas.set(oneOfType.props, tagIndex++);
+      if (field.type.isUnion()) {
+        for (const type of field.type.props) {
+          if (type.isRef()) {
+            taggedSchemas.set(type.props, tagIndex++);
           }
         }
       }

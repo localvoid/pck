@@ -74,7 +74,7 @@ export function arrayReaderFromType(type: Type): TChildren {
   if (type.isRef()) {
     return pck("readObject");
   }
-  if (type.isOneOf()) {
+  if (type.isUnion()) {
     return pck("readTaggedObject");
   }
   throw new Error("Invalid type");

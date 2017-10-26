@@ -1,3 +1,4 @@
+export { upperCaseFirstLetter } from "./strings";
 export { VARS, V, v } from "./vars";
 export { TYPED, isTyped, Type, type } from "./type";
 export { TARGET, getTarget } from "./target";

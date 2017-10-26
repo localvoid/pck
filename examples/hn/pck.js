@@ -20,10 +20,12 @@ class Item {
    * @param __w Writer object.
    */
   pck(__w) {
+    const optionalKids = (((this.kids) !== null) && ((this.kids).length > 0));
+    const optionalUrl = ((this.url) !== "");
     __pck.writeBitSet(
       __w,
-      (((this.kids) !== null) && ((this.kids).length > 0)),
-      ((this.url) !== ""),
+      optionalKids,
+      optionalUrl,
     );
     __pck.writeI32(__w, this.time);
     __pck.writeUVar(__w, this.descendants);
@@ -31,10 +33,10 @@ class Item {
     __pck.writeUVar(__w, this.score);
     __pck.writeUtf8(__w, this.by);
     __pck.writeUtf8(__w, this.title);
-    if ((this.url) !== "") {
+    if (optionalUrl) {
       __pck.writeUtf8(__w, this.url);
     }
-    if (((this.kids) !== null) && ((this.kids).length > 0)) {
+    if (optionalKids) {
       __pck.writeArray(__w, this.kids, __pck.writeUVar);
     }
   }

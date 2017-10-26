@@ -1,7 +1,7 @@
 import { Context, ComponentNode, TChildren, component } from "osh";
 import { line, indent } from "osh-code";
-import { checkOptionalField } from "./checks";
 import { serializeField } from "./field";
+import { optional } from "./optional";
 import { getSchema } from "../utils";
 
 export function SerializeFields(ctx: Context): TChildren {
@@ -12,7 +12,7 @@ export function SerializeFields(ctx: Context): TChildren {
       null :
       f.isOptional() ?
         [
-          line("if ", checkOptionalField(f), " {"),
+          line("if (", optional(f), ") {"),
           indent(line(serializeField(f), ";")),
           line("}"),
         ] :

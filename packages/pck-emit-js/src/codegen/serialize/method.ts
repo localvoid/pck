@@ -4,6 +4,7 @@ import { writeUVar } from "./writers";
 import { v, type, pck, getBundle, getSchema } from "../utils";
 import { serializeBitSet } from "./bitset";
 import { serializeFields } from "./fields";
+import { optionalChecks } from "./optional";
 
 function serializeTag(tag: number) {
   return writeUVar(tag);
@@ -16,6 +17,7 @@ export function SerializeMethodBody(ctx: Context): TChildren {
 
   return [
     tag !== void 0 ? serializeTag(tag) : null,
+    schema.hasOptionalFields() ? optionalChecks() : null,
     schema.hasBitSet() ? serializeBitSet() : null,
     serializeFields(),
   ];

@@ -1,4 +1,4 @@
-export { VARS, V, v } from "./vars";
+export { VARIABLES, declareSymbols, v } from "./symbol";
 export { TYPED, isTyped, Type, type } from "./type";
 export { TARGET, getTarget } from "./target";
 export { BUNDLE, getBundle } from "./bundle";

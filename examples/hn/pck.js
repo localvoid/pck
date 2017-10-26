@@ -1,4 +1,4 @@
-const __pck = require("pck-node");
+const pck = require("pck-node");
 
 // pck:assign({ "schema": "Item" })
 class Item {
@@ -17,27 +17,27 @@ class Item {
   /**
    * pck is an automatically generated serialization method.
    *
-   * @param __w Writer object.
+   * @param writer Writer object.
    */
-  pck(__w) {
+  pck(writer) {
     const optionalKids = (((this.kids) !== null) && ((this.kids).length > 0));
     const optionalUrl = ((this.url) !== "");
-    __pck.writeBitSet(
-      __w,
+    pck.writeBitSet(
+      writer,
       optionalKids,
       optionalUrl,
     );
-    __pck.writeI32(__w, this.time);
-    __pck.writeUVar(__w, this.descendants);
-    __pck.writeUVar(__w, this.id);
-    __pck.writeUVar(__w, this.score);
-    __pck.writeUtf8(__w, this.by);
-    __pck.writeUtf8(__w, this.title);
+    pck.writeI32(writer, this.time);
+    pck.writeUVar(writer, this.descendants);
+    pck.writeUVar(writer, this.id);
+    pck.writeUVar(writer, this.score);
+    pck.writeUtf8(writer, this.by);
+    pck.writeUtf8(writer, this.title);
     if (optionalUrl) {
-      __pck.writeUtf8(__w, this.url);
+      pck.writeUtf8(writer, this.url);
     }
     if (optionalKids) {
-      __pck.writeArray(__w, this.kids, __pck.writeUVar);
+      pck.writeArray(writer, this.kids, pck.writeUVar);
     }
   }
   // pck:end
@@ -47,19 +47,19 @@ class Item {
 /**
  * unpckItem is an automatically generated deserialization function.
  *
- * @param __r Read buffer.
+ * @param reader Read buffer.
  * @returns Deserialized object.
  */
-function unpckItem(__r) {
-  const __bitSet0 = __pck.readU8(__r);
-  const time = __pck.readU32(__r);
-  const descendants = __pck.readUVar(__r);
-  const id = __pck.readUVar(__r);
-  const score = __pck.readUVar(__r);
-  const by = __pck.readUtf8(__r);
-  const title = __pck.readUtf8(__r);
-  const url = (__bitSet0 & (1 << 1)) !== 0 ? __pck.readUtf8(__r) : "";
-  const kids = (__bitSet0 & (1 << 0)) !== 0 ? __pck.readArray(__r, __pck.readUVar) : null;
+export function unpckItem(reader) {
+  const __bitSet0 = pck.readU8(reader);
+  const time = pck.readU32(reader);
+  const descendants = pck.readUVar(reader);
+  const id = pck.readUVar(reader);
+  const score = pck.readUVar(reader);
+  const by = pck.readUtf8(reader);
+  const title = pck.readUtf8(reader);
+  const url = (__bitSet0 & (1 << 1)) !== 0 ? pck.readUtf8(reader) : "";
+  const kids = (__bitSet0 & (1 << 0)) !== 0 ? pck.readArray(reader, pck.readUVar) : null;
 
   return new Item(
     by,

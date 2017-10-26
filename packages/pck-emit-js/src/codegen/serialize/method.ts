@@ -39,14 +39,14 @@ export function SerializeMethod(ctx: Context): TChildren {
       line(),
       line("@param ", v("writer"), " Writer object."),
       shouldSupportTagging ?
-        line("@param ", v("tagged"), " Tagged.") :
+        line("@param ", v("isTagged"), " Tagged.") :
         null,
     ),
     line(
       "pck", "(",
       v("writer"), type(": ", pck("Writer")),
       shouldSupportTagging ?
-        [", ", v("tagged"), type("?: boolean")] :
+        [", ", v("isTagged"), type("?: boolean")] :
         null,
       ")", type(": void"), " {",
     ),

@@ -3,7 +3,7 @@ import { Context, TChildren, component, context, ContextNode, ComponentNode } fr
 export const MODULE_RESOLVERS = Symbol("ImportModules");
 
 function resolveModuleSymbol(ctx: Context, module: string, symbol: string): string {
-  return ctx[MODULE_RESOLVERS][module](symbol);
+  return ctx[MODULE_RESOLVERS][module](symbol, ctx);
 }
 
 export function ModuleResolvers(ctx: Context, props: { imports: {}, children: TChildren }): ContextNode {

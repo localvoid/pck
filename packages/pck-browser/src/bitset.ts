@@ -16,7 +16,5 @@ export function writeBitSet(w: Writer): void {
     ++j;
   }
 
-  if (j > 0) {
-    pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.Int, Math.ceil(j / 8), v));
-  }
+  pushWriteNode(w, new WriteNode<number>(WriteNodeFlags.Int, (j < 16) ? ((j < 8) ? 1 : 2) : ((j < 24) ? 3 : 4), v));
 }

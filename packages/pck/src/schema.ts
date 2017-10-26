@@ -22,6 +22,7 @@ export interface BitField {
 export interface SchemaDetails {
   readonly flags: SchemaFlags;
   readonly size: number;
+  readonly sortedFields: Field[];
   readonly optionalFields: Field[];
   readonly booleanFields: Field[];
   readonly bitSet: BitField[];
@@ -31,6 +32,7 @@ export class Schema {
   readonly fields: Field<any>[];
   readonly flags: SchemaFlags;
   readonly size: number;
+  readonly sortedFields: Field[];
   readonly optionalFields: Field[];
   readonly booleanFields: Field[];
   readonly bitSet: BitField[];
@@ -39,6 +41,7 @@ export class Schema {
     this.fields = fields;
     this.flags = details.flags;
     this.size = details.size;
+    this.sortedFields = details.sortedFields;
     this.optionalFields = details.optionalFields;
     this.booleanFields = details.booleanFields;
     this.bitSet = details.bitSet;
@@ -104,15 +107,16 @@ function _normalizeFields(result: Field[], fields: Fields[]): void {
   }
 }
 
-function normalizeFields(fields: Fields[]): Field[] {
-  const result: Field[] = [];
+function normalizeFields(fields: Fields[]): Field<any>[] {
+  const result: Field<any>[] = [];
   _normalizeFields(result, fields);
   return result;
 }
 
 function analyzeFields(fields: Field[]): SchemaDetails {
-  const optionalFields: Field[] = [];
-  const booleanFields: Field[] = [];
+  const sortedFields = fields.slice().sort(sortFields);
+  const optionalFields: Field<any>[] = [];
+  const booleanFields: Field<any>[] = [];
   const bitSet: BitField[] = [];
   let flags: SchemaFlags = 0;
   let size = 0;
@@ -152,10 +156,10 @@ function analyzeFields(fields: Field[]): SchemaDetails {
     size += Math.ceil(bitSet.length / 8);
   }
 
-  return { flags, size, optionalFields, booleanFields, bitSet };
+  return { flags, size, sortedFields, optionalFields, booleanFields, bitSet };
 }
 
-function bitSetIndex(fields: Field[], field: Field, offset = 0): { index: number, position: number } {
+function bitSetIndex(fields: Field<any>[], field: Field<any>, offset = 0): { index: number, position: number } {
   let position = offset + fields.indexOf(field);
   let index = 0;
   while (position > 0) {
@@ -171,4 +175,99 @@ function bitSetIndex(fields: Field[], field: Field, offset = 0): { index: number
     index++;
   }
   return { index, position };
+}
+
+/**
+ * Field Priorities:
+ *  - required fields
+ *  - optional fields
+ *  - dynamic size fields
+ *
+ * Field types:
+ *  - numbers
+ *  - strings
+ *  - bytearray
+ *  - refs
+ *  - arrays
+ */
+function sortFields(a: Field<any>, b: Field<any>): number {
+  if (a.type.hasDynamicSize()) {
+    if (!b.type.hasDynamicSize()) {
+      return 1;
+    }
+  }
+  if (a.isOptional()) {
+    if (!b.isOptional()) {
+      return 1;
+    }
+  }
+  if (a.type.isArray()) {
+    if (!b.type.isArray()) {
+      return 1;
+    }
+    return 0;
+  }
+  if (a.type.isRef()) {
+    if (!b.type.isRef()) {
+      if (b.type.isArray()) {
+        return -1;
+      }
+      return 1;
+    }
+    return 0;
+  }
+  if (a.type.isByteArray()) {
+    if (!b.type.isByteArray()) {
+      if (b.type.isArray() || b.type.isRef()) {
+        return -1;
+      }
+      return 1;
+    }
+    return 0;
+  }
+  if (a.type.isString()) {
+    if (!b.type.isString()) {
+      if (b.type.isArray() || b.type.isRef() || b.type.isByteArray()) {
+        return -1;
+      }
+      return 1;
+    }
+    return 0;
+  }
+  if (a.type.isNumber()) {
+    if (!b.type.isNumber()) {
+      if (b.type.isArray() || b.type.isRef() || b.type.isByteArray() || b.type.isString()) {
+        return -1;
+      }
+      return 1;
+    }
+
+    if (a.type.isVariadicInteger()) {
+      if (!b.type.isVariadicInteger()) {
+        return 1;
+      }
+      if (a.type.isSignedInteger()) {
+        if (!b.type.isSignedInteger()) {
+          return 1;
+        }
+      }
+      return 0;
+    } else if (a.type.isFloat()) {
+      if (!b.type.isFloat()) {
+        if (b.type.isVariadicInteger()) {
+          return -1;
+        }
+        return 1;
+      }
+      return a.type.size - b.type.size;
+    } else { // fixed integer
+      if (a.type.isSignedInteger()) {
+        if (!b.type.isSignedInteger()) {
+          return 1;
+        }
+      }
+      return a.type.size - b.type.size;
+    }
+  }
+  return 0;
 }

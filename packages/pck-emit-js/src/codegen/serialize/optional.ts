@@ -1,12 +1,10 @@
-import { Context, ComponentNode, TChildren, component } from "osh";
+import { Context, ComponentNode, TChildren, component, capitalize } from "osh";
 import { line } from "osh-code";
 import { Field } from "pck";
-import {
-  isNotEmpty, isNotEmptyString, isNotNull, isNotZero, and, getter, getSchema, upperCaseFirstLetter,
-} from "../utils";
+import { isNotEmpty, isNotEmptyString, isNotNull, isNotZero, and, getter, getSchema } from "../utils";
 
 export function optional(f: Field): TChildren {
-  return ["optional", upperCaseFirstLetter(f.name)];
+  return ["optional", capitalize(f.name)];
 }
 
 export function checkOptionalField(f: Field): TChildren {

@@ -10,7 +10,6 @@ export function DeserializeBitSet(ctx: Context): TChildren {
     bitSetSizes(schema.bitSetSize()).map((s, i) => (
       line(`const __bitSet${i} = `, call(pck(`readU${s * 8}`), [v("reader")]), ";")),
     ),
-    line(),
     schema.hasBooleanFields() ?
       schema.booleanFields.map((f) => line("const ", fieldName(f), " = ", checkBitSetBoolean(f), ";")) :
       null,

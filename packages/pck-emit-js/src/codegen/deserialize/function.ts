@@ -32,7 +32,7 @@ export function DeserializeBody(ctx: Context): TChildren {
     schema.hasBitSet() ? deserializeBitSet() : null,
     schema.hasRegularFields() ?
       [
-        schema.fields.map((f) => f.type.isBoolean() ?
+        schema.sortedFields.map((f) => f.type.isBoolean() ?
           null :
           [
             line(

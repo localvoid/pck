@@ -8,7 +8,7 @@ export function SerializeFields(ctx: Context): TChildren {
   const schema = getSchema(ctx);
 
   return [
-    schema.fields.map((f) => f.type.isBoolean() ?
+    schema.sortedFields.map((f) => f.type.isBoolean() ?
       null :
       f.isOptional() ?
         [

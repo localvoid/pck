@@ -25,17 +25,17 @@ class Item {
       (((this.kids) !== null) && ((this.kids).length > 0)),
       ((this.url) !== ""),
     );
-    __pck.writeUtf8(__w, this.by);
+    __pck.writeI32(__w, this.time);
     __pck.writeUVar(__w, this.descendants);
     __pck.writeUVar(__w, this.id);
-    if (((this.kids) !== null) && ((this.kids).length > 0)) {
-      __pck.writeArray(__w, this.kids, __pck.writeUVar);
-    }
     __pck.writeUVar(__w, this.score);
-    __pck.writeI32(__w, this.time);
+    __pck.writeUtf8(__w, this.by);
     __pck.writeUtf8(__w, this.title);
     if ((this.url) !== "") {
       __pck.writeUtf8(__w, this.url);
+    }
+    if (((this.kids) !== null) && ((this.kids).length > 0)) {
+      __pck.writeArray(__w, this.kids, __pck.writeUVar);
     }
   }
   // pck:end
@@ -50,15 +50,14 @@ class Item {
  */
 function unpckItem(__r) {
   const __bitSet0 = __pck.readU8(__r);
-
-  const by = __pck.readUtf8(__r);
+  const time = __pck.readU32(__r);
   const descendants = __pck.readUVar(__r);
   const id = __pck.readUVar(__r);
-  const kids = (__bitSet0 & (1 << 0)) !== 0 ? __pck.readArray(__r, __pck.readUVar) : null;
   const score = __pck.readUVar(__r);
-  const time = __pck.readU32(__r);
+  const by = __pck.readUtf8(__r);
   const title = __pck.readUtf8(__r);
   const url = (__bitSet0 & (1 << 1)) !== 0 ? __pck.readUtf8(__r) : "";
+  const kids = (__bitSet0 & (1 << 0)) !== 0 ? __pck.readArray(__r, __pck.readUVar) : null;
 
   return new Item(
     by,

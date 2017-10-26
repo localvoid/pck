@@ -259,14 +259,14 @@ function sortFields(a: Field<any>, b: Field<any>): number {
         }
         return 1;
       }
-      return a.type.size - b.type.size;
+      return b.type.size - a.type.size;
     } else { // fixed integer
       if (a.type.isSignedInteger()) {
         if (!b.type.isSignedInteger()) {
           return 1;
         }
       }
-      return a.type.size - b.type.size;
+      return b.type.size - a.type.size;
     }
   }
   return 0;

@@ -45,6 +45,8 @@ function emitTypeFromString(type: string): EmitType {
       return EmitType.Properties;
     case "constructor":
       return EmitType.Constructor;
+    case "class":
+      return EmitType.Class;
   }
   throw new Error(`Invalid emit type "${type}"`);
 }

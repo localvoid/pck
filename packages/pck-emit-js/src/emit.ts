@@ -6,7 +6,7 @@ import { BUNDLE, SCHEMA, MODULES, moduleResolvers } from "./codegen/utils";
 import { pckMethod } from "./codegen/pck";
 import { unpckFunction } from "./codegen/unpck";
 import { taggedReaders } from "./codegen/tagged_readers";
-import { objectProperties, objectConstructor } from "./codegen/object";
+import { objectProperties, objectConstructor, objectClass } from "./codegen/object";
 
 export interface EmitOptions {
   readonly bundle: Bundle;
@@ -20,6 +20,7 @@ export enum EmitType {
   TaggedReaders = 2,
   Properties = 3,
   Constructor = 4,
+  Class = 5,
 }
 
 function emitByType(type: EmitType) {
@@ -34,6 +35,8 @@ function emitByType(type: EmitType) {
       return objectProperties();
     case EmitType.Constructor:
       return objectConstructor();
+    case EmitType.Class:
+      return objectClass();
   }
   throw new Error(`Invalid emit type "${EmitType[type]}"`);
 }

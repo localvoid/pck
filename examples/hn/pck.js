@@ -1,8 +1,8 @@
 const pck = require("pck-node");
 
 // pck:assign({ "schema": "Item" })
+// pck:emit("class")
 class Item {
-  // pck:emit("constructor")
   constructor(
     by,
     descendants,
@@ -22,9 +22,7 @@ class Item {
     this.title = title;
     this.url = url;
   }
-  // pck:end
 
-  // pck:emit("pck")
   /**
    * pck is an automatically generated serialization method.
    *
@@ -51,10 +49,8 @@ class Item {
       pck.writeArray(writer, this.kids, pck.writeUVar);
     }
   }
-  // pck:end
 }
 
-// pck:emit("unpck")
 /**
  * unpckItem is an automatically generated deserialization function.
  *

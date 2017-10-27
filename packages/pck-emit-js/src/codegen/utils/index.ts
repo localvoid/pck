@@ -1,4 +1,7 @@
-export { ARGUMENTS, OPTIONAL, MODULES, BITSETS, arg, optional, bitSet } from "./symbols";
+export {
+  ARGUMENTS, OPTIONAL, MODULES, BIT_SETS, FIELD_VALUES,
+  arg, optional, bitSet, fieldValue,
+} from "./symbols";
 export { TYPED, isTyped, Type, type } from "./type";
 export { TARGET, getTarget } from "./target";
 export { BUNDLE, getBundle } from "./bundle";

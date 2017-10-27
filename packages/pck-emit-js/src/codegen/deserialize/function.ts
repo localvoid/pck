@@ -4,7 +4,7 @@ import { line, indent, docComment, scope, declSymbol } from "osh-code";
 import { deserializeBitSet, bitSetSizes } from "./bitset";
 import { deserializeField } from "./field";
 import { checkBitSetOptional } from "./checks";
-import { BITSETS, arg, type, pck, getSchema, schemaType, fieldName } from "../utils";
+import { BIT_SETS, FIELD_VALUES, arg, type, pck, getSchema, schemaType, fieldValue } from "../utils";
 
 function defaultValue(f: Field) {
   if (f.isOmitNull()) {
@@ -29,30 +29,34 @@ export function DeserializeBody(ctx: Context): TChildren {
   const schema = getSchema(ctx);
 
   return scope({
-    type: BITSETS,
-    symbols: bitSetSizes(schema.bitSetSize()).map((s, i) => declSymbol(i, `bitSet${0}`)),
-    children: [
-      schema.hasBitSet() ? deserializeBitSet() : null,
-      schema.hasRegularFields() ?
-        [
-          schema.sortedFields.map((f) => f.type.isBoolean() ?
-            null :
-            [
-              line(
-                "const ", fieldName(f), " = ",
-                f.isOptional() ?
-                  [checkBitSetOptional(schema, f), " ? ", deserializeField(f), " : ", defaultValue(f)] :
-                  deserializeField(f),
-                ";",
-              ),
-            ],
-          ),
-        ] : null,
-      line(),
-      line("return new ", schemaType(schema), "("),
-      indent(schema.fields.map((f) => line(fieldName(f), ","))),
-      line(");"),
-    ],
+    type: FIELD_VALUES,
+    symbols: schema.fields.map((f) => declSymbol(f, f.name)),
+    children: scope({
+      type: BIT_SETS,
+      symbols: bitSetSizes(schema.bitSetSize()).map((s, i) => declSymbol(i, `bitSet${0}`)),
+      children: [
+        schema.hasBitSet() ? deserializeBitSet() : null,
+        schema.hasRegularFields() ?
+          [
+            schema.sortedFields.map((f) => f.type.isBoolean() ?
+              null :
+              [
+                line(
+                  "const ", fieldValue(f), " = ",
+                  f.isOptional() ?
+                    [checkBitSetOptional(schema, f), " ? ", deserializeField(f), " : ", defaultValue(f)] :
+                    deserializeField(f),
+                  ";",
+                ),
+              ],
+            ),
+          ] : null,
+        line(),
+        line("return new ", schemaType(schema), "("),
+        indent(schema.fields.map((f) => line(fieldValue(f), ","))),
+        line(");"),
+      ],
+    }),
   });
 }
 

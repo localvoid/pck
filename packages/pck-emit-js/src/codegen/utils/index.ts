@@ -5,7 +5,6 @@ export {
 export { BUNDLE, getBundle } from "./bundle";
 export {
   SCHEMA, SchemaName, getSchema, schemaName, schemaType, SchemaType,
-  fieldName,
   bitSetBooleanIndex, bitSetBooleanPosition, bitSetOptionalIndex, bitSetOptionalPosition,
 } from "./schema";
 export { MODULE_RESOLVERS, moduleResolvers, ModuleResolvers, moduleSymbol, ModuleSymbol, pck } from "./modules";

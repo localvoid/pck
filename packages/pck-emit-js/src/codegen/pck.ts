@@ -7,72 +7,71 @@ import {
   getter, call,
 } from "./utils";
 
-export function PckMethodBody(ctx: Context): TChildren {
-  const bundle = getBundle(ctx);
-  const schema = getSchema(ctx);
-  const tag = bundle.getSchemaTag(schema);
-
-  return scope({
-    type: OPTIONAL,
-    symbols: schema.optionalFields.map((f) => declSymbol(f, `optional${capitalizeTransformer(f.name)}`)),
-    children: [
-      tag !== void 0 ? serializeTag(tag) : null,
-      schema.hasOptionalFields() ?
-        schema.optionalFields.map((f) => (
-          line("const ", optional(f), " = ", checkOptionalField(f), ";")),
-        ) : null,
-      schema.hasBitSet() ?
-        [
-          line(pck("writeBitSet"), "("),
-          indent(
-            line(arg("writer"), ","),
-            schema.optionalFields.map((f) => line(optional(f), ",")),
-            schema.booleanFields.map((f) => line(isTrue(getter(f)), ",")),
-          ),
-          line(");"),
-        ] : null,
-      schema.sortedFields.map((f) => f.type.isBoolean() ?
-        null :
-        f.isOptional() ?
-          [
-            line("if (", optional(f), ") {"),
-            indent(line(serializeField(f), ";")),
-            line("}"),
-          ] :
-          line(serializeField(f), ";"),
-      ),
-    ],
-  });
-}
-
-export function pckMethodBody(): ComponentNode<undefined> {
-  return component(PckMethodBody);
-}
+const WRITER = arg("writer");
+const IS_TAGGED = arg("isTagged");
 
 export function PckMethod(ctx: Context): TChildren {
   const bundle = getBundle(ctx);
   const schema = getSchema(ctx);
-
-  const shouldSupportTagging = bundle.getSchemaTag(schema) !== void 0;
+  const tag = bundle.getSchemaTag(schema);
 
   return [
     docComment(
       line("pck is an automatically generated serialization method."),
       line(),
-      line("@param ", arg("writer"), " Writer object."),
-      shouldSupportTagging ?
-        line("@param ", arg("isTagged"), " Tagged.") :
+      line("@param ", WRITER, " Writer object."),
+      tag !== void 0 ?
+        line("@param ", IS_TAGGED, " Tagged.") :
         null,
     ),
     line(
       "pck", "(",
-      arg("writer"), ts(": ", pck("Writer")),
-      shouldSupportTagging ?
-        [", ", arg("isTagged"), ts("?: boolean")] :
+      WRITER, ts(": ", pck("Writer")),
+      tag !== void 0 ?
+        [", ", IS_TAGGED, ts("?: boolean")] :
         null,
       ")", ts(": void"), " {",
     ),
-    indent(pckMethodBody()),
+    indent(
+      scope({
+        type: OPTIONAL,
+        symbols: schema.optionalFields.map((f) => declSymbol(f, `optional${capitalizeTransformer(f.name)}`)),
+        children: [
+          tag !== void 0 ?
+            [
+              line("if ", isTrue(IS_TAGGED), " {"),
+              indent(
+                line(writeUVar(tag)),
+              ),
+              line("}"),
+            ] : null,
+          schema.hasOptionalFields() ?
+            schema.optionalFields.map((f) => (
+              line("const ", optional(f), " = ", checkOptionalField(f), ";")),
+            ) : null,
+          schema.hasBitSet() ?
+            [
+              line(pck("writeBitSet"), "("),
+              indent(
+                line(WRITER, ","),
+                schema.optionalFields.map((f) => line(optional(f), ",")),
+                schema.booleanFields.map((f) => line(isTrue(getter(f)), ",")),
+              ),
+              line(");"),
+            ] : null,
+          schema.sortedFields.map((f) => f.type.isBoolean() ?
+            null :
+            f.isOptional() ?
+              [
+                line("if (", optional(f), ") {"),
+                indent(line(serializeField(f), ";")),
+                line("}"),
+              ] :
+              line(serializeField(f), ";"),
+          ),
+        ],
+      }),
+    ),
     line("}"),
   ];
 }
@@ -104,63 +103,63 @@ function checkOptionalField(field: Field<any>): TChildren {
 }
 
 function writeI8(value: TChildren): TChildren {
-  return call(pck("writeI8"), [arg("writer"), value]);
+  return call(pck("writeI8"), [WRITER, value]);
 }
 
 function writeI16(value: TChildren): TChildren {
-  return call(pck("writeI16"), [arg("writer"), value]);
+  return call(pck("writeI16"), [WRITER, value]);
 }
 
 function writeI32(value: TChildren): TChildren {
-  return call(pck("writeI32"), [arg("writer"), value]);
+  return call(pck("writeI32"), [WRITER, value]);
 }
 
 function writeF32(value: TChildren): TChildren {
-  return call(pck("writeF32"), [arg("writer"), value]);
+  return call(pck("writeF32"), [WRITER, value]);
 }
 
 function writeF64(value: TChildren): TChildren {
-  return call(pck("writeF64"), [arg("writer"), value]);
+  return call(pck("writeF64"), [WRITER, value]);
 }
 
 function writeIVar(value: TChildren): TChildren {
-  return call(pck("writeIVar"), [arg("writer"), value]);
+  return call(pck("writeIVar"), [WRITER, value]);
 }
 
 function writeUVar(value: TChildren): TChildren {
-  return call(pck("writeUVar"), [arg("writer"), value]);
+  return call(pck("writeUVar"), [WRITER, value]);
 }
 
 function writeUtf8(value: TChildren): TChildren {
-  return call(pck("writeUtf8"), [arg("writer"), value]);
+  return call(pck("writeUtf8"), [WRITER, value]);
 }
 
 function writeAscii(value: TChildren): TChildren {
-  return call(pck("writeAscii"), [arg("writer"), value]);
+  return call(pck("writeAscii"), [WRITER, value]);
 }
 
 function writeLongFixedAscii(value: TChildren, length: TChildren): TChildren {
-  return call(pck("writeLongFixedAscii"), [arg("writer"), value, length]);
+  return call(pck("writeLongFixedAscii"), [WRITER, value, length]);
 }
 
 function writeBytes(value: TChildren): TChildren {
-  return call(pck("writeBytes"), [arg("writer"), value]);
+  return call(pck("writeBytes"), [WRITER, value]);
 }
 
 function writeFixedBytes(value: TChildren, length: TChildren): TChildren {
-  return call(pck("writeFixedBytes"), [arg("writer"), value, length]);
+  return call(pck("writeFixedBytes"), [WRITER, value, length]);
 }
 
 function writeArray(value: TChildren, arrayWriter: TChildren): TChildren {
-  return call(pck("writeArray"), [arg("writer"), value, arrayWriter]);
+  return call(pck("writeArray"), [WRITER, value, arrayWriter]);
 }
 
 function writeFixedArray(value: TChildren, arrayWriter: TChildren): TChildren {
-  return call(pck("writeFixedArray"), [arg("writer"), value, arrayWriter]);
+  return call(pck("writeFixedArray"), [WRITER, value, arrayWriter]);
 }
 
 function writeRef(value: TChildren): TChildren {
-  return call([value, ".pck"], [arg("writer")]);
+  return call([value, ".pck"], [WRITER]);
 }
 
 function arrayWriterFromType(type: Type): TChildren {
@@ -310,8 +309,4 @@ function serializeField(field: Field<any>): TChildren {
   }
 
   throw new Error(`Unable to emit writer callsite for a field: ${field}. Invalid field type.`);
-}
-
-function serializeTag(tag: number) {
-  return writeUVar(tag);
 }

@@ -39,7 +39,3 @@ export function bitSetBooleanIndex(schema: Schema, field: Field<any>) {
 export function bitSetBooleanPosition(schema: Schema, field: Field<any>) {
   return schema.booleanBitSetIndex(field).position;
 }
-
-export function fieldName(f: Field) {
-  return f.name;
-}

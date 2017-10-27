@@ -41,6 +41,8 @@ function emitTypeFromString(type: string): EmitType {
       return EmitType.Unpck;
     case "tagged-readers":
       return EmitType.TaggedReaders;
+    case "constructor":
+      return EmitType.Constructor;
   }
   throw new Error(`Invalid emit type "${type}"`);
 }

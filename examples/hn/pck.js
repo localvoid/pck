@@ -2,7 +2,17 @@ const pck = require("pck-node");
 
 // pck:assign({ "schema": "Item" })
 class Item {
-  constructor(by, descendants, id, kids, score, time, title, url) {
+  // pck:emit("constructor")
+  constructor(
+    by,
+    descendants,
+    id,
+    kids,
+    score,
+    time,
+    title,
+    url,
+  ) {
     this.by = by;
     this.descendants = descendants;
     this.id = id;
@@ -12,6 +22,7 @@ class Item {
     this.title = title;
     this.url = url;
   }
+  // pck:end
 
   // pck:emit("pck")
   /**

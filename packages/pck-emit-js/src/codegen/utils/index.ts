@@ -10,3 +10,4 @@ export {
 export { MODULE_RESOLVERS, moduleResolvers, ModuleResolvers, moduleSymbol, ModuleSymbol, pck } from "./modules";
 export { isNotEmpty, isNotEmptyString, isNotNull, isNotZero, isTrue } from "./checks";
 export { call, and, getter } from "./operators";
+export { tsType, tsFieldType } from "./types";

@@ -3,7 +3,7 @@ import { Schema, Field, Type } from "pck";
 import { line, indent, docComment, scope, declSymbol } from "osh-code";
 import { ts } from "osh-code-js";
 import {
-  BIT_SETS, FIELD_VALUES, arg, pck, getSchema, schemaType, fieldValue, bitSet, call,
+  ARGUMENTS, BIT_SETS, FIELD_VALUES, arg, pck, getSchema, schemaType, fieldValue, bitSet, call,
   bitSetOptionalIndex, bitSetOptionalPosition, bitSetBooleanIndex, bitSetBooleanPosition,
 } from "./utils";
 
@@ -12,57 +12,63 @@ const READER = arg("reader");
 export function UnpckFunction(ctx: Context): TChildren {
   const schema = getSchema(ctx);
 
-  return [
-    docComment(
-      line("unpck", schemaType(schema), " is an automatically generated deserialization function."),
-      line(),
-      line("@param ", READER, " Read buffer."),
-      line("@returns Deserialized object."),
-    ),
-    line(
-      "export function unpck", schemaType(schema), "(",
-      READER, ts(": ", pck("ReadBuffer")),
-      ")", ts(": ", schemaType(schema)), " {",
-    ),
-    indent(
-      scope({
-        type: FIELD_VALUES,
-        symbols: schema.fields.map((f) => declSymbol(f, f.name)),
-        children: scope({
-          type: BIT_SETS,
-          symbols: bitSetSizes(schema.bitSetSize()).map((s, i) => declSymbol(i, `bitSet${0}`)),
-          children: [
-            schema.hasBitSet() ? [
-              bitSetSizes(schema.bitSetSize()).map((s, i) => (
-                line("const ", bitSet(i), " = ", call(pck(`readU${s * 8}`), [READER]), ";")),
-              ),
-              schema.hasBooleanFields() ?
-                schema.booleanFields.map((f) => (
-                  line("const ", fieldValue(f), " = ", checkBitSetBoolean(schema, f), ";")),
+  return scope({
+    type: ARGUMENTS,
+    symbols: [
+      declSymbol("reader", "reader"),
+    ],
+    children: [
+      docComment(
+        line("unpck", schemaType(schema), " is an automatically generated deserialization function."),
+        line(),
+        line("@param ", READER, " Read buffer."),
+        line("@returns Deserialized object."),
+      ),
+      line(
+        "export function unpck", schemaType(schema), "(",
+        READER, ts(": ", pck("ReadBuffer")),
+        ")", ts(": ", schemaType(schema)), " {",
+      ),
+      indent(
+        scope({
+          type: FIELD_VALUES,
+          symbols: schema.fields.map((f) => declSymbol(f, f.name)),
+          children: scope({
+            type: BIT_SETS,
+            symbols: bitSetSizes(schema.bitSetSize()).map((s, i) => declSymbol(i, `bitSet${0}`)),
+            children: [
+              schema.hasBitSet() ? [
+                bitSetSizes(schema.bitSetSize()).map((s, i) => (
+                  line("const ", bitSet(i), " = ", call(pck(`readU${s * 8}`), [READER]), ";")),
+                ),
+                schema.hasBooleanFields() ?
+                  schema.booleanFields.map((f) => (
+                    line("const ", fieldValue(f), " = ", checkBitSetBoolean(schema, f), ";")),
+                  ) : null,
+              ] : null,
+              schema.hasRegularFields() ?
+                schema.sortedFields.map((f) => !f.type.isBoolean() ?
+                  [
+                    line(
+                      "const ", fieldValue(f), " = ",
+                      f.isOptional() ?
+                        [checkBitSetOptional(schema, f), " ? ", deserializeField(f), " : ", defaultValue(f)] :
+                        deserializeField(f),
+                      ";",
+                    ),
+                  ] : null,
                 ) : null,
-            ] : null,
-            schema.hasRegularFields() ?
-              schema.sortedFields.map((f) => !f.type.isBoolean() ?
-                [
-                  line(
-                    "const ", fieldValue(f), " = ",
-                    f.isOptional() ?
-                      [checkBitSetOptional(schema, f), " ? ", deserializeField(f), " : ", defaultValue(f)] :
-                      deserializeField(f),
-                    ";",
-                  ),
-                ] : null,
-              ) : null,
-            line(),
-            line("return new ", schemaType(schema), "("),
-            indent(schema.fields.map((f) => line(fieldValue(f), ","))),
-            line(");"),
-          ],
+              line(),
+              line("return new ", schemaType(schema), "("),
+              indent(schema.fields.map((f) => line(fieldValue(f), ","))),
+              line(");"),
+            ],
+          }),
         }),
-      }),
-    ),
-    line("}"),
-  ];
+      ),
+      line("}"),
+    ],
+  });
 }
 
 export function unpckFunction(): ComponentNode<undefined> {

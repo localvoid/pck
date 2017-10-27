@@ -3,8 +3,9 @@ import { line, indent, docComment, scope, declSymbol } from "osh-code";
 import { ts } from "osh-code-js";
 import { Field, Type } from "pck";
 import {
-  OPTIONAL, arg, pck, getBundle, getSchema, optional, isNotEmpty, isNotEmptyString, isNotNull, isNotZero, isTrue, and,
-  getter, call,
+  ARGUMENTS, OPTIONAL,
+  arg, pck, getBundle, getSchema, optional, isNotEmpty, isNotEmptyString, isNotNull, isNotZero, isTrue, and, getter,
+  call,
 } from "./utils";
 
 const WRITER = arg("writer");
@@ -15,65 +16,72 @@ export function PckMethod(ctx: Context): TChildren {
   const schema = getSchema(ctx);
   const tag = bundle.getSchemaTag(schema);
 
-  return [
-    docComment(
-      line("pck is an automatically generated serialization method."),
-      line(),
-      line("@param ", WRITER, " Writer object."),
-      tag !== void 0 ?
-        line("@param ", IS_TAGGED, " Tagged.") :
-        null,
-    ),
-    line(
-      "pck", "(",
-      WRITER, ts(": ", pck("Writer")),
-      tag !== void 0 ?
-        [", ", IS_TAGGED, ts("?: boolean")] :
-        null,
-      ")", ts(": void"), " {",
-    ),
-    indent(
-      scope({
-        type: OPTIONAL,
-        symbols: schema.optionalFields.map((f) => declSymbol(f, `optional${capitalizeTransformer(f.name)}`)),
-        children: [
-          tag !== void 0 ?
-            [
-              line("if ", isTrue(IS_TAGGED), " {"),
-              indent(
-                line(writeUVar(tag)),
-              ),
-              line("}"),
-            ] : null,
-          schema.hasOptionalFields() ?
-            schema.optionalFields.map((f) => (
-              line("const ", optional(f), " = ", checkOptionalField(f), ";")),
-            ) : null,
-          schema.hasBitSet() ?
-            [
-              line(pck("writeBitSet"), "("),
-              indent(
-                line(WRITER, ","),
-                schema.optionalFields.map((f) => line(optional(f), ",")),
-                schema.booleanFields.map((f) => line(isTrue(getter(f)), ",")),
-              ),
-              line(");"),
-            ] : null,
-          schema.sortedFields.map((f) => f.type.isBoolean() ?
-            null :
-            f.isOptional() ?
+  return scope({
+    type: ARGUMENTS,
+    symbols: [
+      declSymbol("writer", "writer"),
+      declSymbol("isTagged", "isTagged"),
+    ],
+    children: [
+      docComment(
+        line("pck is an automatically generated serialization method."),
+        line(),
+        line("@param ", WRITER, " Writer object."),
+        tag !== void 0 ?
+          line("@param ", IS_TAGGED, " Tagged.") :
+          null,
+      ),
+      line(
+        "pck", "(",
+        WRITER, ts(": ", pck("Writer")),
+        tag !== void 0 ?
+          [", ", IS_TAGGED, ts("?: boolean")] :
+          null,
+        ")", ts(": void"), " {",
+      ),
+      indent(
+        scope({
+          type: OPTIONAL,
+          symbols: schema.optionalFields.map((f) => declSymbol(f, `optional${capitalizeTransformer(f.name)}`)),
+          children: [
+            tag !== void 0 ?
               [
-                line("if (", optional(f), ") {"),
-                indent(line(serializeField(f), ";")),
+                line("if ", isTrue(IS_TAGGED), " {"),
+                indent(
+                  line(writeUVar(tag)),
+                ),
                 line("}"),
-              ] :
-              line(serializeField(f), ";"),
-          ),
-        ],
-      }),
-    ),
-    line("}"),
-  ];
+              ] : null,
+            schema.hasOptionalFields() ?
+              schema.optionalFields.map((f) => (
+                line("const ", optional(f), " = ", checkOptionalField(f), ";")),
+              ) : null,
+            schema.hasBitSet() ?
+              [
+                line(pck("writeBitSet"), "("),
+                indent(
+                  line(WRITER, ","),
+                  schema.optionalFields.map((f) => line(optional(f), ",")),
+                  schema.booleanFields.map((f) => line(isTrue(getter(f)), ",")),
+                ),
+                line(");"),
+              ] : null,
+            schema.sortedFields.map((f) => f.type.isBoolean() ?
+              null :
+              f.isOptional() ?
+                [
+                  line("if (", optional(f), ") {"),
+                  indent(line(serializeField(f), ";")),
+                  line("}"),
+                ] :
+                line(serializeField(f), ";"),
+            ),
+          ],
+        }),
+      ),
+      line("}"),
+    ],
+  });
 }
 
 export function pckMethod(): ComponentNode<undefined> {

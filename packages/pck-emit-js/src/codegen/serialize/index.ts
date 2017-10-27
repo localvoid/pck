@@ -1,1 +1,0 @@
-export { serializeMethod } from "./method";

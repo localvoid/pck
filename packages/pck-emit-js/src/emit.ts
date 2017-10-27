@@ -1,16 +1,16 @@
 import { Context, renderToString, context } from "osh";
 import { PADDING, line, scope, declSymbol, getSymbol } from "osh-code";
-import { jsCode } from "osh-code-js";
+import { JSCodeOptions, jsCode } from "osh-code-js";
 import { Bundle, Schema } from "pck";
-import { BUNDLE, SCHEMA, TYPED, TARGET, ARGUMENTS, MODULES, moduleResolvers } from "./codegen/utils";
-import { serializeMethod } from "./codegen/serialize";
-import { deserializeFunction, taggedReaders } from "./codegen/deserialize";
+import { BUNDLE, SCHEMA, ARGUMENTS, MODULES, moduleResolvers } from "./codegen/utils";
+import { pckMethod } from "./codegen/pck";
+import { unpckFunction } from "./codegen/unpck";
+import { taggedReaders } from "./codegen/tagged_readers";
 
 export interface EmitOptions {
   readonly bundle: Bundle;
   readonly padding?: string;
-  readonly mode?: "js" | "ts";
-  readonly target?: "browser" | "node";
+  readonly jsOptions?: JSCodeOptions;
 }
 
 export enum EmitType {
@@ -22,9 +22,9 @@ export enum EmitType {
 function emitByType(type: EmitType) {
   switch (type) {
     case EmitType.Pck:
-      return serializeMethod();
+      return pckMethod();
     case EmitType.Unpck:
-      return deserializeFunction();
+      return unpckFunction();
     case EmitType.TaggedReaders:
       return taggedReaders();
   }
@@ -35,14 +35,13 @@ export function emit(options: EmitOptions, schema: Schema, type: EmitType): stri
   options = {
     ...{
       padding: "",
-      mode: "js",
-      target: "browser",
     },
     ...options,
   };
 
   return renderToString(
     jsCode(
+      options.jsOptions,
       scope({
         type: ARGUMENTS,
         symbols: [
@@ -59,8 +58,6 @@ export function emit(options: EmitOptions, schema: Schema, type: EmitType): stri
               [BUNDLE]: options.bundle,
               [SCHEMA]: schema,
               [PADDING]: options.padding,
-              [TYPED]: options.mode === "ts",
-              [TARGET]: options.target,
             },
             line(),
             emitByType(type),

@@ -41,6 +41,8 @@ function emitTypeFromString(type: string): EmitType {
       return EmitType.Unpck;
     case "tagged-readers":
       return EmitType.TaggedReaders;
+    case "properties":
+      return EmitType.Properties;
     case "constructor":
       return EmitType.Constructor;
   }

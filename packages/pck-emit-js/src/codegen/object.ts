@@ -3,6 +3,12 @@ import { line, indent, scope, declSymbol } from "osh-code";
 import { ts } from "osh-code-js";
 import { FIELD_VALUES, getSchema, fieldValue, tsFieldType } from "./utils";
 
+export function ObjectProperties(ctx: Context): TChildren {
+  const schema = getSchema(ctx);
+
+  return schema.fields.map((f) => line(f.name, ": ", tsFieldType(f), ";"));
+}
+
 export function ObjectConstructor(ctx: Context): TChildren {
   const schema = getSchema(ctx);
 
@@ -19,6 +25,10 @@ export function ObjectConstructor(ctx: Context): TChildren {
       line("}"),
     ],
   });
+}
+
+export function objectProperties(): ComponentNode<undefined> {
+  return component(ObjectProperties);
 }
 
 export function objectConstructor(): ComponentNode<undefined> {

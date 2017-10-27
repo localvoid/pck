@@ -1,17 +1,17 @@
 import { Context, ComponentNode, TChildren, component } from "osh";
 import { line } from "osh-code";
 import { checkBitSetBoolean } from "./checks";
-import { getSchema, call, pck, arg, fieldName } from "../utils";
+import { getSchema, call, pck, arg, fieldName, bitSet } from "../utils";
 
 export function DeserializeBitSet(ctx: Context): TChildren {
   const schema = getSchema(ctx);
 
   return [
     bitSetSizes(schema.bitSetSize()).map((s, i) => (
-      line(`const __bitSet${i} = `, call(pck(`readU${s * 8}`), [arg("reader")]), ";")),
+      line("const ", bitSet(i), " = ", call(pck(`readU${s * 8}`), [arg("reader")]), ";")),
     ),
     schema.hasBooleanFields() ?
-      schema.booleanFields.map((f) => line("const ", fieldName(f), " = ", checkBitSetBoolean(f), ";")) :
+      schema.booleanFields.map((f) => line("const ", fieldName(f), " = ", checkBitSetBoolean(schema, f), ";")) :
       null,
   ];
 }
@@ -30,7 +30,7 @@ function bitSetMaxSize(size: number): number {
   return 1;
 }
 
-function bitSetSizes(size: number): number[] {
+export function bitSetSizes(size: number): number[] {
   const r = [];
   while (size > 0) {
     const n = bitSetMaxSize(size);

@@ -1,10 +1,10 @@
 import { Context, ComponentNode, TChildren, component } from "osh";
 import { Field } from "pck";
-import { line, indent, docComment } from "osh-code";
-import { deserializeBitSet } from "./bitset";
+import { line, indent, docComment, scope, declSymbol } from "osh-code";
+import { deserializeBitSet, bitSetSizes } from "./bitset";
 import { deserializeField } from "./field";
 import { checkBitSetOptional } from "./checks";
-import { arg, type, pck, getSchema, schemaType, fieldName } from "../utils";
+import { BITSETS, arg, type, pck, getSchema, schemaType, fieldName } from "../utils";
 
 function defaultValue(f: Field) {
   if (f.isOmitNull()) {
@@ -28,28 +28,32 @@ function defaultValue(f: Field) {
 export function DeserializeBody(ctx: Context): TChildren {
   const schema = getSchema(ctx);
 
-  return [
-    schema.hasBitSet() ? deserializeBitSet() : null,
-    schema.hasRegularFields() ?
-      [
-        schema.sortedFields.map((f) => f.type.isBoolean() ?
-          null :
-          [
-            line(
-              "const ", fieldName(f), " = ",
-              f.isOptional() ?
-                [checkBitSetOptional(f), " ? ", deserializeField(f), " : ", defaultValue(f)] :
-                deserializeField(f),
-              ";",
-            ),
-          ],
-        ),
-      ] : null,
-    line(),
-    line("return new ", schemaType(schema), "("),
-    indent(schema.fields.map((f) => line(fieldName(f), ","))),
-    line(");"),
-  ];
+  return scope({
+    type: BITSETS,
+    symbols: bitSetSizes(schema.bitSetSize()).map((s, i) => declSymbol(i, `bitSet${0}`)),
+    children: [
+      schema.hasBitSet() ? deserializeBitSet() : null,
+      schema.hasRegularFields() ?
+        [
+          schema.sortedFields.map((f) => f.type.isBoolean() ?
+            null :
+            [
+              line(
+                "const ", fieldName(f), " = ",
+                f.isOptional() ?
+                  [checkBitSetOptional(schema, f), " ? ", deserializeField(f), " : ", defaultValue(f)] :
+                  deserializeField(f),
+                ";",
+              ),
+            ],
+          ),
+        ] : null,
+      line(),
+      line("return new ", schemaType(schema), "("),
+      indent(schema.fields.map((f) => line(fieldName(f), ","))),
+      line(");"),
+    ],
+  });
 }
 
 export function deserializeBody(): ComponentNode<undefined> {

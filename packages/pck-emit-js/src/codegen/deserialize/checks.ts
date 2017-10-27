@@ -1,11 +1,19 @@
 import { TChildren } from "osh";
-import { Field } from "pck";
-import { bitSetOptionalIndex, bitSetOptionalPosition, bitSetBooleanIndex, bitSetBooleanPosition } from "../utils";
+import { Schema, Field } from "pck";
+import {
+  bitSetOptionalIndex, bitSetOptionalPosition, bitSetBooleanIndex, bitSetBooleanPosition, bitSet,
+} from "../utils";
 
-export function checkBitSetOptional(f: Field): TChildren {
-  return ["(__bitSet", bitSetOptionalIndex(f), " & (1 << ", bitSetOptionalPosition(f), ")) !== 0"];
+export function checkBitSetOptional(schema: Schema, field: Field<any>): TChildren {
+  return [
+    "(", bitSet(bitSetOptionalIndex(schema, field)),
+    " & (1 << ", bitSetOptionalPosition(schema, field), ")) !== 0",
+  ];
 }
 
-export function checkBitSetBoolean(f: Field): TChildren {
-  return ["(__bitSet", bitSetBooleanIndex(f), " & (1 << ", bitSetBooleanPosition(f), ")) !== 0"];
+export function checkBitSetBoolean(schema: Schema, field: Field<any>): TChildren {
+  return [
+    "(", bitSet(bitSetBooleanIndex(schema, field)),
+    " & (1 << ", bitSetBooleanPosition(schema, field), ")) !== 0",
+  ];
 }

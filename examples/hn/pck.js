@@ -51,15 +51,15 @@ class Item {
  * @returns Deserialized object.
  */
 function unpckItem(reader) {
-  const __bitSet0 = pck.readU8(reader);
+  const bitSet0 = pck.readU8(reader);
   const time = pck.readU32(reader);
   const descendants = pck.readUVar(reader);
   const id = pck.readUVar(reader);
   const score = pck.readUVar(reader);
   const by = pck.readUtf8(reader);
   const title = pck.readUtf8(reader);
-  const url = (__bitSet0 & (1 << 1)) !== 0 ? pck.readUtf8(reader) : "";
-  const kids = (__bitSet0 & (1 << 0)) !== 0 ? pck.readArray(reader, pck.readUVar) : null;
+  const url = (bitSet0 & (1 << 1)) !== 0 ? pck.readUtf8(reader) : "";
+  const kids = (bitSet0 & (1 << 0)) !== 0 ? pck.readArray(reader, pck.readUVar) : null;
 
   return new Item(
     by,

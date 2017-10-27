@@ -24,36 +24,20 @@ export function schemaType(schema: Schema) {
   return component(SchemaType, schema);
 }
 
-export function BitSetOptionalIndex(ctx: Context, field: Field) {
-  return getSchema(ctx).optionalBitSetIndex(field).index;
+export function bitSetOptionalIndex(schema: Schema, field: Field<any>) {
+  return schema.optionalBitSetIndex(field).index;
 }
 
-export function bitSetOptionalIndex(f: Field) {
-  return component(BitSetOptionalIndex, f);
+export function bitSetOptionalPosition(schema: Schema, field: Field<any>) {
+  return schema.optionalBitSetIndex(field).position;
 }
 
-export function BitSetOptionalPosition(ctx: Context, field: Field) {
-  return getSchema(ctx).optionalBitSetIndex(field).position;
+export function bitSetBooleanIndex(schema: Schema, field: Field<any>) {
+  return schema.booleanBitSetIndex(field).index;
 }
 
-export function bitSetOptionalPosition(f: Field) {
-  return component(BitSetOptionalPosition, f);
-}
-
-export function BitSetBooleanIndex(ctx: Context, field: Field) {
-  return getSchema(ctx).booleanBitSetIndex(field).index;
-}
-
-export function bitSetBooleanIndex(f: Field) {
-  return component(BitSetBooleanIndex, f);
-}
-
-export function BitSetBooleanPosition(ctx: Context, field: Field) {
-  return getSchema(ctx).booleanBitSetIndex(field).position;
-}
-
-export function bitSetBooleanPosition(f: Field) {
-  return component(BitSetBooleanPosition, f);
+export function bitSetBooleanPosition(schema: Schema, field: Field<any>) {
+  return schema.booleanBitSetIndex(field).position;
 }
 
 export function fieldName(f: Field) {

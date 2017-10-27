@@ -1,8 +1,7 @@
 import { Context, ComponentNode, TChildren, component } from "osh";
 import { line, indent } from "osh-code";
 import { serializeField } from "./field";
-import { optional } from "./optional";
-import { getSchema } from "../utils";
+import { getSchema, optional } from "../utils";
 
 export function SerializeFields(ctx: Context): TChildren {
   const schema = getSchema(ctx);

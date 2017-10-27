@@ -1,14 +1,14 @@
 import { Context, ComponentNode, TChildren, component } from "osh";
 import { line } from "osh-code";
 import { checkBitSetBoolean } from "./checks";
-import { getSchema, call, pck, v, fieldName } from "../utils";
+import { getSchema, call, pck, arg, fieldName } from "../utils";
 
 export function DeserializeBitSet(ctx: Context): TChildren {
   const schema = getSchema(ctx);
 
   return [
     bitSetSizes(schema.bitSetSize()).map((s, i) => (
-      line(`const __bitSet${i} = `, call(pck(`readU${s * 8}`), [v("reader")]), ";")),
+      line(`const __bitSet${i} = `, call(pck(`readU${s * 8}`), [arg("reader")]), ";")),
     ),
     schema.hasBooleanFields() ?
       schema.booleanFields.map((f) => line("const ", fieldName(f), " = ", checkBitSetBoolean(f), ";")) :

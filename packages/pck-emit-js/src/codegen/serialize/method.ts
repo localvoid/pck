@@ -1,7 +1,7 @@
-import { Context, ComponentNode, TChildren, component } from "osh";
-import { line, indent, docComment } from "osh-code";
+import { Context, ComponentNode, TChildren, component, capitalizeTransformer } from "osh";
+import { line, indent, docComment, scope, declSymbol } from "osh-code";
 import { writeUVar } from "./writers";
-import { v, type, pck, getBundle, getSchema } from "../utils";
+import { OPTIONAL, arg, type, pck, getBundle, getSchema } from "../utils";
 import { serializeBitSet } from "./bitset";
 import { serializeFields } from "./fields";
 import { optionalChecks } from "./optional";
@@ -15,12 +15,16 @@ export function SerializeMethodBody(ctx: Context): TChildren {
   const schema = getSchema(ctx);
   const tag = bundle.getSchemaTag(schema);
 
-  return [
-    tag !== void 0 ? serializeTag(tag) : null,
-    schema.hasOptionalFields() ? optionalChecks() : null,
-    schema.hasBitSet() ? serializeBitSet() : null,
-    serializeFields(),
-  ];
+  return scope({
+    type: OPTIONAL,
+    symbols: schema.optionalFields.map((f) => declSymbol(f, `optional${capitalizeTransformer(f.name)}`)),
+    children: [
+      tag !== void 0 ? serializeTag(tag) : null,
+      schema.hasOptionalFields() ? optionalChecks() : null,
+      schema.hasBitSet() ? serializeBitSet() : null,
+      serializeFields(),
+    ],
+  });
 }
 
 export function serializeMethodBody(): ComponentNode<undefined> {
@@ -37,16 +41,16 @@ export function SerializeMethod(ctx: Context): TChildren {
     docComment(
       line("pck is an automatically generated serialization method."),
       line(),
-      line("@param ", v("writer"), " Writer object."),
+      line("@param ", arg("writer"), " Writer object."),
       shouldSupportTagging ?
-        line("@param ", v("isTagged"), " Tagged.") :
+        line("@param ", arg("isTagged"), " Tagged.") :
         null,
     ),
     line(
       "pck", "(",
-      v("writer"), type(": ", pck("Writer")),
+      arg("writer"), type(": ", pck("Writer")),
       shouldSupportTagging ?
-        [", ", v("isTagged"), type("?: boolean")] :
+        [", ", arg("isTagged"), type("?: boolean")] :
         null,
       ")", type(": void"), " {",
     ),

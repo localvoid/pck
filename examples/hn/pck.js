@@ -50,7 +50,7 @@ class Item {
  * @param reader Read buffer.
  * @returns Deserialized object.
  */
-export function unpckItem(reader) {
+function unpckItem(reader) {
   const __bitSet0 = pck.readU8(reader);
   const time = pck.readU32(reader);
   const descendants = pck.readUVar(reader);

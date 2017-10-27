@@ -4,7 +4,7 @@ import { line, indent, docComment } from "osh-code";
 import { deserializeBitSet } from "./bitset";
 import { deserializeField } from "./field";
 import { checkBitSetOptional } from "./checks";
-import { v, type, pck, getSchema, schemaType, fieldName } from "../utils";
+import { arg, type, pck, getSchema, schemaType, fieldName } from "../utils";
 
 function defaultValue(f: Field) {
   if (f.isOmitNull()) {
@@ -63,12 +63,12 @@ export function DeserializeFunction(ctx: Context): TChildren {
     docComment(
       line("unpck", schemaType(schema), " is an automatically generated deserialization function."),
       line(),
-      line("@param ", v("reader"), " Read buffer."),
+      line("@param ", arg("reader"), " Read buffer."),
       line("@returns Deserialized object."),
     ),
     line(
       "export function unpck", schemaType(schema), "(",
-      v("reader"), type(": ", pck("ReadBuffer")),
+      arg("reader"), type(": ", pck("ReadBuffer")),
       ")", type(": ", schemaType(schema)), " {",
     ),
     indent(deserializeBody()),

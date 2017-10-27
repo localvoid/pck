@@ -1,7 +1,6 @@
 import { Context, ComponentNode, TChildren, component } from "osh";
 import { line, indent } from "osh-code";
-import { optional } from "./optional";
-import { getSchema, pck, v, isTrue, getter } from "../utils";
+import { getSchema, pck, arg, optional, isTrue, getter } from "../utils";
 
 export function SerializeBitSet(ctx: Context): TChildren {
   const schema = getSchema(ctx);
@@ -9,7 +8,7 @@ export function SerializeBitSet(ctx: Context): TChildren {
   return [
     line(pck("writeBitSet"), "("),
     indent(
-      line(v("writer"), ","),
+      line(arg("writer"), ","),
       schema.optionalFields.map((f) => line(optional(f), ",")),
       schema.booleanFields.map((f) => line(isTrue(getter(f)), ",")),
     ),

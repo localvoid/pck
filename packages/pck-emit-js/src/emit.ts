@@ -1,7 +1,8 @@
 import { Context, renderToString, context } from "osh";
-import { PADDING, jsCode, line, declSymbol, getSymbol } from "osh-code";
+import { PADDING, line, scope, declSymbol, getSymbol } from "osh-code";
+import { jsCode } from "osh-code-js";
 import { Bundle, Schema } from "pck";
-import { BUNDLE, SCHEMA, TYPED, TARGET, moduleResolvers, declareSymbols, VARIABLES } from "./codegen/utils";
+import { BUNDLE, SCHEMA, TYPED, TARGET, ARGUMENTS, MODULES, moduleResolvers } from "./codegen/utils";
 import { serializeMethod } from "./codegen/serialize";
 import { deserializeFunction, taggedReaders } from "./codegen/deserialize";
 
@@ -42,18 +43,17 @@ export function emit(options: EmitOptions, schema: Schema, type: EmitType): stri
 
   return renderToString(
     jsCode(
-      moduleResolvers(
-        {
-          "pck": resolvePckSymbol,
-        },
-        declareSymbols(
-          VARIABLES,
-          [
-            declSymbol("pck", "pck"),
-            declSymbol("writer", "writer"),
-            declSymbol("reader", "reader"),
-            declSymbol("isTagged", "isTagged"),
-          ],
+      scope({
+        type: ARGUMENTS,
+        symbols: [
+          declSymbol("writer", "writer"),
+          declSymbol("reader", "reader"),
+          declSymbol("isTagged", "isTagged"),
+        ],
+        children: moduleResolvers(
+          {
+            "pck": resolvePckSymbol,
+          },
           context(
             {
               [BUNDLE]: options.bundle,
@@ -66,11 +66,11 @@ export function emit(options: EmitOptions, schema: Schema, type: EmitType): stri
             emitByType(type),
           ),
         ),
-      ),
+      }),
     ),
   );
 }
 
 function resolvePckSymbol(symbol: string, ctx: Context): string {
-  return `${getSymbol(ctx, VARIABLES, "pck")}.${symbol}`;
+  return `${getSymbol(ctx, MODULES, "pck")}.${symbol}`;
 }

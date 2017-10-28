@@ -34,7 +34,10 @@ export function ObjectClass(ctx: Context): TChildren {
   const jsOpts = jsCodeOptions(ctx);
 
   return [
-    line("export class ", schemaName(schema), " {"),
+    line(
+      jsOpts.module === "es2015" ? "export " : null,
+      "class ", schemaName(schema), " {",
+    ),
     indent(
       jsOpts.lang === "ts" ? [objectProperties(), line()] : null,
       objectConstructor(),

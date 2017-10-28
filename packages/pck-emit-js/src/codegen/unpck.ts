@@ -1,7 +1,7 @@
 import { Context, ComponentNode, TChildren, component } from "osh";
 import { Schema, Field, Type } from "pck";
 import { line, indent, docComment, scope, declSymbol } from "osh-code";
-import { ts } from "osh-code-js";
+import { jsCodeOptions, ts } from "osh-code-js";
 import {
   ARGUMENTS, BIT_SETS, FIELD_VALUES, arg, pck, getSchema, schemaType, fieldValue, bitSet, call,
   bitSetOptionalIndex, bitSetOptionalPosition, bitSetBooleanIndex, bitSetBooleanPosition,
@@ -11,6 +11,7 @@ const READER = arg("reader");
 
 export function UnpckFunction(ctx: Context): TChildren {
   const schema = getSchema(ctx);
+  const jsOpts = jsCodeOptions(ctx);
 
   return scope({
     type: ARGUMENTS,
@@ -25,7 +26,8 @@ export function UnpckFunction(ctx: Context): TChildren {
         line("@returns Deserialized object."),
       ),
       line(
-        "export function unpck", schemaType(schema), "(",
+        jsOpts.module === "es2015" ? "export " : null,
+        "function unpck", schemaType(schema), "(",
         READER, ts(": ", pck("ReadBuffer")),
         ")", ts(": ", schemaType(schema)), " {",
       ),

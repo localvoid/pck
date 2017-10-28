@@ -11,6 +11,11 @@ const Item = pck.schema(
   pck.omitEmpty(pck.utf8("url")),
 );
 
+const TopStories = pck.schema(
+  pck.array("items", pck.REF(Item)),
+);
+
 module.exports = pck.bundle([
   pck.importSchema("Item", Item),
+  pck.importSchema("TopStories", TopStories),
 ]);

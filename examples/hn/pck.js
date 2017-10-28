@@ -81,7 +81,43 @@ function unpckItem(reader) {
 }
 // pck:end
 
+// pck:assign({ "schema": "TopStories" })
+// pck:emit("class")
+class TopStories {
+  constructor(
+    items,
+  ) {
+    this.items = items;
+  }
+
+  /**
+   * pck is an automatically generated serialization method.
+   *
+   * @param writer Writer object.
+   */
+  pck(writer) {
+    pck.writeArray(writer, this.items, pck.writeObject);
+  }
+}
+
+/**
+ * unpckTopStories is an automatically generated deserialization function.
+ *
+ * @param reader Read buffer.
+ * @returns Deserialized object.
+ */
+function unpckTopStories(reader) {
+  const items = pck.readArray(reader, unpckItem);
+
+  return new TopStories(
+    items,
+  );
+}
+// pck:end
+
 module.exports = {
   Item,
   unpckItem,
+  TopStories,
+  unpckTopStories,
 };

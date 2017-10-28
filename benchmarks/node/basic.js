@@ -18,6 +18,28 @@ const JSON_DATA = jsonEncode();
 console.log(`PCK Buffer Size: ${PCK_BROWSER.length}`);
 console.log(`JSON Buffer Size: ${JSON_DATA.length}`);
 
+let start;
+console.log("JSON");
+for (let i = 0; i < 10; i++) {
+  start = process.hrtime();
+  jsonDecode();
+  console.log(process.hrtime(start));
+}
+
+console.log("PCK:browser");
+for (let i = 0; i < 10; i++) {
+  start = process.hrtime();
+  pckBrowserDecode();
+  console.log(process.hrtime(start));
+}
+
+console.log("PCK:node");
+for (let i = 0; i < 10; i++) {
+  start = process.hrtime();
+  pckNodeDecode();
+  console.log(process.hrtime(start));
+}
+
 function browserWriteData(w, v) {
   pckBrowser.writeBitSet(w, v.jumping);
   pckBrowser.writeIVar(w, v.health);

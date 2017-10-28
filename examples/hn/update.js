@@ -26,13 +26,10 @@ async function loadData() {
     stories.push(JSON.parse(await get(itemUrl(id))));
   }
 
-  return { topStories, stories };
+  return stories;
 }
 
 loadData()
-  .then((d) => {
-    fs.writeFileSync("./data/top_stories.json", JSON.stringify(d.topStories));
-    for (const story of d.stories) {
-      fs.writeFileSync(`./data/items/${story.id}.json`, JSON.stringify(story));
-    }
+  .then((topStories) => {
+    fs.writeFileSync("./data/top_stories.json", JSON.stringify(topStories));
   });

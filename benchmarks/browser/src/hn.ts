@@ -38,7 +38,7 @@ export class Item {
    * @param writer Writer object.
    */
   pck(writer: pck.Writer): void {
-    const optionalKids = (((this.kids) !== null) && ((this.kids).length > 0));
+    const optionalKids = (((this.kids!) !== null) && ((this.kids!).length > 0));
     const optionalUrl = ((this.url) !== "");
     pck.writeBitSet(
       writer,
@@ -161,8 +161,16 @@ export function jsonEncodeHN() {
   return JSON.stringify(stories);
 }
 
+function fromJSON(data: any) {
+  const items = [];
+  for (const item of data.items) {
+    items.push(createItem(item));
+  }
+  return new TopStories(items);
+}
+
 export function jsonDecodeHN() {
-  return JSON.parse(rawStories);
+  return fromJSON(JSON.parse(rawStories));
 }
 
 export function hnReady(cb: () => void): void {
@@ -174,16 +182,9 @@ fetch("top_stories.json")
     return response.text();
   })
   .then((raw) => {
-    stories = {
-      items: JSON.parse(raw),
-    };
+    stories = { items: JSON.parse(raw).slice(0, 10) };
     rawStories = jsonEncodeHN();
-
-    const items = [];
-    for (const item of stories.items) {
-      items.push(createItem(item));
-    }
-    pckStories = new TopStories(items);
+    pckStories = fromJSON(stories);
     rawPckStories = pckEncodeHN();
     ready();
   });

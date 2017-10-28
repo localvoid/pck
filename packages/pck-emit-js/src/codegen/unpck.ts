@@ -320,7 +320,7 @@ function arrayReaderFromType(t: Type): TChildren {
     }
   }
   if (t.isRef()) {
-    return pck("readObject");
+    return ["unpck", schemaType(t.props)];
   }
   if (t.isUnion()) {
     return pck("readTaggedObject");

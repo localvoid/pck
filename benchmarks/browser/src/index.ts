@@ -11,6 +11,7 @@ import {
   jsonEncodeUTF32, jsonEncodeUTF8,
 } from "./string";
 import { DECODE_STRING_EXPERIMENTS, ENCODE_STRING_EXPERIMENTS } from "./experiments/string";
+import { pckDecodeHN, pckEncodeHN, jsonDecodeHN, jsonEncodeHN, hnReady } from "./hn";
 import * as __pck from "pck-browser";
 
 declare global {
@@ -86,9 +87,28 @@ add(
   DECODE_STRING_EXPERIMENTS.map((x) => x.fn),
 );
 
+add("encodeHN", ["PCK", "JSON"], [pckEncodeHN, jsonEncodeHN]);
+add("decodeHN", ["PCK", "JSON"], [pckDecodeHN, jsonDecodeHN]);
+
 if (__pck.utf8Decoder !== null) {
   printResult("TextDecoder detected");
 }
 if (__pck.utf8Encoder !== null) {
   printResult("TextEncoder detected");
 }
+
+hnReady(() => {
+  printResult("HN Ready");
+  let start;
+  for (let i = 0; i < 3; i++) {
+    start = performance.now();
+    pckDecodeHN();
+    printResult(`pck:decode:hn: ${performance.now() - start}`);
+  }
+
+  for (let i = 0; i < 3; i++) {
+    start = performance.now();
+    jsonDecodeHN();
+    printResult(`json:decode:hn: ${performance.now() - start}`);
+  }
+});

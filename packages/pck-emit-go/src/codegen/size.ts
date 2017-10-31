@@ -1,29 +1,26 @@
-import { Context, TChildren } from "osh";
+import { TChildren } from "osh";
+import { intersperse } from "osh-text";
 import { line, indent } from "osh-code";
-import { Field } from "pck";
-import { getSchema, self, structName } from "../utils";
+import { Field, Schema } from "pck";
+import { enterSchema, declArgs, self, structName, internal } from "./utils";
 
-function callMethod(obj: TChildren, method: TChildren, args?: TChildren): TChildren {
+function callMethod(obj: TChildren, method: TChildren, args?: TChildren[]): TChildren {
   if (args === void 0) {
     return [obj, ".", method, "()"];
   }
-  return [obj, ".", method, "(", args, ")"];
+  return [obj, ".", method, "(", intersperse(args, ","), ")"];
 }
 
-function sym(s: TChildren): TChildren {
-  return s;
-}
-
-function len(children: TChildren): TChildren {
+function len(...children: TChildren[]): TChildren {
   return ["len(", children, ")"];
 }
 
-function sizeIVar(children: TChildren): TChildren {
-  return [sym("sizeIVar"), "(", children, ")"];
+function sizeIVar(...children: TChildren[]): TChildren {
+  return [internal("sizeIVar"), "(", children, ")"];
 }
 
-function sizeUVar(children: TChildren): TChildren {
-  return [sym("sizeIVar"), "(", children, ")"];
+function sizeUVar(...children: TChildren[]): TChildren {
+  return [internal("sizeUVar"), "(", children, ")"];
 }
 
 function fieldSize(field: Field<any>): TChildren {
@@ -83,25 +80,27 @@ function incFieldSize(field: Field<any>): TChildren {
   return null;
 }
 
-export function SizeMethod(ctx: Context): TChildren {
-  const schema = getSchema(ctx);
-
-  if (!schema.hasDynamicSize()) {
-    return [
-      line("func (", self(), " *", structName(), ") Size() int {"),
-      indent(
-        line("return ", schema.size),
-      ),
-      line("}"),
-    ];
-  }
-
-  return [
-    line("func (", self(), " *", structName(), ") Size() (n int) {"),
-    indent(
-      line("n = ", schema.size),
-      schema.sortedFields.map(incFieldSize),
+export function sizeMethod(schema: Schema): TChildren {
+  return enterSchema(
+    schema,
+    declArgs(
+      ["self"],
+      schema.hasDynamicSize() ?
+        [
+          line("func (", self(), " *", structName(), ") Size() (n int) {"),
+          indent(
+            line("n = ", schema.size),
+            schema.sortedFields.map(incFieldSize),
+          ),
+          line("}"),
+        ] :
+        [
+          line("func (", self(), " *", structName(), ") Size() int {"),
+          indent(
+            line("return ", schema.size),
+          ),
+          line("}"),
+        ],
     ),
-    line("}"),
-  ];
+  );
 }

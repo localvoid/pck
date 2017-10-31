@@ -2485,6 +2485,10 @@ osenv@^0.1.4:
     os-homedir "^1.0.0"
     os-tmpdir "^1.0.0"
 
+osh-code-go@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/osh-code-go/-/osh-code-go-0.3.0.tgz#3986638848b7605e4f4ffff3563883908661f98c"
+
 osh-code-js@^0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/osh-code-js/-/osh-code-js-0.3.0.tgz#70d9a8b504be4caeb126c8f0d3e12ccfd37300a6"

@@ -1,5 +1,7 @@
 import { createDirectiveMatcher, inject as _inject } from "incode";
-import { EmitType, EmitOptions, emit } from "./emit";
+import { Bundle, Schema } from "pck";
+import { sizeMethod } from "./codegen/size";
+import { EmitOptions, emit } from "./emit";
 
 interface InjectableData {
   readonly schema: string;
@@ -15,32 +17,39 @@ export function inject(options: EmitOptions, text: string): string {
     DIRECTIVE_MATCHER,
     (region) => {
       const data = region.data as InjectableData;
-
-      const schemaName = data.schema;
-      if (typeof schemaName !== "string") {
-        throw new Error(`Invalid schema name type: ${typeof schemaName}`);
+      let children;
+      switch (region.type) {
+        case "size":
+          children = sizeMethod(extractSchema(data, bundle));
+          break;
       }
 
-      const schema = bundle.findSchemaByName(schemaName);
-      if (schema === void 0) {
-        throw new Error(`Unable to find schema with a name "${schemaName}"`);
-      }
-
-      const type = emitTypeFromString(region.type);
-
-      return emit({ ...options, ...{ padding: region.padding } }, schema, type);
+      return emit(
+        {
+          ...options,
+          ...{
+            padding: region.padding,
+          },
+        },
+        children,
+      );
     },
   );
 }
 
-function emitTypeFromString(type: string): EmitType {
-  switch (type) {
-    case "size":
-      return EmitType.Size;
-    case "pck":
-      return EmitType.Pck;
-    case "unpck":
-      return EmitType.Unpck;
+function extractSchema(data: InjectableData, bundle: Bundle): Schema {
+  const schemaName: string | undefined = data.schema;
+  let schema;
+  if (schemaName === void 0) {
+    throw new Error(`Unable to find schema.`);
   }
-  throw new Error(`Invalid emit type "${type}"`);
+  if (typeof schemaName !== "string") {
+    throw new Error(`Invalid schema name. Invalid type: ${typeof schemaName}.`);
+  }
+  schema = bundle.findSchemaByName(schemaName);
+  if (schema === void 0) {
+    throw new Error(`Unable to find schema with a name "${schemaName}".`);
+  }
+
+  return schema;
 }

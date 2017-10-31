@@ -1,9 +1,10 @@
 import { TChildren } from "osh";
 import { line, indent } from "osh-code";
+import { internal } from "./utils";
 
-export function writeU8(): TChildren {
+export function putU8Function(): TChildren {
   return [
-    line("putU8(buf []byte, offset int, v uint8) int {"),
+    line("func ", internal("putU8"), "(buf []byte, offset int, v uint8) int {"),
     indent(
       line("buf[offset] = uint8(v)"),
       line("return offset + 1"),
@@ -12,9 +13,9 @@ export function writeU8(): TChildren {
   ];
 }
 
-export function writeU16(): TChildren {
+export function putU16Function(): TChildren {
   return [
-    line("putU16(buf []byte, offset int, v uint16) int {"),
+    line("func ", internal("putU16"), "(buf []byte, offset int, v uint16) int {"),
     indent(
       line("buf[offset] = uint8(v)"),
       line("buf[offset + 1] = uint8(v >> 8)"),
@@ -24,9 +25,9 @@ export function writeU16(): TChildren {
   ];
 }
 
-export function writeU32(): TChildren {
+export function putU32Function(): TChildren {
   return [
-    line("putU32(buf []byte, offset int, v uint32) int {"),
+    line("func ", internal("putU32"), "(buf []byte, offset int, v uint32) int {"),
     indent(
       line("buf[offset] = uint8(v)"),
       line("buf[offset + 1] = uint8(v >> 8)"),
@@ -38,9 +39,9 @@ export function writeU32(): TChildren {
   ];
 }
 
-export function writeU64(): TChildren {
+export function putU64Function(): TChildren {
   return [
-    line("putU64(buf []byte, offset int, v uint64) int {"),
+    line("func ", internal("putU64"), "(buf []byte, offset int, v uint64) int {"),
     indent(
       line("buf[offset] = uint8(v)"),
       line("buf[offset + 1] = uint8(v >> 8)"),
@@ -56,9 +57,9 @@ export function writeU64(): TChildren {
   ];
 }
 
-export function writeUVar(): TChildren {
+export function putUVarFunction(): TChildren {
   return [
-    line("putUVar(buf []byte, offset int, v uint32) int {"),
+    line("func ", internal("putUVar"), "(buf []byte, offset int, v uint32) int {"),
     indent(
       line("for v >= 1<<7 {"),
       indent(
@@ -69,6 +70,36 @@ export function writeUVar(): TChildren {
       line("}"),
       line("buf[offset] = uint8(v)"),
       line("return offset + 1"),
+    ),
+    line("}"),
+  ];
+}
+
+export function sizeUVarFunction(): TChildren {
+  return [
+    line("func ", internal("sizeUVar"), "(x uint64) (n int) {"),
+    indent(
+      line("for {"),
+      indent(
+        line("n++"),
+        line("x >>= 7"),
+        line("if x == 0 {"),
+        indent(
+          line("return"),
+        ),
+        line("}"),
+      ),
+      line("}"),
+    ),
+    line("}"),
+  ];
+}
+
+export function sizeIVarFunction(): TChildren {
+  return [
+    line("func ", internal("sizeIVar"), "(x uint64) int {"),
+    indent(
+      line("return sizeUVar(uint64((x << 1) ^ uint64((int64(x) >> 63))))"),
     ),
     line("}"),
   ];

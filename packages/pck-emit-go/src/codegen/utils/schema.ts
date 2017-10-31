@@ -1,11 +1,15 @@
+import { TNode, TChildren, Context, ComponentNode, context, component } from "osh";
 import { Schema, Field } from "pck";
-import { Context, component, ComponentNode } from "osh";
 import { getBundle } from "./bundle";
 
-export const SCHEMA = Symbol("Schema");
+const SCHEMA = Symbol("Schema");
 
 export function getSchema(ctx: Context): Schema {
   return ctx[SCHEMA];
+}
+
+export function enterSchema(schema: Schema, ...children: TChildren[]): TNode {
+  return context({ [SCHEMA]: schema }, ...children);
 }
 
 export function SchemaName(ctx: Context, schema: Schema) {

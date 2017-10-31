@@ -1,5 +1,5 @@
 import { TChildren } from "osh";
-import { v } from "./vars";
+import { arg } from "./symbols";
 
 export function structName(): TChildren {
   return "";
@@ -7,7 +7,7 @@ export function structName(): TChildren {
 
 export function self(property?: TChildren): TChildren {
   if (property === void 0) {
-    return v("self");
+    return arg("self");
   }
-  return [v("self"), ".", property];
+  return [arg("self"), ".", property];
 }

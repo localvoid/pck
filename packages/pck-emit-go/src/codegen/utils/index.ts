@@ -1,7 +1,8 @@
-export { VARS, V, v } from "./vars";
+export { declInternal, declArgs, internal, arg } from "./symbols";
 export { BUNDLE, getBundle } from "./bundle";
 export {
-  SCHEMA, getSchema, bitSetBooleanIndex, BitSetBooleanIndex, bitSetBooleanPosition, BitSetBooleanPosition,
+  getSchema, enterSchema,
+  bitSetBooleanIndex, BitSetBooleanIndex, bitSetBooleanPosition, BitSetBooleanPosition,
   BitSetOptionalIndex, bitSetOptionalIndex, BitSetOptionalPosition, bitSetOptionalPosition, fieldName,
   schemaName, SchemaName, schemaType, SchemaType,
 } from "./schema";

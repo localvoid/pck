@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "pck-benchmark-node",
+  "main": "basic.js",
+  "version": "0.1.0",
+  "description": "pck benchmark: node",
+  "files": [],
+  "scripts": {},
+  "dependencies": {},
+  "peerDependencies": {},
+  "devDependencies": {
+    "benchmark": "^2.1.4"
+  }
+}

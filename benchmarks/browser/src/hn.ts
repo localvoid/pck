@@ -182,7 +182,7 @@ fetch("top_stories.json")
     return response.text();
   })
   .then((raw) => {
-    stories = { items: JSON.parse(raw).slice(0, 10) };
+    stories = { items: JSON.parse(raw) };
     rawStories = jsonEncodeHN();
     pckStories = fromJSON(stories);
     rawPckStories = pckEncodeHN();

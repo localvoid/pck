@@ -1,30 +1,38 @@
-PCK is a binary format and a set of tools specifically designed for generating efficient serializers and deserializers
-in javascript.
-
-## Current Status
-
-**WORK IN PROGRESS**
-
-## Packages
-
-- `pck` Core data structures and helper functions for generating schemas.
-- `pck-emit-js` Emitter for Javascript/TypeScript (Browser/Node).
-- `pck-emit-go` Emitter for Go.
-- `pck-browser` Helper utilities for Javascript (Browser).
-- `pck-node` Helper utilities for Javascript (Node).
+PCK is a binary format and a set of tools specifically designed for generating efficient deserializers in javascript.
 
 ## Features
 
-- Javascript API for generating schemas (custom data query languages)
 - Binary format
 - Compact storage size
-- Efficient serialization and deserialization in javascript
-- Compact javascript serializers and deserializers that can immediately generate objects with appropriate types without
-any additional steps
+- Javascript as a language to describe schemas
+- Efficient and compact deserialization and serialization in javascript
+
+## Supported Programming Languages
+
+- Javascript ([pck-emit-js](https://npmjs.com/package/pck-emit-js))
+- Go ([pck-emit-go](https://npmjs.com/package/pck-emit-go))
+
+## Packages
+
+- [pck](https://npmjs.com/package/pck) Core data structures and helper functions for generating schemas.
+- [pck-emit-js](https://npmjs.com/package/pck-emit-js) Emitter for Javascript/TypeScript (Browser/Node).
+- [pck-emit-go](https://npmjs.com/package/pck-emit-go) Emitter for Go.
+- [pck-browser](https://npmjs.com/package/pck-browser) Helper utilities for Javascript (Browser).
+- [pck-node](https://npmjs.com/package/pck-node) Helper utilities for Javascript (Node).
 
 ## Benchmarks
 
-Basic benchmarks that encode and decode simple data structure:
+[pck-browser](https://npmjs.com/package/pck-browser) is optimized towards fast deserialization performance and compact
+seralization functions. It is possible to generate way much faster serializers, but it would require generating more
+code and in most situations it is isn't worth it.
+
+[pck-node](https://npmjs.com/package/pck-node) works in the same way as `pck-browser`, but Node.js implementation
+doesn't need to be super compact, so in the future, serialization functions will be optimized towards serialization
+performance.
+
+### Basic Data
+
+Basic benchmarks that serialize and deserialize simple data structure that doesn't contain any strings:
 
 ```js
 const DATA = {
@@ -35,7 +43,7 @@ const DATA = {
 };
 ```
 
-PCK schema:
+#### Schema
 
 ```js
 const Position = schema(ivar("x"), ivar("y"));
@@ -48,38 +56,91 @@ const Player = schema(
 );
 ```
 
-PCK storage size: 8 bytes
+#### Storage Size
 
-JSON storage size: 99 bytes
+- PCK: 8 bytes
+- JSON: 99 bytes
 
-In real applications, JSON deserialization should be even slower because it usually requires additional transformation
-step after `JSON.parse` invocation.
-
-### Node v8.7.0 (i5 4570k, Linux)
+#### Node v8.8.0 (i5 4570k, Linux)
 
 ```txt
-pck:encode x 2,644,196 ops/sec ±0.97% (90 runs sampled)
-pck:decode x 19,933,122 ops/sec ±0.36% (93 runs sampled)
-json:encode x 493,391 ops/sec ±1.09% (93 runs sampled)
-json:decode x 625,069 ops/sec ±0.41% (94 runs sampled)
+pck:encode x 3,424,757 ops/sec ±0.96% (94 runs sampled)
+pck:decode x 19,974,290 ops/sec ±0.22% (96 runs sampled)
+json:encode x 508,511 ops/sec ±1.45% (84 runs sampled)
+json:decode x 589,417 ops/sec ±0.27% (96 runs sampled)
 ```
 
-### Browser (iPad 2017, iOS 11.0.3)
+#### Browser (iPad 2017, iOS 11.0.3)
 
 ```txt
-pck:encode x 1,154,161 ops/sec ±18.16% (24 runs sampled)
-pck:decode x 28,425,812 ops/sec ±0.40% (64 runs sampled)
-json:encode x 629,975 ops/sec ±0.76% (60 runs sampled)
-json:decode x 617,485 ops/sec ±0.76% (60 runs sampled)
+pck:encode x 2,467,280 ops/sec ±4.99% (34 runs sampled)
+pck:decode x 27,437,271 ops/sec ±0.78% (64 runs sampled)
+json:encode x 626,667 ops/sec ±1.26% (61 runs sampled)
+json:decode x 617,130 ops/sec ±0.27% (44 runs sampled)
 ```
 
-### Browser (Nexus 5, Chrome 61)
+#### Browser (Nexus 5, Chrome 61)
 
 ```txt
-pck:encode x 384,855 ops/sec ±5.11% (54 runs sampled)
-pck:decode x 3,066,241 ops/sec ±4.17% (48 runs sampled)
-json:encode x 130,336 ops/sec ±3.17% (56 runs sampled)
-json:decode x 126,887 ops/sec ±3.34% (54 runs sampled)
+pck:encode x 514,284 ops/sec ±5.64% (52 runs sampled)
+pck:decode x 1,529,939 ops/sec ±4.71% (49 runs sampled)
+json:encode x 127,017 ops/sec ±3.10% (51 runs sampled)
+json:decode x 132,055 ops/sec ±0.71% (55 runs sampled)
+```
+
+### HackerNews Data
+
+This benchmark serializes and deserializes response from [HackerNews](https://news.ycombinator.com/) top stories API.
+
+#### Schema
+
+```js
+const Item = schema(
+  utf8("by"),
+  uvar("descendants"),
+  uvar("id"),
+  omitEmpty(omitNull(array("kids", UVAR))),
+  uvar("score"),
+  u32("time"),
+  utf8("title"),
+  omitEmpty(utf8("url")),
+);
+
+const TopStories = schema(
+  array("items", REF(Item)),
+);
+```
+
+#### Storage Size
+
+- PCK: 94815 bytes
+- JSON: 185885 bytes
+
+#### Node v8.8.0 (i5 4570k, Linux)
+
+```txt
+pck:encode x 970 ops/sec ±2.41% (91 runs sampled)
+pck:decode x 2,265 ops/sec ±0.67% (94 runs sampled)
+json:encode x 1,468 ops/sec ±0.21% (94 runs sampled)
+json:decode x 516 ops/sec ±2.86% (82 runs sampled)
+```
+
+#### Browser (iPad 2017, iOS 11.0.3)
+
+```txt
+pck:encode x 441 ops/sec ±1.00% (63 runs sampled)
+pck:decode x 1,176 ops/sec ±0.50% (62 runs sampled)
+json:encode x 941 ops/sec ±0.44% (62 runs sampled)
+json:decode x 587 ops/sec ±0.25% (63 runs sampled)
+```
+
+#### Browser (Nexus 5, Chrome 61)
+
+```txt
+pck:encode x 102 ops/sec ±6.51% (45 runs sampled)
+pck:decode x 511 ops/sec ±2.95% (54 runs sampled)
+json:encode x 238 ops/sec ±3.76% (51 runs sampled)
+json:decode x 71 ops/sec ±7.94% (44 runs sampled)
 ```
 
 ## Data Types
@@ -108,13 +169,8 @@ json:decode x 126,887 ops/sec ±3.34% (54 runs sampled)
 | REF(T)       | size(T) bytes        | Reference to an Object            |
 | UNION(T...)  | 1-5+size(...T) bytes | Tagged Union                      |
 
-## Object Structure
+## Field Flags
 
-```
-struct {
-  // bitSet is used to store flags for optional fields and boolean values
-  bitSet?: u8[N];
-  // Data
-  ...data;
-}
-```
+| Flag         | Storage Size         | Description                       |
+| ---          | ---                  | ---                               |
+| Optional     | 1 bit (bit store)    | OmitNull, OmitEmpty, OmitZero     |

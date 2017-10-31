@@ -31,8 +31,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "prepublish": "npm run dist",
-    "dist": "npm run dist:es2015 && npm run dist:cjs",
+    "dist": "rm -rf ./dist && npm run dist:es2015 && npm run dist:cjs",
     "dist:es2015": "../../node_modules/.bin/tsc --project ./tsconfig.build.es2015.json",
     "dist:cjs": "../../node_modules/.bin/tsc --project ./tsconfig.build.cjs.json",
     "lint": "../../node_modules/.bin/tslint --project ./tsconfig.json",
@@ -43,10 +42,12 @@
     "pck": "^0.1.0"
   },
   "dependencies": {
-    "incode": "^0.1.1",
+    "incode": "^0.2.1",
     "lodash": "^4.17.4",
-    "osh": "^0.1.1",
-    "osh-code": "^0.1.1"
+    "osh": "^0.4.0",
+    "osh-code": "^0.3.0",
+    "osh-code-js": "^0.3.0",
+    "osh-text": "^0.4.0"
   },
   "devDependencies": {
     "pck": "^0.1.0"

@@ -1,4 +1,5 @@
-import { Context, ComponentNode, TChildren, component, capitalizeTransformer } from "osh";
+import { Context, ComponentNode, TChildren, component } from "osh";
+import { capitalizeTransformer } from "osh-text";
 import { line, indent, docComment, scope, declSymbol } from "osh-code";
 import { ts } from "osh-code-js";
 import { Field, Type } from "pck";

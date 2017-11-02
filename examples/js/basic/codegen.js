@@ -1,6 +1,6 @@
 const fs = require("fs");
 const jsEmit = require("pck-emit-js");
-const bundle = require("./schema");
+const bundle = require("../../schemas/basic");
 
 const FILE = "./code.ts";
 

@@ -1,21 +1,17 @@
 const fs = require("fs");
 const osh = require("osh");
 const oshDebug = require("osh-debug");
-const jsEmit = require("pck-emit-js");
+const goEmit = require("pck-emit-go");
 const bundle = require("./schema");
 
-const FILE = "./pck.js";
+const FILE = "./code.go";
 
 try {
   fs.writeFileSync(
     FILE,
-    jsEmit.inject(
+    goEmit.inject(
       {
         bundle: bundle,
-        mode: "js",
-        jsOptions: {
-          module: "commonjs",
-        },
       },
       fs.readFileSync(FILE).toString(),
     ),

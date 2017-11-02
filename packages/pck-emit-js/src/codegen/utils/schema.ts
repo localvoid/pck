@@ -39,3 +39,12 @@ export function bitSetBooleanIndex(schema: Schema, field: Field<any>) {
 export function bitSetBooleanPosition(schema: Schema, field: Field<any>) {
   return schema.booleanBitSetIndex(field).position;
 }
+
+function bitSetOffset(index: number): number {
+  let offset = 0;
+  offset += Math.floor(index / 32);
+  index %= 32;
+  offset += Math.floor(index / 16);
+  index %= 16;
+  return offset + Math.floor(index / 8);
+}

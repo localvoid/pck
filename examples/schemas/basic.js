@@ -9,9 +9,7 @@ const User = pck.schema(
   pck.ref("attributes", Attributes),
 );
 
-const Bundle = pck.bundle([
+module.exports = pck.bundle([
   pck.importSchema("Attributes", Attributes),
   pck.importSchema("User", User),
 ]);
-
-module.exports = Bundle;

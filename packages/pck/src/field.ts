@@ -39,6 +39,14 @@ export class Field<T = null> {
   isOmitZero(): boolean {
     return (this.flags & FieldFlags.OmitZero) !== 0;
   }
+
+  isDynamic(): boolean {
+    return this.isOptional() || this.type.hasDynamicSize();
+  }
+
+  isFixed(): boolean {
+    return !this.isDynamic();
+  }
 }
 
 export function omitNull<T>(field: Field<T>): Field<T> {

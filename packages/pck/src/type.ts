@@ -129,11 +129,14 @@ const _REFS = new WeakMap<Schema, Type<Schema>>();
 export function REF(schema: Schema): Type<Schema> {
   let r = _REFS.get(schema);
   if (r === void 0) {
-    let size = schema.size;
-    let flags = 0;
+    let size;
+    let flags;
     if (schema.hasDynamicSize()) {
-      flags |= TypeFlags.DynamicSize;
+      flags = TypeFlags.DynamicSize;
       size = 0;
+    } else {
+      flags = 0;
+      size = schema.getFixedSize();
     }
     _REFS.set(schema, r = new Type(TypeId.Ref, size, flags, schema));
   }
@@ -149,8 +152,9 @@ export function ARRAY(type: Type<any>, length = 0): Type<ArrayTypeProps> {
   } else {
     if (type.hasDynamicSize()) {
       flags |= TypeFlags.DynamicSize;
+    } else {
+      size = type.size * length;
     }
-    size *= length;
   }
 
   return new Type<ArrayTypeProps>(TypeId.Array, size, flags, { length, type });

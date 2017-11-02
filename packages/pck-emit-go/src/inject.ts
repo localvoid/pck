@@ -1,6 +1,10 @@
 import { createDirectiveMatcher, inject as _inject } from "incode";
+import { line } from "osh-code";
 import { Bundle, Schema } from "pck";
+import { lib } from "./codegen/lib";
 import { sizeMethod } from "./codegen/size";
+import { pckMethod } from "./codegen/pck";
+import { unpckMethod } from "./codegen/unpck";
 import { EmitOptions, emit } from "./emit";
 
 interface InjectableData {
@@ -19,19 +23,42 @@ export function inject(options: EmitOptions, text: string): string {
       const data = region.data as InjectableData;
       let children;
       switch (region.type) {
+        case "lib":
+          children = lib();
+          break;
+        case "methods":
+          const schema = extractSchema(data, bundle);
+          children = [
+            sizeMethod(schema),
+            line(),
+            pckMethod(schema),
+            line(),
+            unpckMethod(schema),
+          ];
+          break;
         case "size":
           children = sizeMethod(extractSchema(data, bundle));
           break;
+        case "pck":
+          children = pckMethod(extractSchema(data, bundle));
+          break;
+        case "unpck":
+          children = unpckMethod(extractSchema(data, bundle));
+          break;
       }
 
-      return emit(
-        {
-          ...options,
-          ...{
-            padding: region.padding,
+      return (
+        "\n\n" +
+        emit(
+          {
+            ...options,
+            ...{
+              padding: region.padding,
+            },
           },
-        },
-        children,
+          children,
+        ) +
+        "\n"
       );
     },
   );

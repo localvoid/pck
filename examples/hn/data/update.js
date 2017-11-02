@@ -31,5 +31,5 @@ async function loadData() {
 
 loadData()
   .then((topStories) => {
-    fs.writeFileSync("./data/top_stories.json", JSON.stringify(topStories));
+    fs.writeFileSync("./top_stories.json", JSON.stringify(topStories));
   });

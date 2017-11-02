@@ -88,6 +88,15 @@ json:encode x 127,017 ops/sec ±3.10% (51 runs sampled)
 json:decode x 132,055 ops/sec ±0.71% (55 runs sampled)
 ```
 
+#### Go 1.9 (i5 4570k, Linux)
+
+```txt
+BenchmarkPckEncode-4    	200000000	        67.1 ns/op
+BenchmarkPckDecode-4    	100000000	       101 ns/op
+BenchmarkJsonEncode-4   	10000000	      1372 ns/op
+BenchmarkJsonDecode-4   	 3000000	      4815 ns/op
+```
+
 ### HackerNews Data
 
 This benchmark serializes and deserializes response from [HackerNews](https://news.ycombinator.com/) top stories API.

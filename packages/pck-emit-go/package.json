@@ -31,8 +31,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "dist": "rm -rf ./dist && npm run dist:es6 && npm run dist:cjs",
-    "dist:es6": "../../node_modules/.bin/tsc --project ./tsconfig.build.es6.json",
+    "dist": "rm -rf ./dist && npm run dist:es2015 && npm run dist:cjs",
+    "dist:es2015": "../../node_modules/.bin/tsc --project ./tsconfig.build.es2015.json",
     "dist:cjs": "../../node_modules/.bin/tsc --project ./tsconfig.build.cjs.json",
     "lint": "../../node_modules/.bin/tslint --project ./tsconfig.json",
     "test": "../../node_modules/.bin/mocha --reporter mocha-iko-reporter -r ../../node_modules/ts-node/register __tests__/index.ts",
@@ -45,7 +45,7 @@
     "incode": "^0.2.1",
     "lodash": "^4.17.4",
     "osh": "^0.4.0",
-    "osh-code": "^0.3.0",
+    "osh-code": "^0.4.0",
     "osh-code-go": "^0.3.0",
     "osh-text": "^0.4.0"
   },

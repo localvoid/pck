@@ -1,89 +1,118 @@
 import { TChildren } from "osh";
+import { intersperse } from "osh-text";
 import { line, indent } from "osh-code";
-import { internal } from "./utils";
+import {
+  declInternal, internal, callFunc,
+  castToUint8, castToUint16, castToUint32, castToUint64, castToInt16, castToInt32, castToInt64,
+} from "./utils";
 
-export function putU8Function(): TChildren {
+export function writeUint16Function(): TChildren {
   return [
-    line("func ", internal("putU8"), "(buf []byte, offset int, v uint8) int {"),
+    line("func ", internal("writeUint16"), "(b []byte, v uint16) {"),
     indent(
-      line("buf[offset] = uint8(v)"),
-      line("return offset + 1"),
+      line("_ = b[1]"),
+      line("b[0] = byte(v)"),
+      line("b[1] = byte(v >> 8)"),
     ),
     line("}"),
   ];
 }
 
-export function putU16Function(): TChildren {
+export function readUint16Function(): TChildren {
   return [
-    line("func ", internal("putU16"), "(buf []byte, offset int, v uint16) int {"),
+    line("func ", internal("readUint16"), "(b []byte) uint16 {"),
     indent(
-      line("buf[offset] = uint8(v)"),
-      line("buf[offset + 1] = uint8(v >> 8)"),
-      line("return offset + 2"),
+      line("_ = b[1]"),
+      line("return uint16(b[0]) | uint16(b[1])<<8"),
     ),
     line("}"),
   ];
 }
 
-export function putU32Function(): TChildren {
+export function writeUint32Function(): TChildren {
   return [
-    line("func ", internal("putU32"), "(buf []byte, offset int, v uint32) int {"),
+    line("func ", internal("writeUint32"), "(b []byte, v uint32) {"),
     indent(
-      line("buf[offset] = uint8(v)"),
-      line("buf[offset + 1] = uint8(v >> 8)"),
-      line("buf[offset + 2] = uint8(v >> 16)"),
-      line("buf[offset + 3] = uint8(v >> 24)"),
-      line("return offset + 4"),
+      line("_ = b[3]"),
+      line("b[0] = byte(v)"),
+      line("b[1] = byte(v >> 8)"),
+      line("b[2] = byte(v >> 16)"),
+      line("b[3] = byte(v >> 24)"),
     ),
     line("}"),
   ];
 }
 
-export function putU64Function(): TChildren {
+export function readUint32Function(): TChildren {
   return [
-    line("func ", internal("putU64"), "(buf []byte, offset int, v uint64) int {"),
+    line("func ", internal("readUint32"), "(b []byte) uint32 {"),
     indent(
-      line("buf[offset] = uint8(v)"),
-      line("buf[offset + 1] = uint8(v >> 8)"),
-      line("buf[offset + 2] = uint8(v >> 16)"),
-      line("buf[offset + 3] = uint8(v >> 24)"),
-      line("buf[offset + 4] = uint8(v >> 32)"),
-      line("buf[offset + 5] = uint8(v >> 40)"),
-      line("buf[offset + 6] = uint8(v >> 48)"),
-      line("buf[offset + 7] = uint8(v >> 56)"),
-      line("return offset + 8"),
+      line("_ = b[3]"),
+      line("return uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3])<<24"),
     ),
     line("}"),
   ];
 }
 
-export function putUVarFunction(): TChildren {
+export function writeUint64Function(): TChildren {
   return [
-    line("func ", internal("putUVar"), "(buf []byte, offset int, v uint32) int {"),
+    line("func ", internal("writeUint64"), "(b []byte, v uint64) {"),
     indent(
-      line("for v >= 1<<7 {"),
+      line("_ = b[7]"),
+      line("b[0] = byte(v)"),
+      line("b[1] = byte(v >> 8)"),
+      line("b[2] = byte(v >> 16)"),
+      line("b[3] = byte(v >> 24)"),
+      line("b[4] = byte(v >> 32)"),
+      line("b[5] = byte(v >> 40)"),
+      line("b[6] = byte(v >> 48)"),
+      line("b[7] = byte(v >> 56)"),
+    ),
+    line("}"),
+  ];
+}
+
+export function readUint64Function(): TChildren {
+  return [
+    line("func ", internal("readUint64"), "(b []byte) uint64 {"),
+    indent(
+      line("_ = b[7]"),
+      line("return uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24 |"),
+      indent(line("uint64(b[4])<<32 | uint64(b[5])<<40 | uint64(b[6])<<48 | uint64(b[7])<<56")),
+    ),
+    line("}"),
+  ];
+}
+
+export function writeUvarFunction(): TChildren {
+  return [
+    line("func ", internal("writeUvar"), "(b []byte, v uint64) int {"),
+    indent(
+      line("i := 0"),
+      line("for v >= 0x80 {"),
       indent(
-        line("buf[offset] = uint8((v & 0x7f) | 0x80)"),
+        line("b[i] = byte(v) | 0x80"),
         line("v >>= 7"),
-        line("offset++"),
+        line("i++"),
       ),
       line("}"),
-      line("buf[offset] = uint8(v)"),
-      line("return offset + 1"),
+      line("b[i] = byte(v)"),
+      line("return i + 1"),
     ),
     line("}"),
   ];
 }
 
-export function sizeUVarFunction(): TChildren {
+export function readUvarFunction(): TChildren {
   return [
-    line("func ", internal("sizeUVar"), "(x uint64) (n int) {"),
+    line("func ", internal("readUvar"), "(b []byte) (v uint64, i int) {"),
     indent(
-      line("for {"),
+      line("for shift := uint(0); ; shift += 7 {"),
       indent(
-        line("n++"),
-        line("x >>= 7"),
-        line("if x == 0 {"),
+        line("x := b[i]"),
+        line("i++"),
+        line("v |= (uint64(x) & 0x7F) << shift"),
+        line("if x < 0x80 {"),
         indent(
           line("return"),
         ),
@@ -95,12 +124,264 @@ export function sizeUVarFunction(): TChildren {
   ];
 }
 
-export function sizeIVarFunction(): TChildren {
+export function writeIvarFunction(): TChildren {
   return [
-    line("func ", internal("sizeIVar"), "(x uint64) int {"),
+    line("func ", internal("writeIvar"), "(b []byte, v int64) int {"),
     indent(
-      line("return sizeUVar(uint64((x << 1) ^ uint64((int64(x) >> 63))))"),
+      line("uv := uint64(v) << 1"),
+      line("if v < 0 {"),
+      indent(
+        line("uv ^= uv"),
+      ),
+      line("}"),
+      line("return ", internal("writeUvar"), "(b, uv)"),
     ),
     line("}"),
+  ];
+}
+
+export function readIvarFunction(): TChildren {
+  return [
+    line("func ", internal("readIvar"), "(b []byte) (int64, int) {"),
+    indent(
+      line("uv, i := ", internal("readUvar"), "(b)"),
+      line("v := int64(uv >> 1)"),
+      line("if uv&1 != 0 {"),
+      indent(
+        line("v = ^v"),
+      ),
+      line("}"),
+      line("return v, i"),
+    ),
+    line("}"),
+  ];
+}
+
+export function sizeUvarFunction(): TChildren {
+  return [
+    line("func ", internal("sizeUvar"), "(v uint64) (n int) {"),
+    indent(
+      line("for {"),
+      indent(
+        line("n++"),
+        line("v >>= 7"),
+        line("if v == 0 {"),
+        indent(
+          line("return"),
+        ),
+        line("}"),
+      ),
+      line("}"),
+    ),
+    line("}"),
+  ];
+}
+
+export function sizeIvarFunction(): TChildren {
+  return [
+    line("func ", internal("sizeIvar"), "(v int64) int {"),
+    indent(
+      line("uv := uint64(v) << 1"),
+      line("if v < 0 {"),
+      indent(
+        line("uv ^= uv"),
+      ),
+      line("}"),
+      line("return ", internal("sizeUvar"), "(uv)"),
+    ),
+    line("}"),
+  ];
+}
+
+export function lib(): TChildren {
+  return intersperse(
+    [
+      writeUint16Function(),
+      readUint16Function(),
+      writeUint32Function(),
+      readUint32Function(),
+      writeUint64Function(),
+      readUint64Function(),
+      writeUvarFunction(),
+      readUvarFunction(),
+      writeIvarFunction(),
+      readIvarFunction(),
+      sizeUvarFunction(),
+      sizeIvarFunction(),
+    ],
+    line(),
+  );
+}
+
+export function declLibSymbols(...children: TChildren[]): TChildren {
+  return declInternal(
+    [
+      "writeUint16", "writeUint32", "writeUint64",
+      "readUint16", "readUint32", "readUint64",
+      "writeUvar", "writeIvar",
+      "readUvar", "readIvar",
+      "sizeUvar", "sizeIvar",
+    ],
+    children,
+  );
+}
+
+export function writeUint16(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeUint16"), [buf, castToUint16(value)]);
+}
+
+export function writeInt16(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeUint16"), [buf, castToUint16(value)]);
+}
+
+export function readUint16(buf: TChildren): TChildren {
+  return castToUint16(callFunc(internal("readUint16"), [buf]));
+}
+
+export function readInt16(buf: TChildren): TChildren {
+  return castToInt16(callFunc(internal("readUint16"), [buf]));
+}
+
+export function writeUint32(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeUint32"), [buf, castToUint32(value)]);
+}
+
+export function writeInt32(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeUint32"), [buf, castToUint32(value)]);
+}
+
+export function readUint32(buf: TChildren): TChildren {
+  return castToUint32(callFunc(internal("readUint32"), [buf]));
+}
+
+export function readInt32(buf: TChildren): TChildren {
+  return castToInt32(callFunc(internal("readUint32"), [buf]));
+}
+
+export function writeUint64(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeUint64"), [buf, castToUint64(value)]);
+}
+
+export function writeInt64(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeUint64"), [buf, castToUint64(value)]);
+}
+
+export function readUint64(buf: TChildren): TChildren {
+  return castToUint64(callFunc(internal("readUint64"), [buf]));
+}
+
+export function readInt64(buf: TChildren): TChildren {
+  return castToInt64(callFunc(internal("readUint64"), [buf]));
+}
+
+export function writeUvar(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeUvar"), [buf, castToUint64(value)]);
+}
+
+export function writeIvar(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeIvar"), [buf, castToInt64(value)]);
+}
+
+export function readUvar(buf: TChildren): TChildren {
+  return callFunc(internal("readUvar"), [buf]);
+}
+
+export function readIvar(buf: TChildren): TChildren {
+  return callFunc(internal("readIvar"), [buf]);
+}
+
+export function sizeUvar(...value: TChildren[]): TChildren {
+  return callFunc(internal("sizeUvar"), [castToUint64(value)]);
+}
+
+export function sizeIvar(...value: TChildren[]): TChildren {
+  return callFunc(internal("sizeIvar"), [castToInt64(value)]);
+}
+
+export interface InlineReadIntOptions {
+  from: (offset: number) => TChildren;
+  to: TChildren;
+  offset?: number;
+  cast?: (...c: TChildren[]) => TChildren;
+}
+
+export function inlineReadUint8(opts: InlineReadIntOptions): TChildren {
+  const offset = opts.offset === void 0 ? 0 : opts.offset;
+  const cast = opts.cast === void 0 ? castToUint8 : opts.cast;
+  return line(opts.to, " = ", cast(opts.from(offset)));
+}
+
+export function inlineReadUint16(opts: InlineReadIntOptions): TChildren {
+  const offset = opts.offset === void 0 ? 0 : opts.offset;
+  const cast = opts.cast === void 0 ? castToUint16 : opts.cast;
+  return (
+    line(
+      opts.to, " = ",
+      cast(
+        intersperse(
+          [
+            [castToUint16(opts.from(offset))],
+            [castToUint16(opts.from(offset + 1)), "<<8"],
+          ],
+          " | ",
+        ),
+      ),
+    )
+  );
+}
+
+export function inlineReadUint32(opts: InlineReadIntOptions): TChildren {
+  const offset = opts.offset === void 0 ? 0 : opts.offset;
+  const cast = opts.cast === void 0 ? castToUint16 : opts.cast;
+  return (
+    line(
+      opts.to, " = ",
+      cast(
+        intersperse(
+          [
+            [castToUint32(opts.from(offset))],
+            [castToUint32(opts.from(offset + 1)), "<<8"],
+            [castToUint32(opts.from(offset + 2)), "<<16"],
+            [castToUint32(opts.from(offset + 3)), "<<24"],
+          ],
+          " | ",
+        ),
+      ),
+    )
+  );
+}
+
+export function inlineReadUint64(opts: InlineReadIntOptions): TChildren {
+  const offset = opts.offset === void 0 ? 0 : opts.offset;
+  const cast = opts.cast === void 0 ? castToUint16 : opts.cast;
+  return [
+    line(
+      opts.to, " = ",
+      cast(
+        intersperse(
+          [
+            [castToUint64(opts.from(offset))],
+            [castToUint64(opts.from(offset + 1)), "<<8"],
+            [castToUint64(opts.from(offset + 2)), "<<16"],
+            [castToUint64(opts.from(offset + 3)), "<<24"],
+          ],
+          " | ",
+        ),
+      ),
+      " |",
+    ),
+    line(
+      cast(
+        intersperse(
+          [
+            [castToUint64(opts.from(offset + 4)), "<<32"],
+            [castToUint64(opts.from(offset + 5)), "<<40"],
+            [castToUint64(opts.from(offset + 6)), "<<48"],
+            [castToUint64(opts.from(offset + 7)), "<<56"],
+          ],
+          " | ",
+        ),
+      ),
+    ),
   ];
 }

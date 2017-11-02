@@ -2,9 +2,9 @@ const fs = require("fs");
 const osh = require("osh");
 const oshDebug = require("osh-debug");
 const jsEmit = require("pck-emit-js");
-const bundle = require("../../examples/schemas/hn");
+const bundle = require("../../schemas/hn");
 
-const FILE = "./src/hn.ts";
+const FILE = "./pck.js";
 
 try {
   fs.writeFileSync(
@@ -12,10 +12,9 @@ try {
     jsEmit.inject(
       {
         bundle: bundle,
+        mode: "js",
         jsOptions: {
-          lang: "ts",
-          module: "es2015",
-          target: "browser",
+          module: "commonjs",
         },
       },
       fs.readFileSync(FILE).toString(),

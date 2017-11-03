@@ -1,116 +1,64 @@
 import { Type } from "./type";
 import { Schema } from "./schema";
-
-export class SchemaImport {
-  readonly name: string;
-  readonly schema: Schema;
-
-  constructor(name: string, schema: Schema) {
-    this.name = name;
-    this.schema = schema;
-  }
-}
-
-export function importSchema(name: string, schema: Schema): SchemaImport {
-  return new SchemaImport(name, schema);
-}
+import { Binder } from "./binder";
 
 export class Bundle {
+  readonly binder: Binder;
   readonly schemas: Schema[];
-  readonly index: Map<string, Schema>;
-  readonly schemaNames: Map<Schema, string>;
   readonly types: Set<Type>;
-  readonly fixedSizeSchemas: Set<Schema>;
-  readonly taggedSchemas: Map<Schema, number>;
+  readonly taggedSchemas: Map<symbol, number>;
 
   constructor(
+    binder: Binder,
     schemas: Schema[],
-    index: Map<string, Schema>,
     types: Set<Type>,
-    fixedSizeSchemas: Set<Schema>,
-    taggedSchemas: Map<Schema, number>,
+    taggedSchemas: Map<symbol, number>,
   ) {
+    this.binder = binder;
     this.schemas = schemas;
-    this.index = index;
-    this.schemaNames = new Map<Schema, string>();
     this.types = types;
-    this.fixedSizeSchemas = fixedSizeSchemas;
     this.taggedSchemas = taggedSchemas;
-
-    this.index.forEach((schema, name) => {
-      this.schemaNames.set(schema, name);
-    });
-  }
-
-  findSchemaByName(name: string): Schema | undefined {
-    return this.index.get(name);
   }
 
   getSchemaTag(schema: Schema): number | undefined {
-    return this.taggedSchemas.get(schema);
-  }
-
-  getSchemaName(schema: Schema): string {
-    const name = this.schemaNames.get(schema);
-    if (name === void 0) {
-      throw new Error("Unable to find schema name");
-    }
-    return name;
+    return this.taggedSchemas.get(schema.id);
   }
 }
 
-export function bundle(imports: SchemaImport[]): Bundle {
-  const analyzeResult = analyzeSchemas(imports);
+export function bundle(schemas: Schema[]): Bundle {
+  const binder = new Binder();
+  for (const schema of schemas) {
+    binder.addSchema(schema);
+  }
 
-  return new Bundle(
-    analyzeResult.schemas,
-    analyzeResult.index,
-    analyzeResult.types,
-    analyzeResult.fixedSizeSchemas,
-    analyzeResult.taggedSchemas,
-  );
+  const analyzeResult = analyzeSchemas(binder, schemas);
+
+  return new Bundle(binder, schemas, analyzeResult.types, analyzeResult.taggedSchemas);
 }
 
 interface AnalyzeResult {
-  readonly schemas: Schema[];
-  readonly index: Map<string, Schema>;
   readonly types: Set<Type>;
-  readonly fixedSizeSchemas: Set<Schema>;
-  readonly taggedSchemas: Map<Schema, number>;
+  readonly taggedSchemas: Map<symbol, number>;
 }
 
-function analyzeSchemas(imports: SchemaImport[]): AnalyzeResult {
-  const schemas = imports.map((i) => i.schema);
-  const index = new Map<string, Schema>();
+function analyzeSchemas(binder: Binder, schemas: Schema[]): AnalyzeResult {
   const types = new Set<Type>();
-  const fixedSizeSchemas = new Set<Schema>();
-  const taggedSchemas = new Map<Schema, number>();
+  const taggedSchemas = new Map<symbol, number>();
   let tagIndex = 0;
 
-  for (const i of imports) {
-    if (index.has(i.name)) {
-      throw new Error(`Failed to bundle, found two schemas with the name "${i.name}"`);
-    }
-    index.set(i.name, i.schema);
-  }
-
   for (const schema of schemas) {
-    if (!schema.hasDynamicSize()) {
-      fixedSizeSchemas.add(schema);
-    }
-
     for (const field of schema.fields) {
       types.add(field.type);
 
-      if (field.type.isUnion()) {
-        for (const type of field.type.props) {
-          if (type.isRef()) {
-            taggedSchemas.set(type.props, tagIndex++);
+      if (field.type.id === "union") {
+        for (const schemaId of field.type.symbols) {
+          if (!taggedSchemas.has(schemaId)) {
+            taggedSchemas.set(schemaId, tagIndex++);
           }
         }
       }
     }
   }
 
-  return { schemas, index, types, fixedSizeSchemas, taggedSchemas };
+  return { types, taggedSchemas };
 }

@@ -1,35 +1,42 @@
-import { TChildren } from "osh";
+import { Context, TChildren, TNode, component } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
-import { Field, Type, Schema } from "pck";
-import { enterSchema, declArgs, declVars, v, self, structName, callMethod, len } from "./utils";
+import { FieldFlags, Type, Binder } from "pck";
+import { GoField, GoSchema } from "../schema";
+import { getBundle, enterSchema, declArgs, declVars, v, SELF, callMethod, len } from "./utils";
 import { sizeIvar, sizeUvar } from "./lib";
 
-export function sizeMethod(schema: Schema): TChildren {
+const SIZE = v("size");
+const LENGTH = v("length");
+
+export function SizeMethod(ctx: Context, schema: GoSchema): TChildren {
+  const bundle = getBundle(ctx);
+  const details = bundle.binder.getSchemaDetails(schema);
+
   return (
     enterSchema(schema,
-      declArgs([declSymbol("self", "s")],
+      declArgs([declSymbol("self", schema.self)],
         [
           docComment(
             line("Size is an automatically generated method for PCK serialized size calculation."),
           ),
-          schema.hasDynamicSize() ?
+          details.size.dynamic ?
             declVars(["size", "length"],
               [
-                line("func (", self(), " *", structName(schema), ") Size() (", v("size"), " int) {"),
+                line("func (", SELF(), " *", schema.struct, ") Size() (", SIZE, " int) {"),
                 indent(
-                  line("var ", v("length"), " int"),
-                  line("_ = ", v("length")),
-                  line(v("size"), " = ", schema.getFixedSize()),
-                  schema.sortedDynamicFields.map(incFieldSize),
+                  line("var ", LENGTH, " int"),
+                  line("_ = ", LENGTH),
+                  line(SIZE, " = ", details.size.fixedSize),
+                  details.dynamicFields.map((f) => incFieldSize(bundle.binder, f)),
                   line("return"),
                 ),
                 line("}"),
               ],
             ) :
             [
-              line("func (", self(), " *", structName(schema), ") Size() int {"),
+              line("func (", SELF(), " *", schema.struct, ") Size() int {"),
               indent(
-                line("return ", schema.getFixedSize()),
+                line("return ", details.size.fixedSize),
               ),
               line("}"),
             ],
@@ -39,106 +46,113 @@ export function sizeMethod(schema: Schema): TChildren {
   );
 }
 
-function incFieldSize(field: Field<any>): TChildren {
+export function sizeMethod(schema: GoSchema): TNode {
+  return component(SizeMethod, schema);
+}
+
+function incFieldSize(binder: Binder<GoSchema, GoField>, field: GoField): TChildren {
   if (field.isOptional()) {
-    if (field.type.isArray()) {
-      return incSizeValue(field.type, self(field.name));
+    switch (field.type.id) {
+      case "array":
+        return incSizeValue(binder, field.type, SELF(field.name));
     }
 
-    if (field.isOmitNull()) {
-      if (field.isOmitEmpty()) {
-        return [
-          line("if ", self(field.name), " != nil && ", len(self(field.name)), " > 0 {"),
-          indent(incSizeValue(field.type, self(field.name))),
-          line("}"),
-        ];
-      }
+    if ((field.flags & (FieldFlags.OmitNull | FieldFlags.OmitEmpty)) === (FieldFlags.OmitNull | FieldFlags.OmitEmpty)) {
       return [
-        line("if ", self(field.name), " != nil {"),
-        indent(incSizeValue(field.type, self(field.name))),
+        line("if ", SELF(field.name), " != nil && ", len(SELF(field.name)), " > 0 {"),
+        indent(incSizeValue(binder, field.type, SELF(field.name))),
         line("}"),
       ];
-    } else if (field.isOmitZero()) {
+    }
+    if ((field.flags & FieldFlags.OmitNull) !== 0) {
       return [
-        line("if ", self(field.name), " != 0 {"),
-        indent(incSizeValue(field.type, self(field.name))),
+        line("if ", SELF(field.name), " != nil {"),
+        indent(incSizeValue(binder, field.type, SELF(field.name))),
         line("}"),
       ];
-    } else if (field.isOmitEmpty()) {
+    }
+    if ((field.flags & FieldFlags.OmitZero) !== 0) {
+      return [
+        line("if ", SELF(field.name), " != 0 {"),
+        indent(incSizeValue(binder, field.type, SELF(field.name))),
+        line("}"),
+      ];
+    }
+    if ((field.flags & FieldFlags.OmitEmpty) !== 0) {
       return [
         // TODO: should reuse len value
-        line("if ", len(self(field.name)), " > 0 {"),
-        indent(incSizeValue(field.type, self(field.name))),
+        line("if ", len(SELF(field.name)), " > 0 {"),
+        indent(incSizeValue(binder, field.type, SELF(field.name))),
         line("}"),
       ];
     }
   }
 
-  return incSizeValue(field.type, self(field.name));
+  return incSizeValue(binder, field.type, SELF(field.name));
 }
 
-function incSizeValue(type: Type<any>, value?: TChildren): TChildren {
-  if (type.isNumber()) {
-    if (type.isVariadicInteger()) {
-      if (type.isSignedInteger()) {
+function incSizeValue(binder: Binder<GoSchema, GoField>, type: Type, value?: TChildren): TChildren {
+  switch (type.id) {
+    case "union":
+    case "map":
+    case "bool":
+      return null;
+    case "int":
+    case "float":
+      return incSize(type.size);
+    case "varint":
+      if (type.signed) {
         return incSize(sizeIvar(value));
       } else {
         return incSize(sizeUvar(value));
       }
-    }
-    return incSize(type.size);
-  }
-
-  if (type.isArray()) {
-    if (type.props.length === 0) {
-      if (type.props.type.hasDynamicSize()) {
-        return declVars(
-          ["item"],
-          [
-            incSize(sizeUvar(len(value))),
-            line("for _, ", v("item"), " := range ", value, " {"),
-            indent(
-              incSizeValue(type.props.type, v("item")),
-            ),
-            line("}"),
-          ],
-        );
+    case "utf8":
+    case "ascii":
+    case "bytes":
+      return [
+        line(LENGTH, " = ", len(value)),
+        incSize(sizeUvar(LENGTH), " + ", LENGTH),
+      ];
+    case "ref":
+      return incSize(callMethod(value, "Size"));
+    case "array":
+      const valueSize = binder.getTypeSize(type.valueType);
+      if (type.length === 0) {
+        if (valueSize === -1) {
+          return declVars(
+            ["item"],
+            [
+              incSize(sizeUvar(len(value))),
+              line("for _, ", v("item"), " := range ", value, " {"),
+              indent(
+                incSizeValue(binder, type.valueType, v("item")),
+              ),
+              line("}"),
+            ],
+          );
+        } else {
+          return [
+            line(v("length"), " = ", len(value)),
+            incSize(sizeUvar(v("length")), " + ", v("length"), "*", valueSize),
+          ];
+        }
       } else {
-        return [
-          line(v("length"), " = ", len(value)),
-          incSize(sizeUvar(v("length")), " + ", v("length"), "*", type.props.type.size),
-        ];
+        if (valueSize === -1) {
+          return declVars(
+            ["item"],
+            [
+              line("for _, ", v("item"), " := range ", value, " {"),
+              indent(
+                incSizeValue(binder, type.valueType, v("item")),
+              ),
+              line("}"),
+            ],
+          );
+        } else {
+          throw new Error("Unreachable code");
+        }
       }
-    } else {
-      if (type.props.type.hasDynamicSize()) {
-        return declVars(
-          ["item"],
-          [
-            line("for _, ", v("item"), " := range ", value, " {"),
-            indent(
-              incSizeValue(type.props.type, v("item")),
-            ),
-            line("}"),
-          ],
-        );
-      } else {
-        throw new Error("Unreachable code");
-      }
-    }
   }
-
-  if (type.isString() || type.isByteArray()) {
-    return [
-      line(v("length"), " = ", len(value)),
-      incSize(sizeUvar(v("length")), " + ", v("length")),
-    ];
-  }
-
-  if (type.isRef()) {
-    return incSize(callMethod(value, "Size"));
-  }
-
-  return incSize(type.size);
 }
 
 function incSize(...children: TChildren[]): TChildren {

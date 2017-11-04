@@ -1,38 +1,42 @@
-import { TChildren } from "osh";
+import { Context, TChildren, TNode, component } from "osh";
 import { line, indent, docComment, declSymbol } from "osh-code";
-import { Schema, Field } from "pck";
+import { FieldFlags, Field, SchemaDetails, Binder } from "pck";
 import {
-  enterSchema, declArgs, declVars, declOptionals, arg, self, v, optional, structName, fieldName, len,
-  castToByte,
+  getBundle, enterSchema, declArgs, declVars, declOptionals, SELF, BUF, v, optional, len, slice, castToByte,
+  boundCheckHint, callFunc, callMethod,
 } from "./utils";
 import { writeUvar, writeIvar } from "./lib";
+import { GoSchema, GoField } from "../schema";
 
-export function pckMethod(schema: Schema): TChildren {
+const OFFSET = v("offset");
+const BIT_SET_VALUE = v("bitSetValue");
+
+export function PckMethod(ctx: Context, schema: GoSchema): TChildren {
+  const bundle = getBundle(ctx);
+  const details = bundle.binder.getSchemaDetails(schema);
+
   return (
     enterSchema(schema,
       declArgs(
         [
-          declSymbol("self", "s"),
+          declSymbol("self", schema.self),
           declSymbol("buf", "b"),
         ],
         declVars(["offset", "bitSetValue"],
-          declOptionals(schema.optionalFields,
+          declOptionals(details.optionalFields,
             [
               docComment(
                 line("Pck is an automatically generated method for PCK serialization."),
               ),
-              line("func (", self(), " *", structName(schema), ") Pck(", arg("buf"), " []byte) int {"),
+              line("func (", SELF(), " *", schema.struct, ") Pck(", BUF(), " []byte) int {"),
               indent(
-                (schema.getFixedSize() > 1) ?
-                  boundCheckHint(schema.getFixedSize() - 1) :
-                  null,
-                schema.hasBitSet() ? line("var ", v("bitSetValue"), " uint8") : null,
-                schema.hasOptionalFields() ?
-                  schema.optionalFields.map((f) => line(optional(f), " := ", checkOptional(f))) :
-                  null,
-                schema.hasBitSet() ? putBitSet(schema) : null,
-                putFields(schema),
-                line("return ", schema.hasDynamicSize() ? v("offset") : schema.getFixedSize()),
+                (details.size.fixedSize > 1) ? boundCheckHint(details.size.fixedSize - 1) : null,
+                (details.optionalFields.length > 0)
+                  ? details.optionalFields.map((f) => line(optional(f), " := ", checkOptional(f)))
+                  : null,
+                writeBitSet(schema, details),
+                writeFields(bundle.binder, schema, details),
+                line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
               ),
               line("}"),
             ],
@@ -43,293 +47,250 @@ export function pckMethod(schema: Schema): TChildren {
   );
 }
 
-function putBitSet(schema: Schema): TChildren {
-  const result = [];
-  let bitSetIndex = 0;
-  let offset = 0;
-
-  for (let i = 0; i < schema.bitSet.length; i++) {
-    const bitField = schema.bitSet[i];
-
-    result.push(
-      bitField.isOptional() ?
-        line("if ", optional(bitField.field), " {") :
-        line("if ", self(fieldName(bitField.field)), " {"),
-      indent(
-        bitSetIndex === 0 ?
-          line(v("bitSetValue"), " = 1") :
-          line(v("bitSetValue"), " |= 1 << ", bitSetIndex),
-      ),
-      line("}"),
-    );
-    if (++bitSetIndex === 8) {
-      bitSetIndex = 0;
-      result.push([
-        line(buf(offset, v("bitSetValue"))),
-        (i < (schema.bitSet.length - 1)) ?
-          line(v("bitSetValue"), " = 0") :
-          null,
-      ]);
-      offset++;
-    }
-  }
-  if (bitSetIndex > 0) {
-    result.push(line(buf(offset, v("bitSetValue"))));
-    offset++;
-  }
-  advanceOffset(offset);
-
-  return result;
+export function pckMethod(schema: GoSchema): TNode {
+  return component(PckMethod, schema);
 }
 
-function putFields(schema: Schema): TChildren {
-  const r = [];
-  let offset = schema.getBitSetSize();
-  for (const field of schema.sortedFixedFields) {
-    if (!field.type.isBoolean()) {
-      r.push(
-        putFixedField(field, offset),
-      );
-      offset += field.type.size;
+function writeBitSet(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>): TChildren {
+  if (details.bitStore.length > 0) {
+    if (details.bitStore.length === 1) {
+      if (details.bitStore.optionals.length > 0) {
+        return [
+          line("if ", optional(details.bitStore.optionals[0].field), " {"),
+          indent(line(BUF({ offset: 0 }, 1))),
+          line("}"),
+        ];
+      } else {
+        return [
+          line("if ", SELF(details.bitStore.booleans[0].field.name), " {"),
+          indent(line(BUF({ offset: 0 }, 1))),
+          line("}"),
+        ];
+      }
+    } else {
+      const result = [];
+      let bitSetIndex = 0;
+      let offset = 0;
+      let i = 0;
+      for (const bitField of details.bitStore.optionals) {
+        result.push(
+          line("if ", optional(bitField.field), " {"),
+          indent(
+            (bitSetIndex === 0)
+              ? line(BIT_SET_VALUE, " = 1")
+              : line(BIT_SET_VALUE, " |= 1 << ", bitSetIndex),
+          ),
+          line("}"),
+        );
+        bitSetIndex++;
+        if (bitSetIndex === 8) {
+          bitSetIndex = 0;
+          result.push(
+            line(BUF({ offset }, BIT_SET_VALUE)),
+            (i < (details.bitStore.length - 1))
+              ? line(BIT_SET_VALUE, " = 0")
+              : null,
+          );
+          offset++;
+        }
+        i++;
+      }
+      for (const bitField of details.bitStore.booleans) {
+        result.push(
+          line("if ", SELF(bitField.field.name), " {"),
+          indent(
+            bitSetIndex === 0 ?
+              line(BIT_SET_VALUE, " = 1") :
+              line(BIT_SET_VALUE, " |= 1 << ", bitSetIndex),
+          ),
+          line("}"),
+        );
+        bitSetIndex++;
+        if (bitSetIndex === 8) {
+          bitSetIndex = 0;
+          result.push(
+            line(BUF({ offset }, BIT_SET_VALUE)),
+            (i < (details.bitStore.length - 1))
+              ? line(BIT_SET_VALUE, " = 0")
+              : null,
+          );
+          offset++;
+        }
+        i++;
+      }
+      if (bitSetIndex > 0) {
+        result.push(line(BUF({ offset }, BIT_SET_VALUE)));
+        offset++;
+      }
+      result.push(line(OFFSET, " += ", offset));
+
+      return result;
     }
   }
-  if (schema.hasDynamicSize()) {
-    r.push(line(v("offset"), " := ", offset));
+
+  return null;
+}
+
+function writeFields(
+  binder: Binder<GoSchema, GoField>,
+  schema: GoSchema,
+  details: SchemaDetails<GoSchema, GoField>,
+): TChildren {
+  const r = [];
+  let offset = details.size.bitStoreSize;
+  for (const field of details.fixedFields) {
+    r.push(putFixedField(binder, field, offset));
+    offset += binder.getTypeSize(field.type);
   }
-  for (const field of schema.sortedDynamicFields) {
+  if (details.size.dynamic) {
+    r.push(line(OFFSET, " := ", offset));
+  }
+  for (const field of details.dynamicFields) {
     if (field.isOptional()) {
       r.push(
         line("if ", optional(field), " {"),
-        indent(
-          putDynamicField(field),
-        ),
+        indent(putDynamicField(field)),
         line("}"),
       );
     } else {
-      r.push(
-        putDynamicField(field),
-      );
+      r.push(putDynamicField(field));
     }
   }
 
   return r;
 }
 
-function putFixedField(field: Field<any>, offset: number): TChildren {
-  const type = field.type;
-  const size = type.size;
-
-  if (field.isFixed()) {
-    if (type.isNumber()) {
-      if (type.isInteger()) {
-        if (type.isSignedInteger()) {
-          switch (size) {
-            case 1:
-              return inlineWriteUint8(self(fieldName(field)), offset);
-            case 2:
-              return inlineWriteUint16(self(fieldName(field)), offset);
-            case 4:
-              return inlineWriteUint32(self(fieldName(field)), offset);
-            default:
-              throw new Error(`Unable to emit writer callsite for a field: ${field}. Invalid size for an Int field.`);
-          }
-        } else {
-          switch (size) {
-            case 1:
-              return inlineWriteUint8(self(fieldName(field)), offset);
-            case 2:
-              return inlineWriteUint16(self(fieldName(field)), offset);
-            case 4:
-              return inlineWriteUint32(self(fieldName(field)), offset);
-            default:
-              throw new Error(`Unable to emit writer callsite for a field: ${field}. Invalid size for an Uint field.`);
-          }
-        }
+function putFixedField(binder: Binder<GoSchema, GoField>, field: GoField, offset: number): TChildren {
+  switch (field.type.id) {
+    case "int":
+      switch (field.type.size) {
+        case 1:
+          return inlineWriteUint8(SELF(field.name), offset);
+        case 2:
+          return inlineWriteUint16(SELF(field.name), offset);
+        case 4:
+          return inlineWriteUint32(SELF(field.name), offset);
       }
-      if (type.isFloat()) {
-        switch (size) {
-          case 4:
-            return inlineWriteUint32(self(fieldName(field)), offset);
-          case 8:
-            return inlineWriteUint64(self(fieldName(field)), offset);
-          default:
-            throw new Error(`Unable to emit writer callsite for a field: ${field}. Invalid size for a Float field.`);
-        }
+      break;
+    case "float":
+      switch (field.type.size) {
+        case 4:
+          return inlineWriteUint32(SELF(field.name), offset);
+        case 8:
+          return inlineWriteUint64(SELF(field.name), offset);
       }
-    }
-
-    if (type.isString() || type.isByteArray()) {
-      return putCopy(self(fieldName(field)), offset);
-    }
-
-    if (type.isRef()) {
-      return line(self(fieldName(field)), ".Pck(", bufSlice(offset), ")");
-    }
-
-    throw new Error("Invalid field type.");
+      break;
+    case "bytes":
+    case "utf8":
+    case "ascii":
+      return putCopy(SELF(field.name), offset);
+    case "array":
+      break;
+    case "ref":
+      return line(callMethod(SELF(field.name), "Pck", [slice(BUF(), offset)]));
   }
 
-  throw new Error("putFixedField doesn't work with dynamic fields.");
+  throw new Error(`Invalid field: ${field.toString()}.`);
 }
 
-function putDynamicField(field: Field<any>): TChildren {
-  const type = field.type;
-
-  if (type.isNumber()) {
-    if (type.isVariadicInteger()) {
-      if (type.isSignedInteger()) {
-        return line(v("offset"), " += ", writeIvar(bufSlice(v("offset")), self(fieldName(field))));
-      } else {
-        return line(v("offset"), " += ", writeUvar(bufSlice(v("offset")), self(fieldName(field))));
-      }
-    }
-  }
-  if (type.isString() || type.isByteArray()) {
-    return [
-      line(v("offset"), " += ", writeUvar(bufSlice(v("offset")), len(self(fieldName(field))))),
-      line(v("offset"), " += ", "copy(", bufSlice(v("offset")), ", ", self(fieldName(field)), ")"),
-    ];
-  }
-
-  if (type.isArray()) {
-    if (type.hasDynamicSize()) {
-      return [];
-    } else {
-      return [];
-    }
+function putDynamicField(field: GoField): TChildren {
+  switch (field.type.id) {
+    case "varint":
+      return field.type.signed
+        ? line(OFFSET, " += ", writeIvar(slice(BUF(), OFFSET), SELF(field.name)))
+        : line(OFFSET, " += ", writeUvar(slice(BUF(), OFFSET), SELF(field.name)));
+    case "bytes":
+    case "utf8":
+    case "ascii":
+      return [
+        line(OFFSET, " += ", writeUvar(slice(BUF(), OFFSET), len(SELF(field.name)))),
+        line(OFFSET, " += ", callFunc("copy", [slice(BUF(), OFFSET), SELF(field.name)])),
+      ];
+    case "array":
+    case "map":
+      return "TODO";
+    case "ref":
+      return line(OFFSET, " += ", callMethod(SELF(field.name), "Pck", [slice(BUF(), OFFSET)]));
+    case "union":
+      return "TODO";
   }
 
-  if (type.isRef()) {
-    return line(v("offset"), " += ", self(fieldName(field)), ".Pck(", bufSlice(v("offset")), ")");
-  }
-
-  throw new Error(`Unable to emit writer callsite for a field: ${field}. Invalid field type.`);
+  throw new Error(`Unable to emit dynamic writer for a field: ${field.toString()}.`);
 }
 
 function checkOptional(field: Field<any>): TChildren {
-  if (field.isOmitNull()) {
-    if (field.isOmitEmpty()) {
-      return [
-        self(fieldName(field)), " != nil",
-        " && ",
-        "len(", self(fieldName(field)), ") > 0",
-      ];
-    }
-    return [self(fieldName(field)), " != nil"];
+  if ((field.flags & (FieldFlags.OmitEmpty | FieldFlags.OmitNull)) === (FieldFlags.OmitEmpty | FieldFlags.OmitNull)) {
+    return [SELF(field.name), " != nil", " && ", len(SELF(field.name)), " > 0"];
   }
-  if (field.isOmitEmpty()) {
-    return ["len(", self(fieldName(field)), ") > 0"];
+  if ((field.flags & FieldFlags.OmitNull) !== 0) {
+    return [SELF(field.name), " != nil"];
   }
-
-  if (field.isOmitZero()) {
-    return [self(fieldName(field)), "!= 0"];
+  if ((field.flags & FieldFlags.OmitEmpty) !== 0) {
+    return [len(SELF(field.name)), " > 0"];
+  }
+  if ((field.flags & FieldFlags.OmitZero) !== 0) {
+    return [SELF(field.name), " != 0"];
   }
 
   throw new Error("Unreachable");
 }
 
-function buf(offset?: TChildren, value?: TChildren): TChildren {
-  if (offset === void 0) {
-    return arg("buf");
-  }
-  if (value === void 0) {
-    return [arg("buf"), "[", offset, "]"];
-  }
-  return [arg("buf"), "[", offset, "]", " = ", value];
-}
-
-function bufSlice(start: TChildren, end?: TChildren): TChildren {
-  return [arg("buf"), "[", start, ":", end === void 0 ? null : end, "]"];
-}
-
-/**
- * https://golang.org/src/encoding/binary/binary.go
- * https://golang.org/issue/14808
- *
- * @param offset Bound check offset
- */
-function boundCheckHint(offset: number): TChildren {
-  return line("_ = ", buf(offset));
-}
-
-function advanceOffset(n: number): TChildren {
-  if (n === 1) {
-    return line(v("offset"), "++");
-  }
-  return line(v("offset"), " += ", n);
-}
-
 function putCopy(value: TChildren, offset?: number): TChildren {
-  if (offset === void 0) {
-    return line(v("offset"), " += ", "copy(", bufSlice(v("offset")), ", ", value, ")");
+  if (offset === undefined) {
+    return line(OFFSET, " += ", callFunc("copy", [slice(BUF(), OFFSET), value]));
   }
-  return line("copy(", bufSlice(offset), ", ", value, ")");
+  return line(callFunc("copy", [slice(BUF(), offset), value]));
 }
 
 function inlineWriteUint8(value: TChildren, offset?: number): TChildren {
-  if (offset === void 0) {
-    return [
-      line(buf(v("offset"), castToByte(value))),
-      advanceOffset(1),
-    ];
+  let start;
+  if (offset === undefined) {
+    start = OFFSET;
+    offset = 0;
   }
-  return line(buf(offset, castToByte(value)));
+  return line(BUF({ start, offset: offset }, castToByte(value)));
 }
 
 function inlineWriteUint16(value: TChildren, offset?: number): TChildren {
-  if (offset === void 0) {
-    return [
-      line(buf(v("offset"), castToByte(value))),
-      line(buf([v("offset"), " + 1"], castToByte([value, " >> 8"]))),
-      advanceOffset(2),
-    ];
+  let start;
+  if (offset === undefined) {
+    start = OFFSET;
+    offset = 0;
   }
   return [
-    line(buf(offset, castToByte(value))),
-    line(buf(offset + 1, castToByte([value, " >> 8"]))),
+    line(BUF({ start, offset: offset + 0 }, castToByte(value))),
+    line(BUF({ start, offset: offset + 1 }, castToByte([value, " >> 8"]))),
   ];
 }
 
 function inlineWriteUint32(value: TChildren, offset?: number): TChildren {
-  if (offset === void 0) {
-    return [
-      line(buf(v("offset"), castToByte(value))),
-      line(buf([v("offset"), " + 1"], castToByte(value, " >> 8"))),
-      line(buf([v("offset"), " + 2"], castToByte(value, " >> 16"))),
-      line(buf([v("offset"), " + 3"], castToByte(value, " >> 24"))),
-      advanceOffset(4),
-    ];
+  let start;
+  if (offset === undefined) {
+    start = OFFSET;
+    offset = 0;
   }
   return [
-    line(buf(offset, castToByte(value))),
-    line(buf(offset + 1, castToByte(value, " >> 8"))),
-    line(buf(offset + 2, castToByte(value, " >> 16"))),
-    line(buf(offset + 3, castToByte(value, " >> 24"))),
+    line(BUF({ start, offset: offset + 0 }, castToByte(value))),
+    line(BUF({ start, offset: offset + 1 }, castToByte([value, " >> 8"]))),
+    line(BUF({ start, offset: offset + 2 }, castToByte([value, " >> 16"]))),
+    line(BUF({ start, offset: offset + 3 }, castToByte([value, " >> 24"]))),
   ];
 }
 
 function inlineWriteUint64(value: TChildren, offset?: number): TChildren {
-  if (offset === void 0) {
-    return [
-      line(buf(v("offset"), castToByte(value))),
-      line(buf([v("offset"), " + 1"], castToByte(value, " >> 8"))),
-      line(buf([v("offset"), " + 2"], castToByte(value, " >> 16"))),
-      line(buf([v("offset"), " + 3"], castToByte(value, " >> 24"))),
-      line(buf([v("offset"), " + 4"], castToByte(value, " >> 32"))),
-      line(buf([v("offset"), " + 5"], castToByte(value, " >> 40"))),
-      line(buf([v("offset"), " + 6"], castToByte(value, " >> 48"))),
-      line(buf([v("offset"), " + 7"], castToByte(value, " >> 56"))),
-      advanceOffset(4),
-    ];
+  let start;
+  if (offset === undefined) {
+    start = OFFSET;
+    offset = 0;
   }
   return [
-    line(buf(offset, castToByte(value))),
-    line(buf(offset + 1, castToByte(value, " >> 8"))),
-    line(buf(offset + 2, castToByte(value, " >> 16"))),
-    line(buf(offset + 3, castToByte(value, " >> 24"))),
-    line(buf(offset + 4, castToByte(value, " >> 32"))),
-    line(buf(offset + 5, castToByte(value, " >> 40"))),
-    line(buf(offset + 6, castToByte(value, " >> 48"))),
-    line(buf(offset + 7, castToByte(value, " >> 56"))),
+    line(BUF({ start, offset: offset + 0 }, castToByte(value))),
+    line(BUF({ start, offset: offset + 1 }, castToByte([value, " >> 8"]))),
+    line(BUF({ start, offset: offset + 2 }, castToByte([value, " >> 16"]))),
+    line(BUF({ start, offset: offset + 3 }, castToByte([value, " >> 24"]))),
+    line(BUF({ start, offset: offset + 5 }, castToByte([value, " >> 32"]))),
+    line(BUF({ start, offset: offset + 6 }, castToByte([value, " >> 40"]))),
+    line(BUF({ start, offset: offset + 7 }, castToByte([value, " >> 48"]))),
+    line(BUF({ start, offset: offset + 8 }, castToByte([value, " >> 56"]))),
   ];
 }

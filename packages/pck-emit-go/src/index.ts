@@ -1,2 +1,2 @@
-export { GOMeta, goMeta } from "./meta";
+export { GoFieldTransformer, GoFieldFlags, GoField, GoSchema, GoSchemaOptions, goSchema, skip, embed } from "./schema";
 export { inject } from "./inject";

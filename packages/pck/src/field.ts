@@ -3,6 +3,7 @@ import {
   BoolType, IntType, FloatType, VarIntType, BytesType, Utf8Type, AsciiType, ArrayType, MapType, RefType, UnionType,
   BOOL, INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT32, FLOAT64, VARINT, VARUINT,
   BYTES, UTF8, ASCII, ARRAY, MAP, REF, UNION,
+  checkTypeCompatibility,
 } from "./type";
 
 export class InvalidFieldDeclarationError extends Error { }
@@ -150,4 +151,15 @@ export function ref(name: string, symbol: symbol): Field<RefType> {
 
 export function union(name: string, symbols: symbol[]): Field<UnionType> {
   return new Field(UNION(symbols), name);
+}
+
+export function checkFieldCompatibility<T extends Field>(a: T, b: T): string | null {
+  const typeCheck = checkTypeCompatibility(a.type, b.type);
+  if (typeCheck !== null) {
+    return typeCheck;
+  }
+  if (a.flags !== b.flags) {
+    return "flags";
+  }
+  return null;
 }

@@ -1,25 +1,31 @@
-import { TChildren } from "osh";
+import { Context, TChildren, TNode, component } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
-import { Schema, Type } from "pck";
+import { Type, SchemaSize, SchemaDetails, Binder } from "pck";
 import {
-  enterSchema, declArgs, declVars, self, arg, v, structName, fieldName,
+  getBundle, enterSchema, declArgs, declVars, SELF, BUF, v, slice, boundCheckHint,
   castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString,
 } from "./utils";
 import {
   InlineReadIntOptions, inlineReadUint8, inlineReadUint16, inlineReadUint32, inlineReadUint64, readIvar, readUvar,
 } from "./lib";
+import { GoField, GoSchema } from "../schema";
 
-// const SELF = arg("self");
-const BUF = arg("buf");
 const OFFSET = v("offset");
 const LENGTH = v("length");
 const VALUE = v("value");
 const SIZE = v("size");
 const I = v("i");
 
-export function unpckMethod(schema: Schema): TChildren {
+function BITSET(i: number): TChildren {
+  return v(`bitSet${i}`);
+}
+
+export function UnpckMethod(ctx: Context, schema: GoSchema): TChildren {
+  const bundle = getBundle(ctx);
+  const details = bundle.binder.getSchemaDetails(schema);
+
   const bitSetVars = [];
-  for (let i = 0; i < schema.getBitSetSize(); i++) {
+  for (let i = 0; i < details.size.bitStoreSize; i++) {
     bitSetVars.push(`bitSet${i}`);
   }
 
@@ -27,7 +33,7 @@ export function unpckMethod(schema: Schema): TChildren {
     enterSchema(schema,
       declArgs(
         [
-          declSymbol("self", "s"),
+          declSymbol("self", schema.self),
           declSymbol("buf", "b"),
         ],
         declVars(
@@ -43,14 +49,14 @@ export function unpckMethod(schema: Schema): TChildren {
             docComment(
               line("Unpck is an automatically generated method for PCK deserialization."),
             ),
-            line("func (", self(), " *", structName(schema), ") Unpck(", BUF, " []byte) int {"),
+            line("func (", SELF(), " *", schema.struct, ") Unpck(", BUF(), " []byte) int {"),
             indent(
-              (schema.getFixedSize() > 1) ?
-                boundCheckHint(schema.getFixedSize() - 1) :
+              (details.size.fixedSize > 1) ?
+                boundCheckHint(details.size.fixedSize - 1) :
                 null,
-              readBitSet(schema),
-              readFields(schema),
-              line("return ", schema.hasDynamicSize() ? v("offset") : schema.getFixedSize()),
+              readBitSet(schema, details.size),
+              readFields(bundle.binder, schema, details),
+              line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
             ),
             line("}"),
           ],
@@ -60,44 +66,54 @@ export function unpckMethod(schema: Schema): TChildren {
   );
 }
 
-function readBitSet(schema: Schema): TChildren {
+export function unpckMethod(schema: GoSchema): TNode {
+  return component(UnpckMethod, schema);
+}
+
+function readBitSet(schema: GoSchema, size: SchemaSize): TChildren {
   const r = [];
-  for (let i = 0; i < schema.getBitSetSize(); i++) {
-    r.push(line(bitSet(i), " := ", buf(i)));
+  for (let i = 0; i < size.bitStoreSize; i++) {
+    r.push(line(BITSET(i), " := ", BUF({ offset: i })));
   }
   return r;
 }
 
-function readFields(schema: Schema): TChildren {
+function readFields(
+  binder: Binder<GoSchema, GoField>,
+  schema: GoSchema,
+  details: SchemaDetails<GoSchema, GoField>,
+): TChildren {
   const r = [];
-  if (schema.hasBitSet()) {
-    if (schema.bitSet.length === 1) {
-      if (schema.booleanFields.length === 1) {
-        const field = schema.booleanFields[0];
-        r.push(line(self(fieldName(field)), " = ", bitSet(0), " != 0"));
+  if (details.bitStore.length > 0) {
+    if (details.bitStore.length === 1) {
+      if (details.bitStore.booleans.length === 1) {
+        const bitField = details.bitStore.booleans[0];
+        r.push(line(SELF(bitField.field.name), " = ", BITSET(0), " != 0"));
       }
     } else {
-      for (const field of schema.booleanFields) {
-        const bitField = schema.getBifField(field, true);
+      for (const bitField of details.bitStore.booleans) {
         const index = bitField.index % 8;
-        r.push(line(self(fieldName(field)), " = ", bitSet(bitField.offset), "&(1<<", index, ") != 0"));
+        r.push(line(SELF(bitField.field.name), " = ", BITSET(bitField.offset), "&(1<<", index, ") != 0"));
       }
     }
   }
 
-  let offset = schema.getBitSetSize();
-  for (const field of schema.sortedFixedFields) {
-    if (!field.type.isBoolean()) {
-      r.push(readFixedType(field.type, buf, self(fieldName(field)), offset));
-      offset += field.type.size;
-    }
+  let offset = details.size.bitStoreSize;
+  for (const field of details.fixedFields) {
+    r.push(readFixedType(binder, field.type, BUF, SELF(field.name), offset));
+    offset += binder.getTypeSize(field.type);
   }
 
-  if (schema.hasDynamicSize()) {
+  if (details.size.dynamic) {
     r.push(line(OFFSET, " := ", offset));
 
-    for (const field of schema.sortedDynamicFields) {
-      r.push(readDynamicType(field.type, (off) => bufSlice([OFFSET, " + ", off]), self(fieldName(field))));
+    for (const field of details.dynamicFields) {
+      r.push(readDynamicType(
+        binder,
+        field.type,
+        (pos: { start: TChildren, offset: number }) => slice(BUF(), pos.start),
+        SELF(field.name),
+      ));
     }
   }
 
@@ -105,118 +121,108 @@ function readFields(schema: Schema): TChildren {
 }
 
 function readFixedType(
-  type: Type<any>,
-  from: (offset?: TChildren) => TChildren,
+  binder: Binder<GoSchema, GoField>,
+  type: Type,
+  from: (pos: { start?: TChildren, offset: number }) => TChildren,
   to: TChildren,
   offset: number,
+  start?: TChildren,
 ): TChildren {
-  const size = type.size;
-  if (type.isNumber()) {
-    const opts: InlineReadIntOptions = {
-      from: from,
-      to: to,
-      offset: offset,
-      cast: undefined,
-    };
-    if (type.isInteger()) {
-      if (type.isSignedInteger()) {
+  const size = binder.getTypeSize(type);
+  switch (type.id) {
+    case "int":
+    case "float": {
+      const opts: InlineReadIntOptions = {
+        from: from,
+        to: to,
+        offset: offset,
+        start: start,
+        cast: undefined,
+      };
+      if (type.id === "int") {
         switch (size) {
           case 1:
-            return inlineReadUint8(opts);
+            return inlineReadUint8(type.signed ? { ...opts, ...{ cast: castToInt8 } } : opts);
           case 2:
-            return inlineReadUint16(opts);
+            return inlineReadUint16(type.signed ? { ...opts, ...{ cast: castToInt16 } } : opts);
           case 4:
-            return inlineReadUint32(opts);
+            return inlineReadUint32(type.signed ? { ...opts, ...{ cast: castToInt32 } } : opts);
           default:
             throw new Error(`Invalid int size: ${size}.`);
         }
       } else {
         switch (size) {
-          case 1:
-            opts.cast = castToInt8;
-            return inlineReadUint8(opts);
-          case 2:
-            opts.cast = castToInt16;
-            return inlineReadUint16(opts);
           case 4:
-            opts.cast = castToInt32;
+            opts.cast = castToFloat;
             return inlineReadUint32(opts);
+          case 8:
+            opts.cast = castToDouble;
+            return inlineReadUint64(opts);
           default:
-            throw new Error(`Invalid uint size: ${size}.`);
+            throw new Error(`Invalid float size ${size}.`);
         }
       }
     }
-    if (type.isFloat()) {
-      switch (size) {
-        case 4:
-          opts.cast = castToFloat;
-          return inlineReadUint32(opts);
-        case 8:
-          opts.cast = castToDouble;
-          return inlineReadUint64(opts);
-        default:
-          throw new Error(`Invalid float size ${size}.`);
+    case "bytes":
+      return line(to, " = ", slice(BUF(), offset, size));
+    case "ascii":
+      return line(to, " = ", castToString(slice(BUF(), offset, size)));
+    case "array":
+      const valueSize = binder.getTypeSize(type.valueType);
+      if (type.length > 4) {
+        return [
+          line(
+            "for ", I, ", ", OFFSET, " := 0, ", offset, "; ",
+            OFFSET, " < ", offset + (type.length * valueSize), "; ",
+            I, ", ", OFFSET, " = ", I, ", ", OFFSET, " = ", I, " + 1, ", OFFSET, " + ", valueSize, " {",
+          ),
+          indent(
+            readFixedType(
+              binder,
+              type.valueType,
+              from,
+              [to, "[", I, "]"],
+              0,
+              OFFSET,
+            ),
+          ),
+          line("}"),
+        ];
+      } else {
+        const r = [];
+        for (let i = 0; i < type.length; i++) {
+          r.push(readFixedType(binder, type.valueType, from, [to, "[", i, "]"], offset + (i * valueSize)));
+        }
+        return r;
       }
-    }
-  }
-
-  if (type.isString()) {
-    return line(to, " = ", castToString(bufSlice(offset, type.size)));
-  }
-
-  if (type.isByteArray()) {
-    return line(to, " = ", bufSlice(offset, type.size));
-  }
-
-  if (type.isArray()) {
-    if (type.props.length < 4) {
-      const r = [];
-      for (let i = 0; i < type.props.length; i++) {
-        r.push(readFixedType(type.props.type, from, [to, "[", i, "]"], offset + i));
-      }
-      return r;
-    } else {
+    case "ref":
       return [
-        line(
-          "for ", I, ", ", OFFSET, " := 0, ", offset, "; ",
-          OFFSET, " < ", offset + (type.props.length * type.props.type.size), "; ",
-          I, ", ", OFFSET, " = ", I, ", ", OFFSET, " = ",
-          I, " + 1, ", OFFSET, " + ", type.props.type.size, " {",
-        ),
+        line("{"),
         indent(
-          readFixedType(type.props.type, (o) => from([OFFSET, " + ", o]), [to, "[", I, "]"], 0),
+          line(VALUE, " := ", binder.findSchemaById(type.symbol).factory),
+          line(VALUE, ".Unpck(", slice(BUF(), offset), ")"),
+          line(to, " = value"),
         ),
         line("}"),
       ];
-    }
   }
 
-  if (type.isRef()) {
-    return [
-      line("{"),
-      indent(
-        line(VALUE, " := &", structName(type.props), "{}"),
-        line(VALUE, ".Unpck(", bufSlice(offset), ")"),
-        line(to, " = value"),
-      ),
-      line("}"),
-    ];
-  }
   throw new Error(`Invalid fixed type: ${type}.`);
 }
 
 function readDynamicType(
-  type: Type<any>,
-  from: (offset?: TChildren) => TChildren,
+  binder: Binder<GoSchema, GoField>,
+  type: Type,
+  from: (pos: { start: TChildren, offset: number }) => TChildren,
   to: TChildren,
 ): TChildren {
-  if (type.isNumber()) {
-    if (type.isVariadicInteger()) {
-      if (type.isSignedInteger()) {
+  switch (type.id) {
+    case "varint":
+      if (type.signed) {
         return [
           line("{"),
           indent(
-            line(VALUE, ", ", SIZE, " := ", readIvar(from(0))),
+            line(VALUE, ", ", SIZE, " := ", readIvar(from({ start: OFFSET, offset: 0 }))),
             line(to, " = ", VALUE),
             line(OFFSET, " += ", SIZE),
           ),
@@ -226,78 +232,52 @@ function readDynamicType(
         return [
           line("{"),
           indent(
-            line(VALUE, ", ", SIZE, " := ", readUvar(from(0))),
+            line(VALUE, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
             line(to, " = ", VALUE),
             line(OFFSET, " += ", SIZE),
           ),
           line("}"),
         ];
       }
-    }
-  }
-  if (type.isString()) {
-    return [
-      line("{"),
-      indent(
-        line(LENGTH, ", ", SIZE, " := ", readUvar(from(0))),
-        line(OFFSET, " += ", SIZE),
-        line(to, " = ", castToString(bufSlice(OFFSET, [OFFSET, " + ", LENGTH]))),
-        line(OFFSET, " += ", LENGTH),
-      ),
-      line("}"),
-    ];
-  }
-  if (type.isByteArray()) {
-    return [
-      line("{"),
-      indent(
-        line(LENGTH, ", ", SIZE, " := ", readUvar(from(0))),
-        line(OFFSET, " += ", SIZE),
-        line(to, " = ", bufSlice(OFFSET, [OFFSET, " + ", LENGTH])),
-        line(OFFSET, " += ", LENGTH),
-      ),
-      line("}"),
-    ];
+    case "bytes":
+      return [
+        line("{"),
+        indent(
+          line(LENGTH, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
+          line(OFFSET, " += ", SIZE),
+          line(to, " = ", slice(BUF(), OFFSET, [OFFSET, " + ", LENGTH])),
+          line(OFFSET, " += ", LENGTH),
+        ),
+        line("}"),
+      ];
+    case "utf8":
+    case "ascii":
+      return [
+        line("{"),
+        indent(
+          line(LENGTH, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
+          line(OFFSET, " += ", SIZE),
+          line(to, " = ", castToString(slice(BUF(), OFFSET, [OFFSET, " + ", LENGTH]))),
+          line(OFFSET, " += ", LENGTH),
+        ),
+        line("}"),
+      ];
+    case "array":
+    case "map":
+      break;
+    case "ref":
+      return [
+        line("{"),
+        indent(
+          line(VALUE, " := ", binder.findSchemaById(type.symbol).factory),
+          line(LENGTH, " := ", VALUE, ".Unpck(", from({ start: OFFSET, offset: 0 }), ")"),
+          line(OFFSET, " += ", LENGTH),
+        ),
+        line("}"),
+      ];
+    case "union":
+      break;
   }
 
-  if (type.isRef()) {
-    return [
-      line("{"),
-      indent(
-        line(VALUE, " := &", structName(type.props), "{}"),
-        line(LENGTH, " := ", VALUE, ".Unpck(", bufSlice(OFFSET), ")"),
-        line(OFFSET, " += ", LENGTH),
-      ),
-      line("}"),
-    ];
-  }
   throw new Error(`Invalid dynamic type: ${type}`);
-}
-
-/**
- * https://golang.org/src/encoding/binary/binary.go
- * https://golang.org/issue/14808
- *
- * @param offset Bound check offset
- */
-function boundCheckHint(offset: number): TChildren {
-  return line("_ = ", buf(offset));
-}
-
-function bitSet(i: number): TChildren {
-  return v(`bitSet${i}`);
-}
-
-function buf(offset?: TChildren, value?: TChildren): TChildren {
-  if (offset === void 0) {
-    return BUF;
-  }
-  if (value === void 0) {
-    return [BUF, "[", offset, "]"];
-  }
-  return [BUF, "[", offset, "]", " = ", value];
-}
-
-function bufSlice(start: TChildren, end?: TChildren): TChildren {
-  return [BUF, "[", start, ":", end === void 0 ? null : end, "]"];
 }

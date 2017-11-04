@@ -3,6 +3,8 @@ import { Field } from "./field";
 import { Schema } from "./schema";
 import { BitStore, createBitStoreFromSchema } from "./bitstore";
 
+export const DYNAMIC_SIZE = -1;
+
 export class SchemaSize {
   readonly bitStoreSize: number;
   readonly fixedFieldsSize: number;
@@ -23,44 +25,53 @@ export class SchemaSize {
   }
 }
 
-export class SchemaDetails {
-  readonly schema: Schema;
+export class SchemaDetails<T extends Schema<F>, F extends Field> {
+  readonly schema: T;
   readonly size: SchemaSize;
   readonly bitStore: BitStore;
-  readonly fixedFields: Field[];
-  readonly dynamicFields: Field[];
+  readonly fixedFields: F[];
+  readonly dynamicFields: F[];
+  readonly optionalFields: F[];
 
-  constructor(schema: Schema, size: SchemaSize, bitStore: BitStore, fixedFields: Field[], dynamicFields: Field[]) {
+  constructor(
+    schema: T,
+    size: SchemaSize,
+    bitStore: BitStore,
+    fixedFields: F[],
+    dynamicFields: F[],
+    optionalFields: F[],
+  ) {
     this.schema = schema;
     this.size = size;
     this.bitStore = bitStore;
     this.fixedFields = fixedFields;
     this.dynamicFields = dynamicFields;
+    this.optionalFields = optionalFields;
   }
 }
 
-export class Binder {
-  readonly schemas: Map<symbol, Schema>;
-  readonly details: Map<symbol, SchemaDetails>;
+export class Binder<T extends Schema<F>, F extends Field> {
+  readonly schemas: Map<symbol, T>;
+  readonly details: Map<symbol, SchemaDetails<T, F>>;
 
   constructor() {
-    this.schemas = new Map<symbol, Schema>();
-    this.details = new Map<symbol, SchemaDetails>();
+    this.schemas = new Map<symbol, T>();
+    this.details = new Map<symbol, SchemaDetails<T, F>>();
   }
 
-  addSchema(schema: Schema): void {
+  addSchema(schema: T): void {
     this.schemas.set(schema.id, schema);
   }
 
-  findSchemaById(id: symbol): Schema {
+  findSchemaById(id: symbol): T {
     const schema = this.schemas.get(id);
     if (schema === undefined) {
-      throw new Error(`Unable to find schema with ${id.toString} id.`);
+      throw new Error(`Unable to find schema with ${id.toString()} id.`);
     }
     return schema;
   }
 
-  getSchemaDetails(schema: Schema): SchemaDetails {
+  getSchemaDetails(schema: T): SchemaDetails<T, F> {
     let details = this.details.get(schema.id);
     if (details === undefined) {
       details = analyzeSchema(this, new Set<symbol>(), schema);
@@ -68,40 +79,52 @@ export class Binder {
     }
     return details;
   }
+
+  getTypeSize(type: Type): number {
+    return getTypeSize(this, new Set<symbol>(), type);
+  }
 }
 
-const DYNAMIC_SIZE = -1;
-
-function analyzeSchema(binder: Binder, visitedSchemas: Set<symbol>, schema: Schema): SchemaDetails {
+function analyzeSchema<T extends Schema<F>, F extends Field>(
+  binder: Binder<T, F>,
+  visitedSchemas: Set<symbol>,
+  schema: T,
+): SchemaDetails<T, F> {
   visitedSchemas.add(schema.id);
 
   const bitStore = createBitStoreFromSchema(schema);
   const fixedFields = [];
   const dynamicFields = [];
+  const optionalFields = [];
   let fixedFieldsSize = 0;
   let dynamic = false;
 
   for (const field of schema.fields.slice().sort(sortFields(binder, visitedSchemas))) {
     if (field.isOptional()) {
+      optionalFields.push(field);
       dynamic = true;
-    } else {
-      const fieldSize = getTypeSize(binder, visitedSchemas, field.type);
-      if (fieldSize === DYNAMIC_SIZE) {
-        dynamicFields.push(field);
-        dynamic = true;
-      } else if (fieldSize > 0) {
-        fixedFields.push(field);
-        fixedFieldsSize += fieldSize;
-      }
+    }
+
+    const fieldSize = getTypeSize(binder, visitedSchemas, field.type);
+    if (fieldSize === DYNAMIC_SIZE) {
+      dynamicFields.push(field);
+      dynamic = true;
+    } else if (fieldSize > 0) {
+      fixedFields.push(field);
+      fixedFieldsSize += fieldSize;
     }
   }
 
   const size = new SchemaSize(Math.ceil(bitStore.length / 8), fixedFieldsSize, dynamic);
 
-  return new SchemaDetails(schema, size, bitStore, fixedFields, dynamicFields);
+  return new SchemaDetails<T, F>(schema, size, bitStore, fixedFields, dynamicFields, optionalFields);
 }
 
-function getSchemaSize(binder: Binder, visitedSchemas: Set<symbol>, schema: Schema): number {
+function getSchemaSize<T extends Schema<F>, F extends Field>(
+  binder: Binder<T, F>,
+  visitedSchemas: Set<symbol>,
+  schema: T,
+): number {
   let details = binder.details.get(schema.id);
   if (details === undefined) {
     if (visitedSchemas.has(schema.id)) {
@@ -116,7 +139,11 @@ function getSchemaSize(binder: Binder, visitedSchemas: Set<symbol>, schema: Sche
   return details.size.fixedSize;
 }
 
-function getTypeSize(binder: Binder, visitedSchemas: Set<symbol>, type: Type): number {
+function getTypeSize<T extends Schema<F>, F extends Field>(
+  binder: Binder<T, F>,
+  visitedSchemas: Set<symbol>,
+  type: Type,
+): number {
   switch (type.id) {
     case "bool":
       return 0;
@@ -132,7 +159,7 @@ function getTypeSize(binder: Binder, visitedSchemas: Set<symbol>, type: Type): n
         return type.length;
       }
     case "utf8":
-      return -1;
+      return DYNAMIC_SIZE;
     case "ascii":
       if (type.length === 0) {
         return DYNAMIC_SIZE;
@@ -141,7 +168,7 @@ function getTypeSize(binder: Binder, visitedSchemas: Set<symbol>, type: Type): n
       }
     case "array":
       if (type.length === 0) {
-        return -1;
+        return DYNAMIC_SIZE;
       } else {
         const valueTypeSize = getTypeSize(binder, visitedSchemas, type.valueType);
         if (valueTypeSize === DYNAMIC_SIZE) {
@@ -164,7 +191,10 @@ function getTypeSize(binder: Binder, visitedSchemas: Set<symbol>, type: Type): n
  * - [UINT | INT | FLOAT | VARUINT | VARINT | BYTES | UTF8 | ASCII | REF | UNION | ARRAY | MAP]
  * - Integers and floats sorted by size
  */
-function sortFields(binder: Binder, visitedSchemas: Set<symbol>) {
+function sortFields<T extends Schema<F>, F extends Field>(
+  binder: Binder<T, F>,
+  visitedSchemas: Set<symbol>,
+): (a: Field, b: Field) => number {
   return (a: Field, b: Field) => {
     if (a.isOptional()) {
       if (!b.isOptional()) {

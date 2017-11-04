@@ -299,8 +299,9 @@ export function sizeIvar(...value: TChildren[]): TChildren {
 }
 
 export interface InlineReadIntOptions {
-  from: (offset: number) => TChildren;
+  from: (pos: { start?: TChildren, offset: number }) => TChildren;
   to: TChildren;
+  start?: TChildren;
   offset?: number;
   cast?: (...c: TChildren[]) => TChildren;
 }
@@ -308,7 +309,7 @@ export interface InlineReadIntOptions {
 export function inlineReadUint8(opts: InlineReadIntOptions): TChildren {
   const offset = opts.offset === void 0 ? 0 : opts.offset;
   const cast = opts.cast === void 0 ? castToUint8 : opts.cast;
-  return line(opts.to, " = ", cast(opts.from(offset)));
+  return line(opts.to, " = ", cast(opts.from({ start: opts.start, offset: offset + 0 })));
 }
 
 export function inlineReadUint16(opts: InlineReadIntOptions): TChildren {
@@ -320,8 +321,8 @@ export function inlineReadUint16(opts: InlineReadIntOptions): TChildren {
       cast(
         intersperse(
           [
-            [castToUint16(opts.from(offset))],
-            [castToUint16(opts.from(offset + 1)), "<<8"],
+            [castToUint16(opts.from({ start: opts.start, offset: offset + 0 }))],
+            [castToUint16(opts.from({ start: opts.start, offset: offset + 1 })), "<<8"],
           ],
           " | ",
         ),
@@ -339,10 +340,10 @@ export function inlineReadUint32(opts: InlineReadIntOptions): TChildren {
       cast(
         intersperse(
           [
-            [castToUint32(opts.from(offset))],
-            [castToUint32(opts.from(offset + 1)), "<<8"],
-            [castToUint32(opts.from(offset + 2)), "<<16"],
-            [castToUint32(opts.from(offset + 3)), "<<24"],
+            [castToUint32(opts.from({ start: opts.start, offset: offset + 0 }))],
+            [castToUint32(opts.from({ start: opts.start, offset: offset + 1 })), "<<8"],
+            [castToUint32(opts.from({ start: opts.start, offset: offset + 2 })), "<<16"],
+            [castToUint32(opts.from({ start: opts.start, offset: offset + 3 })), "<<24"],
           ],
           " | ",
         ),
@@ -360,10 +361,10 @@ export function inlineReadUint64(opts: InlineReadIntOptions): TChildren {
       cast(
         intersperse(
           [
-            [castToUint64(opts.from(offset))],
-            [castToUint64(opts.from(offset + 1)), "<<8"],
-            [castToUint64(opts.from(offset + 2)), "<<16"],
-            [castToUint64(opts.from(offset + 3)), "<<24"],
+            [castToUint64(opts.from({ start: opts.start, offset: offset + 0 }))],
+            [castToUint64(opts.from({ start: opts.start, offset: offset + 1 })), "<<8"],
+            [castToUint64(opts.from({ start: opts.start, offset: offset + 2 })), "<<16"],
+            [castToUint64(opts.from({ start: opts.start, offset: offset + 3 })), "<<24"],
           ],
           " | ",
         ),
@@ -374,10 +375,10 @@ export function inlineReadUint64(opts: InlineReadIntOptions): TChildren {
       cast(
         intersperse(
           [
-            [castToUint64(opts.from(offset + 4)), "<<32"],
-            [castToUint64(opts.from(offset + 5)), "<<40"],
-            [castToUint64(opts.from(offset + 6)), "<<48"],
-            [castToUint64(opts.from(offset + 7)), "<<56"],
+            [castToUint64(opts.from({ start: opts.start, offset: offset + 4 })), "<<32"],
+            [castToUint64(opts.from({ start: opts.start, offset: offset + 5 })), "<<40"],
+            [castToUint64(opts.from({ start: opts.start, offset: offset + 6 })), "<<48"],
+            [castToUint64(opts.from({ start: opts.start, offset: offset + 7 })), "<<56"],
           ],
           " | ",
         ),

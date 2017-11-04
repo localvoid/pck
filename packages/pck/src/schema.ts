@@ -1,31 +1,31 @@
 import { Field } from "./field";
 
-export class Schema {
+export class Schema<T extends Field> {
   readonly id: symbol;
-  readonly fields: Field[];
+  readonly fields: T[];
 
-  constructor(id: symbol, fields: Field<any>[]) {
+  constructor(id: symbol, fields: T[]) {
     this.id = id;
     this.fields = fields;
   }
 }
 
 /* tslint:disable:no-empty-interface */
-export type RecursiveFieldArray = Field | IRecursiveFieldArray | null;
-export interface IRecursiveFieldArray extends Array<RecursiveFieldArray> { }
+export type RecursiveFieldArray<T> = T | IRecursiveFieldArray<T> | null;
+export interface IRecursiveFieldArray<T> extends Array<RecursiveFieldArray<T>> { }
 /* tslint:enable:no-empty-interface */
 
-export function schema(id: symbol, fields: RecursiveFieldArray[]): Schema {
+export function schema<T extends Field>(id: symbol, fields: RecursiveFieldArray<T>[]): Schema<T> {
   return new Schema(id, normalizeFields(fields));
 }
 
-function normalizeFields(fields: RecursiveFieldArray[]): Field<any>[] {
-  const result: Field<any>[] = [];
+function normalizeFields<T extends Field>(fields: RecursiveFieldArray<T>[]): T[] {
+  const result: T[] = [];
   _normalizeFields(result, fields);
   return result;
 }
 
-function _normalizeFields(result: Field[], fields: RecursiveFieldArray[]): void {
+function _normalizeFields<T extends Field>(result: T[], fields: RecursiveFieldArray<T>[]): void {
   for (const f of fields) {
     if (f !== null) {
       if (Array.isArray(f)) {

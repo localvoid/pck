@@ -314,3 +314,49 @@ export function REF(symbol: symbol): RefType {
 export function UNION(symbols: symbol[]): UnionType {
   return new UnionType(symbols);
 }
+
+export function checkTypeCompatibility(a: Type, b: Type): "type" | "size" | "length" | "symbol" | null {
+  if (a.id !== b.id) {
+    return "type";
+  }
+
+  switch (a.id) {
+    case "int":
+    case "float":
+      if (a.size !== (b as IntType | FloatType).size) {
+        return "size";
+      }
+      break;
+    case "ascii":
+    case "bytes":
+      if (a.length !== (b as AsciiType | BytesType).length) {
+        return "length";
+      }
+      break;
+    case "array":
+      return checkTypeCompatibility(a.valueType, (b as ArrayType).valueType);
+    case "map":
+      const keyError = checkTypeCompatibility(a.keyType, (b as MapType).keyType);
+      if (keyError !== null) {
+        return keyError;
+      }
+      return checkTypeCompatibility(a.valueType, (b as MapType).valueType);
+    case "ref":
+      if (a.symbol !== (b as RefType).symbol) {
+        return "symbol";
+      }
+      break;
+    case "union":
+      const bSymbols = (b as UnionType).symbols;
+      if (a.symbols.length !== bSymbols.length) {
+        return "symbol";
+      }
+      for (const s of a.symbols) {
+        if (bSymbols.indexOf(s) === -1) {
+          return "symbol";
+        }
+      }
+  }
+
+  return null;
+}

@@ -1,16 +1,17 @@
 import { Type } from "./type";
+import { Field } from "./field";
 import { Schema } from "./schema";
 import { Binder } from "./binder";
 
-export class Bundle {
-  readonly binder: Binder;
-  readonly schemas: Schema[];
+export class Bundle<T extends Schema<F>, F extends Field> {
+  readonly binder: Binder<T, F>;
+  readonly schemas: T[];
   readonly types: Set<Type>;
   readonly taggedSchemas: Map<symbol, number>;
 
   constructor(
-    binder: Binder,
-    schemas: Schema[],
+    binder: Binder<T, F>,
+    schemas: T[],
     types: Set<Type>,
     taggedSchemas: Map<symbol, number>,
   ) {
@@ -20,20 +21,20 @@ export class Bundle {
     this.taggedSchemas = taggedSchemas;
   }
 
-  getSchemaTag(schema: Schema): number | undefined {
+  getSchemaTag(schema: T): number | undefined {
     return this.taggedSchemas.get(schema.id);
   }
 }
 
-export function bundle(schemas: Schema[]): Bundle {
-  const binder = new Binder();
+export function bundle<T extends Schema<F>, F extends Field>(schemas: T[]): Bundle<T, F> {
+  const binder = new Binder<T, F>();
   for (const schema of schemas) {
     binder.addSchema(schema);
   }
 
   const analyzeResult = analyzeSchemas(binder, schemas);
 
-  return new Bundle(binder, schemas, analyzeResult.types, analyzeResult.taggedSchemas);
+  return new Bundle<T, F>(binder, schemas, analyzeResult.types, analyzeResult.taggedSchemas);
 }
 
 interface AnalyzeResult {
@@ -41,7 +42,7 @@ interface AnalyzeResult {
   readonly taggedSchemas: Map<symbol, number>;
 }
 
-function analyzeSchemas(binder: Binder, schemas: Schema[]): AnalyzeResult {
+function analyzeSchemas<T extends Schema<F>, F extends Field>(binder: Binder<T, F>, schemas: T[]): AnalyzeResult {
   const types = new Set<Type>();
   const taggedSchemas = new Map<symbol, number>();
   let tagIndex = 0;

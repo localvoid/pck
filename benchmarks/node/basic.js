@@ -60,7 +60,7 @@ function browserWriteAttributes(w, v) {
 
 function browserReadData(b) {
   const bitSet1 = pckBrowser.readU8(b);
-  const jumping = (bitSet1 & 1) !== 0;
+  const jumping = bitSet1 !== 0;
 
   const health = pckBrowser.readIVar(b);
   const position = browserReadPosition(b);
@@ -104,7 +104,7 @@ function nodeWriteAttributes(w, v) {
 
 function nodeReadData(b) {
   const bitSet1 = pckNode.readU8(b);
-  const jumping = (bitSet1 & 1) !== 0;
+  const jumping = bitSet1 !== 0;
 
   const health = pckNode.readIVar(b);
   const position = nodeReadPosition(b);

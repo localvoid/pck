@@ -8,9 +8,9 @@ type Position struct {
 
 // Attributes is attributes
 type Attributes struct {
-	Str int8 `json:"str"`
-	Agi int8 `json:"agi"`
-	Int int8 `json:"int"`
+	Str uint8 `json:"str"`
+	Agi uint8 `json:"agi"`
+	Int uint8 `json:"int"`
 }
 
 // User is user
@@ -21,38 +21,37 @@ type User struct {
 	Attributes *Attributes `json:"attributes"`
 }
 
-// pck:assign({ "schema": "Position" })
-// pck:emit("methods")
+// pck:emit("methods", "Position")
 
 // Size is an automatically generated method for PCK serialized size calculation.
-func (s *Position) Size() (size int) {
+func (position *Position) Size() (size int) {
 	var length int
 	_ = length
 	size = 0
-	size += sizeIvar(int64(s.X))
-	size += sizeIvar(int64(s.Y))
+	size += sizeIvar(int64(position.X))
+	size += sizeIvar(int64(position.Y))
 	return
 }
 
 // Pck is an automatically generated method for PCK serialization.
-func (s *Position) Pck(b []byte) int {
+func (position *Position) Pck(b []byte) int {
 	offset := 0
-	offset += writeIvar(b[offset:], int64(s.X))
-	offset += writeIvar(b[offset:], int64(s.Y))
+	offset += writeIvar(b[offset:], int64(position.X))
+	offset += writeIvar(b[offset:], int64(position.Y))
 	return offset
 }
 
 // Unpck is an automatically generated method for PCK deserialization.
-func (s *Position) Unpck(b []byte) int {
+func (position *Position) Unpck(b []byte) int {
 	offset := 0
 	{
-		value, size := readIvar(b[offset + 0:])
-		s.X = value
+		value, size := readIvar(b[offset:])
+		position.X = value
 		offset += size
 	}
 	{
-		value, size := readIvar(b[offset + 0:])
-		s.Y = value
+		value, size := readIvar(b[offset:])
+		position.Y = value
 		offset += size
 	}
 	return offset
@@ -60,76 +59,72 @@ func (s *Position) Unpck(b []byte) int {
 
 // pck:end
 
-// pck:assign({ "schema": "Attributes" })
-// pck:emit("methods")
+// pck:emit("methods", "Attributes")
 
 // Size is an automatically generated method for PCK serialized size calculation.
-func (s *Attributes) Size() int {
+func (attributes *Attributes) Size() int {
 	return 3
 }
 
 // Pck is an automatically generated method for PCK serialization.
-func (s *Attributes) Pck(b []byte) int {
+func (attributes *Attributes) Pck(b []byte) int {
 	_ = b[2]
-	b[0] = byte(s.Str)
-	b[1] = byte(s.Agi)
-	b[2] = byte(s.Int)
+	b[0] = byte(attributes.Str)
+	b[1] = byte(attributes.Agi)
+	b[2] = byte(attributes.Int)
 	return 3
 }
 
 // Unpck is an automatically generated method for PCK deserialization.
-func (s *Attributes) Unpck(b []byte) int {
+func (attributes *Attributes) Unpck(b []byte) int {
 	_ = b[2]
-	s.Str = int8(b[0])
-	s.Agi = int8(b[1])
-	s.Int = int8(b[2])
+	attributes.Str = uint8(b[0])
+	attributes.Agi = uint8(b[1])
+	attributes.Int = uint8(b[2])
 	return 3
 }
 
 // pck:end
 
-// pck:assign({ "schema": "User" })
-// pck:emit("methods")
+// pck:emit("methods", "User")
 
 // Size is an automatically generated method for PCK serialized size calculation.
-func (s *User) Size() (size int) {
+func (user *User) Size() (size int) {
 	var length int
 	_ = length
 	size = 4
-	size += sizeIvar(int64(s.Health))
-	size += s.Position.Size()
+	size += sizeIvar(int64(user.Health))
+	size += user.Position.Size()
 	return
 }
 
 // Pck is an automatically generated method for PCK serialization.
-func (s *User) Pck(b []byte) int {
+func (user *User) Pck(b []byte) int {
 	_ = b[3]
-	var bitSetValue uint8
-	if s.Jumping {
-		bitSetValue = 1
+	if user.Jumping {
+		b[0] = 1
 	}
-	b[0] = bitSetValue
-	s.Attributes.Pck(b[1:])
+	user.Attributes.Pck(b[1:])
 	offset := 4
-	offset += writeIvar(b[offset:], int64(s.Health))
-	offset += s.Position.Pck(b[offset:])
+	offset += writeIvar(b[offset:], int64(user.Health))
+	offset += user.Position.Pck(b[offset:])
 	return offset
 }
 
 // Unpck is an automatically generated method for PCK deserialization.
-func (s *User) Unpck(b []byte) int {
+func (user *User) Unpck(b []byte) int {
 	_ = b[3]
 	bitSet0 := b[0]
-	s.Jumping = bitSet0 != 0
+	user.Jumping = bitSet0 != 0
 	{
 		value := &Attributes{}
 		value.Unpck(b[1:])
-		s.Attributes = value
+		user.Attributes = value
 	}
 	offset := 4
 	{
-		value, size := readIvar(b[offset + 0:])
-		s.Health = value
+		value, size := readIvar(b[offset:])
+		user.Health = value
 		offset += size
 	}
 	{

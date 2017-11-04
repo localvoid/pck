@@ -53,7 +53,7 @@ export class BitStore {
   }
 }
 
-export function createBitStoreFromSchema(schema: Schema): BitStore {
+export function createBitStoreFromSchema<T extends Field>(schema: Schema<T>): BitStore {
   const optionals = [];
   const booleans = [];
 

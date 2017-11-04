@@ -42,11 +42,11 @@
     "pck": "^0.1.0"
   },
   "dependencies": {
-    "incode": "^0.2.1",
+    "incode": "^0.3.0",
     "lodash": "^4.17.4",
     "osh": "^0.4.0",
     "osh-code": "^0.4.0",
-    "osh-code-go": "^0.3.0",
+    "osh-code-go": "^0.4.0",
     "osh-text": "^0.4.0"
   },
   "devDependencies": {

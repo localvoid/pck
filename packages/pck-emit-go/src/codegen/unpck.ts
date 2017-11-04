@@ -2,7 +2,7 @@ import { Context, TChildren, TNode, component } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
 import { Type, SchemaSize, SchemaDetails, Binder } from "pck";
 import {
-  getBundle, enterSchema, declArgs, declVars, SELF, BUF, v, slice, boundCheckHint,
+  getBundle, enterSchema, declArgs, declVars, SELF, BUF, v, slice, boundCheckHint, callMethod,
   castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString,
 } from "./utils";
 import {
@@ -195,6 +195,8 @@ function readFixedType(
         }
         return r;
       }
+    case "schema":
+      return line(callMethod(to, "Unpck", [slice(BUF(), offset)]));
     case "ref":
       return [
         line("{"),
@@ -265,6 +267,8 @@ function readDynamicType(
     case "array":
     case "map":
       break;
+    case "schema":
+      return line(OFFSET, " += ", callMethod(to, "Unpck", [from({ start: OFFSET, offset: 0 })]));
     case "ref":
       return [
         line("{"),

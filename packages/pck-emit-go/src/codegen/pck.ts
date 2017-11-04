@@ -186,6 +186,7 @@ function putFixedField(binder: Binder<GoSchema, GoField>, field: GoField, offset
       return putCopy(SELF(field.name), offset);
     case "array":
       break;
+    case "schema":
     case "ref":
       return line(callMethod(SELF(field.name), "Pck", [slice(BUF(), offset)]));
   }
@@ -209,6 +210,7 @@ function putDynamicField(field: GoField): TChildren {
     case "array":
     case "map":
       return "TODO";
+    case "schema":
     case "ref":
       return line(OFFSET, " += ", callMethod(SELF(field.name), "Pck", [slice(BUF(), OFFSET)]));
     case "union":

@@ -8,6 +8,7 @@ export type TypeId =
   | "ascii"
   | "array"
   | "map"
+  | "schema"
   | "ref"
   | "union";
 
@@ -21,15 +22,18 @@ export type Type =
   | AsciiType
   | ArrayType
   | MapType
+  | SchemaType
   | RefType
   | UnionType;
 
-export interface IType {
+export interface IType<T = any> {
   readonly id: TypeId;
+  readonly meta?: T;
 }
 
-export class BoolType implements IType {
+export class BoolType<T = any> implements IType<T> {
   readonly id: "bool";
+  readonly meta?: T;
 
   constructor() {
     this.id = "bool";
@@ -40,10 +44,11 @@ export class BoolType implements IType {
   }
 }
 
-export class IntType implements IType {
+export class IntType<T = any> implements IType<T> {
   readonly id: "int";
   readonly size: 1 | 2 | 4 | 8;
   readonly signed: boolean;
+  readonly meta?: T;
 
   constructor(size: 1 | 2 | 4 | 8, signed: boolean) {
     this.id = "int";
@@ -56,9 +61,10 @@ export class IntType implements IType {
   }
 }
 
-export class FloatType implements IType {
+export class FloatType<T = any> implements IType<T> {
   readonly id: "float";
   readonly size: 4 | 8;
+  readonly meta?: T;
 
   constructor(size: 4 | 8) {
     this.id = "float";
@@ -70,9 +76,10 @@ export class FloatType implements IType {
   }
 }
 
-export class VarIntType implements IType {
+export class VarIntType<T = any> implements IType<T> {
   readonly id: "varint";
   readonly signed: boolean;
+  readonly meta?: T;
 
   constructor(signed: boolean) {
     this.id = "varint";
@@ -84,9 +91,10 @@ export class VarIntType implements IType {
   }
 }
 
-export class BytesType implements IType {
+export class BytesType<T = any> implements IType<T> {
   readonly id: "bytes";
   readonly length: number;
+  readonly meta?: T;
 
   constructor(length = 0) {
     this.id = "bytes";
@@ -101,8 +109,9 @@ export class BytesType implements IType {
   }
 }
 
-export class Utf8Type implements IType {
+export class Utf8Type<T = any> implements IType<T> {
   readonly id: "utf8";
+  readonly meta?: T;
 
   constructor() {
     this.id = "utf8";
@@ -113,9 +122,10 @@ export class Utf8Type implements IType {
   }
 }
 
-export class AsciiType implements IType {
+export class AsciiType<T = any> implements IType<T> {
   readonly id: "ascii";
   readonly length: number;
+  readonly meta?: T;
 
   constructor(length = 0) {
     this.id = "ascii";
@@ -130,10 +140,11 @@ export class AsciiType implements IType {
   }
 }
 
-export class ArrayType implements IType {
+export class ArrayType<T = any> implements IType<T> {
   readonly id: "array";
   readonly valueType: Type;
   readonly length: number;
+  readonly meta?: T;
 
   constructor(valueType: Type, length = 0) {
     this.id = "array";
@@ -149,10 +160,11 @@ export class ArrayType implements IType {
   }
 }
 
-export class MapType implements IType {
+export class MapType<T = any> implements IType<T> {
   readonly id: "map";
   readonly keyType: Type;
   readonly valueType: Type;
+  readonly meta?: T;
 
   constructor(keyType: Type, valueType: Type) {
     this.id = "map";
@@ -165,9 +177,25 @@ export class MapType implements IType {
   }
 }
 
-export class RefType implements IType {
+export class SchemaType<T = any> implements IType<T> {
+  readonly id: "schema";
+  readonly symbol: symbol;
+  readonly meta?: T;
+
+  constructor(symbol: symbol) {
+    this.id = "schema";
+    this.symbol = symbol;
+  }
+
+  toString(): string {
+    return `<Type: schema<${this.symbol.toString()}>`;
+  }
+}
+
+export class RefType<T = any> implements IType<T> {
   readonly id: "ref";
   readonly symbol: symbol;
+  readonly meta?: T;
 
   constructor(symbol: symbol) {
     this.id = "ref";
@@ -179,9 +207,10 @@ export class RefType implements IType {
   }
 }
 
-export class UnionType implements IType {
+export class UnionType<T = any> implements IType<T> {
   readonly id: "union";
   readonly symbols: symbol[];
+  readonly meta?: T;
 
   constructor(symbols: symbol[]) {
     this.id = "union";
@@ -307,6 +336,10 @@ export function MAP(keyType: Type, valueType: Type): MapType {
   return new MapType(keyType, valueType);
 }
 
+export function SCHEMA(symbol: symbol): SchemaType {
+  return new SchemaType(symbol);
+}
+
 export function REF(symbol: symbol): RefType {
   return new RefType(symbol);
 }
@@ -317,7 +350,15 @@ export function UNION(symbols: symbol[]): UnionType {
 
 export function checkTypeCompatibility(a: Type, b: Type): "type" | "size" | "length" | "symbol" | null {
   if (a.id !== b.id) {
-    return "type";
+    switch (a.id) {
+      case "schema":
+      case "ref":
+        if (b.id === "schema" || b.id === "ref") {
+          break;
+        }
+      default:
+        return "type";
+    }
   }
 
   switch (a.id) {
@@ -341,8 +382,9 @@ export function checkTypeCompatibility(a: Type, b: Type): "type" | "size" | "len
         return keyError;
       }
       return checkTypeCompatibility(a.valueType, (b as MapType).valueType);
+    case "schema":
     case "ref":
-      if (a.symbol !== (b as RefType).symbol) {
+      if (a.symbol !== (b as (SchemaType | RefType)).symbol) {
         return "symbol";
       }
       break;

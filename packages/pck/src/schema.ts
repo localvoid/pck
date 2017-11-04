@@ -15,7 +15,7 @@ export type RecursiveFieldArray<T> = T | IRecursiveFieldArray<T> | null;
 export interface IRecursiveFieldArray<T> extends Array<RecursiveFieldArray<T>> { }
 /* tslint:enable:no-empty-interface */
 
-export function schema<T extends Field>(id: symbol, fields: RecursiveFieldArray<T>[]): Schema<T> {
+export function declareSchema<T extends Field>(id: symbol, fields: RecursiveFieldArray<T>[]): Schema<T> {
   return new Schema(id, normalizeFields(fields));
 }
 

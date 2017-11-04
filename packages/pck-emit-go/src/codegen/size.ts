@@ -113,6 +113,7 @@ function incSizeValue(binder: Binder<GoSchema, GoField>, type: Type, value?: TCh
         line(LENGTH, " = ", len(value)),
         incSize(sizeUvar(LENGTH), " + ", LENGTH),
       ];
+    case "schema":
     case "ref":
       return incSize(callMethod(value, "Size"));
     case "array":

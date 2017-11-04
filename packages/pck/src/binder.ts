@@ -179,6 +179,7 @@ function getTypeSize<T extends Schema<F>, F extends Field>(
       }
     case "map":
       return -1;
+    case "schema":
     case "ref":
       return getSchemaSize(binder, visitedSchemas, binder.findSchemaById(type.symbol));
     case "union":
@@ -263,12 +264,25 @@ function sortFields<T extends Schema<F>, F extends Field>(
       return 1;
     }
 
-    if (a.type.id === "ascii") {
+    if (a.type.id === "schema") {
       if (
         b.type.id === "map" ||
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "ref"
+      ) {
+        return -1;
+      }
+      return 1;
+    }
+
+    if (a.type.id === "ascii") {
+      if (
+        b.type.id === "map" ||
+        b.type.id === "array" ||
+        b.type.id === "union" ||
+        b.type.id === "ref" ||
+        b.type.id === "schema"
       ) {
         return -1;
       }
@@ -281,6 +295,7 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "ref" ||
+        b.type.id === "schema" ||
         b.type.id === "ascii"
       ) {
         return -1;
@@ -294,6 +309,7 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "ref" ||
+        b.type.id === "schema" ||
         b.type.id === "ascii" ||
         b.type.id === "utf8"
       ) {
@@ -308,6 +324,7 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "ref" ||
+        b.type.id === "schema" ||
         b.type.id === "ascii" ||
         b.type.id === "utf8" ||
         b.type.id === "bytes"
@@ -323,6 +340,7 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "ref" ||
+        b.type.id === "schema" ||
         b.type.id === "ascii" ||
         b.type.id === "utf8" ||
         b.type.id === "bytes" ||
@@ -339,6 +357,7 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "ref" ||
+        b.type.id === "schema" ||
         b.type.id === "ascii" ||
         b.type.id === "utf8" ||
         b.type.id === "bytes" ||

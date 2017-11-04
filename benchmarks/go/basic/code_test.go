@@ -7,11 +7,11 @@ import "fmt"
 var Data = &User{
 	Health:  100,
 	Jumping: true,
-	Position: &Position{
+	Position: Position{
 		X: 10,
 		Y: 20,
 	},
-	Attributes: &Attributes{
+	Attributes: Attributes{
 		Str: 100,
 		Agi: 50,
 		Int: 10,

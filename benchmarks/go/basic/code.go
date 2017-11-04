@@ -15,10 +15,10 @@ type Attributes struct {
 
 // User is user
 type User struct {
-	Health     int64       `json:"health"`
-	Jumping    bool        `json:"jumping"`
-	Position   *Position   `json:"position"`
-	Attributes *Attributes `json:"attributes"`
+	Health     int64      `json:"health"`
+	Jumping    bool       `json:"jumping"`
+	Position   Position   `json:"position"`
+	Attributes Attributes `json:"attributes"`
 }
 
 // pck:emit("methods", "Position")
@@ -116,22 +116,14 @@ func (user *User) Unpck(b []byte) int {
 	_ = b[3]
 	bitSet0 := b[0]
 	user.Jumping = bitSet0 != 0
-	{
-		value := &Attributes{}
-		value.Unpck(b[1:])
-		user.Attributes = value
-	}
+	user.Attributes.Unpck(b[1:])
 	offset := 4
 	{
 		value, size := readIvar(b[offset:])
 		user.Health = value
 		offset += size
 	}
-	{
-		value := &Position{}
-		length := value.Unpck(b[offset:])
-		offset += length
-	}
+	offset += user.Position.Unpck(b[offset:])
 	return offset
 }
 

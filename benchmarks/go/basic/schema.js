@@ -1,7 +1,7 @@
 const pck = require("pck");
 const pckGo = require("pck-emit-go");
 
-const Position = pck.schema(
+const Position = pck.declareSchema(
   Symbol.for("pck.Position"),
   [
     pck.varint("x"),
@@ -9,7 +9,7 @@ const Position = pck.schema(
   ],
 );
 
-const Attributes = pck.schema(
+const Attributes = pck.declareSchema(
   Symbol.for("pck.Attributes"),
   [
     pck.uint8("str"),
@@ -18,13 +18,13 @@ const Attributes = pck.schema(
   ],
 );
 
-const User = pck.schema(
+const User = pck.declareSchema(
   Symbol.for("pck.User"),
   [
     pck.varint("health"),
     pck.bool("jumping"),
-    pck.ref("position", Symbol.for("pck.Position")),
-    pck.ref("attributes", Symbol.for("pck.Attributes")),
+    pck.schema("position", Symbol.for("pck.Position")),
+    pck.schema("attributes", Symbol.for("pck.Attributes")),
   ],
 );
 
@@ -40,5 +40,13 @@ module.exports = pck.bundle([
   pckGo.goSchema({
     schema: User,
     struct: "User",
+    fields: (f) => {
+      switch (f.name) {
+        case "position":
+        case "attributes":
+          return pckGo.embed(f);
+      }
+      return f;
+    },
   }),
 ]);

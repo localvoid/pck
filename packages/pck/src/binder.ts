@@ -27,6 +27,7 @@ export class SchemaSize {
 
 export class SchemaDetails<T extends Schema<F>, F extends Field> {
   readonly schema: T;
+  readonly tag: number;
   readonly size: SchemaSize;
   readonly bitStore: BitStore;
   readonly fixedFields: F[];
@@ -35,6 +36,7 @@ export class SchemaDetails<T extends Schema<F>, F extends Field> {
 
   constructor(
     schema: T,
+    tag: number,
     size: SchemaSize,
     bitStore: BitStore,
     fixedFields: F[],
@@ -42,6 +44,7 @@ export class SchemaDetails<T extends Schema<F>, F extends Field> {
     optionalFields: F[],
   ) {
     this.schema = schema;
+    this.tag = tag;
     this.size = size;
     this.bitStore = bitStore;
     this.fixedFields = fixedFields;
@@ -52,15 +55,13 @@ export class SchemaDetails<T extends Schema<F>, F extends Field> {
 
 export class Binder<T extends Schema<F>, F extends Field> {
   readonly schemas: Map<symbol, T>;
+  readonly schemaTags: Map<symbol, number>;
   readonly details: Map<symbol, SchemaDetails<T, F>>;
 
-  constructor() {
-    this.schemas = new Map<symbol, T>();
+  constructor(schemas: Map<symbol, T>, schemaTags: Map<symbol, number>) {
+    this.schemas = schemas;
+    this.schemaTags = schemaTags;
     this.details = new Map<symbol, SchemaDetails<T, F>>();
-  }
-
-  addSchema(schema: T): void {
-    this.schemas.set(schema.id, schema);
   }
 
   findSchemaById(id: symbol): T {
@@ -96,6 +97,11 @@ function analyzeSchema<T extends Schema<F>, F extends Field>(
   const fixedFields = [];
   const dynamicFields = [];
   const optionalFields = [];
+  let tag = binder.schemaTags.get(schema.id);
+  if (tag === undefined) {
+    tag = -1;
+  }
+
   let fixedFieldsSize = 0;
   let dynamic = false;
 
@@ -118,7 +124,7 @@ function analyzeSchema<T extends Schema<F>, F extends Field>(
 
   const size = new SchemaSize(Math.ceil(bitStore.length / 8), fixedFieldsSize, dynamic);
 
-  return new SchemaDetails<T, F>(schema, size, bitStore, fixedFields, dynamicFields, optionalFields);
+  return new SchemaDetails<T, F>(schema, tag, size, bitStore, fixedFields, dynamicFields, optionalFields);
 }
 
 function getSchemaSize<T extends Schema<F>, F extends Field>(

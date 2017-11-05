@@ -5,46 +5,30 @@ import { Binder } from "./binder";
 
 export class Bundle<T extends Schema<F>, F extends Field> {
   readonly binder: Binder<T, F>;
-  readonly schemas: T[];
   readonly types: Set<Type>;
-  readonly taggedSchemas: Map<symbol, number>;
 
-  constructor(
-    binder: Binder<T, F>,
-    schemas: T[],
-    types: Set<Type>,
-    taggedSchemas: Map<symbol, number>,
-  ) {
+  constructor(binder: Binder<T, F>, types: Set<Type>) {
     this.binder = binder;
-    this.schemas = schemas;
     this.types = types;
-    this.taggedSchemas = taggedSchemas;
-  }
-
-  getSchemaTag(schema: T): number | undefined {
-    return this.taggedSchemas.get(schema.id);
   }
 }
 
 export function bundle<T extends Schema<F>, F extends Field>(schemas: T[]): Bundle<T, F> {
-  const binder = new Binder<T, F>();
-  for (const schema of schemas) {
-    binder.addSchema(schema);
-  }
-
-  const analyzeResult = analyzeSchemas(binder, schemas);
-
-  return new Bundle<T, F>(binder, schemas, analyzeResult.types, analyzeResult.taggedSchemas);
+  const analyzeResult = analyzeSchemas(schemas);
+  const binder = new Binder<T, F>(analyzeResult.schemaIndex, analyzeResult.schemaTags);
+  return new Bundle<T, F>(binder, analyzeResult.types);
 }
 
-interface AnalyzeResult {
+interface AnalyzeResult<T extends Schema<F>, F extends Field> {
   readonly types: Set<Type>;
-  readonly taggedSchemas: Map<symbol, number>;
+  readonly schemaIndex: Map<symbol, T>;
+  readonly schemaTags: Map<symbol, number>;
 }
 
-function analyzeSchemas<T extends Schema<F>, F extends Field>(binder: Binder<T, F>, schemas: T[]): AnalyzeResult {
+function analyzeSchemas<T extends Schema<F>, F extends Field>(schemas: T[]): AnalyzeResult<T, F> {
+  const schemaIndex = new Map<symbol, T>();
+  const schemaTags = new Map<symbol, number>();
   const types = new Set<Type>();
-  const taggedSchemas = new Map<symbol, number>();
   let tagIndex = 0;
 
   for (const schema of schemas) {
@@ -53,13 +37,13 @@ function analyzeSchemas<T extends Schema<F>, F extends Field>(binder: Binder<T, 
 
       if (field.type.id === "union") {
         for (const schemaId of field.type.symbols) {
-          if (!taggedSchemas.has(schemaId)) {
-            taggedSchemas.set(schemaId, tagIndex++);
+          if (!schemaTags.has(schemaId)) {
+            schemaTags.set(schemaId, tagIndex++);
           }
         }
       }
     }
   }
 
-  return { types, taggedSchemas };
+  return { schemaIndex, schemaTags, types };
 }

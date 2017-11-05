@@ -102,16 +102,17 @@ function analyzeSchema<T extends Schema<F>, F extends Field>(
   for (const field of schema.fields.slice().sort(sortFields(binder, visitedSchemas))) {
     if (field.isOptional()) {
       optionalFields.push(field);
-      dynamic = true;
-    }
-
-    const fieldSize = getTypeSize(binder, visitedSchemas, field.type);
-    if (fieldSize === DYNAMIC_SIZE) {
       dynamicFields.push(field);
       dynamic = true;
-    } else if (fieldSize > 0) {
-      fixedFields.push(field);
-      fixedFieldsSize += fieldSize;
+    } else {
+      const fieldSize = getTypeSize(binder, visitedSchemas, field.type);
+      if (fieldSize === DYNAMIC_SIZE) {
+        dynamicFields.push(field);
+        dynamic = true;
+      } else if (fieldSize > 0) {
+        fixedFields.push(field);
+        fixedFieldsSize += fieldSize;
+      }
     }
   }
 
@@ -180,7 +181,6 @@ function getTypeSize<T extends Schema<F>, F extends Field>(
     case "map":
       return -1;
     case "schema":
-    case "ref":
       return getSchemaSize(binder, visitedSchemas, binder.findSchemaById(type.symbol));
     case "union":
       return -1;
@@ -253,23 +253,11 @@ function sortFields<T extends Schema<F>, F extends Field>(
       return 1;
     }
 
-    if (a.type.id === "ref") {
-      if (
-        b.type.id === "map" ||
-        b.type.id === "array" ||
-        b.type.id === "union"
-      ) {
-        return -1;
-      }
-      return 1;
-    }
-
     if (a.type.id === "schema") {
       if (
         b.type.id === "map" ||
         b.type.id === "array" ||
-        b.type.id === "union" ||
-        b.type.id === "ref"
+        b.type.id === "union"
       ) {
         return -1;
       }
@@ -281,7 +269,6 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "map" ||
         b.type.id === "array" ||
         b.type.id === "union" ||
-        b.type.id === "ref" ||
         b.type.id === "schema"
       ) {
         return -1;
@@ -294,7 +281,6 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "map" ||
         b.type.id === "array" ||
         b.type.id === "union" ||
-        b.type.id === "ref" ||
         b.type.id === "schema" ||
         b.type.id === "ascii"
       ) {
@@ -308,7 +294,6 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "map" ||
         b.type.id === "array" ||
         b.type.id === "union" ||
-        b.type.id === "ref" ||
         b.type.id === "schema" ||
         b.type.id === "ascii" ||
         b.type.id === "utf8"
@@ -323,7 +308,6 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "map" ||
         b.type.id === "array" ||
         b.type.id === "union" ||
-        b.type.id === "ref" ||
         b.type.id === "schema" ||
         b.type.id === "ascii" ||
         b.type.id === "utf8" ||
@@ -339,7 +323,6 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "map" ||
         b.type.id === "array" ||
         b.type.id === "union" ||
-        b.type.id === "ref" ||
         b.type.id === "schema" ||
         b.type.id === "ascii" ||
         b.type.id === "utf8" ||
@@ -356,7 +339,6 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "map" ||
         b.type.id === "array" ||
         b.type.id === "union" ||
-        b.type.id === "ref" ||
         b.type.id === "schema" ||
         b.type.id === "ascii" ||
         b.type.id === "utf8" ||

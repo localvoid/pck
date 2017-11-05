@@ -9,8 +9,11 @@ export type TypeId =
   | "array"
   | "map"
   | "schema"
-  | "ref"
   | "union";
+
+export const enum TypeFlags {
+  Nullable = 1,
+}
 
 export type Type =
   | BoolType
@@ -23,37 +26,57 @@ export type Type =
   | ArrayType
   | MapType
   | SchemaType
-  | RefType
   | UnionType;
 
-export interface IType<T = any> {
+export abstract class BaseType {
   readonly id: TypeId;
-  readonly meta?: T;
-}
+  readonly flags: TypeFlags;
 
-export class BoolType<T = any> implements IType<T> {
-  readonly id: "bool";
-  readonly meta?: T;
-
-  constructor() {
-    this.id = "bool";
+  constructor(id: TypeId, flags: TypeFlags) {
+    this.id = id;
+    this.flags = flags;
   }
 
   toString(): string {
-    return `<Type: bool>`;
+    return `<Type: ${this.id}>`;
+  }
+
+  isCompatible(other: Type): boolean {
+    return this.id === other.id;
+  }
+
+  abstract withFlags(flags: TypeFlags): Type;
+}
+
+export class BoolType extends BaseType {
+  readonly id: "bool";
+
+  constructor(flags: TypeFlags) {
+    super("bool", flags);
+  }
+
+  withFlags(flags: TypeFlags): BoolType {
+    return new BoolType(flags);
   }
 }
 
-export class IntType<T = any> implements IType<T> {
+export class IntType extends BaseType {
   readonly id: "int";
   readonly size: 1 | 2 | 4 | 8;
   readonly signed: boolean;
-  readonly meta?: T;
 
-  constructor(size: 1 | 2 | 4 | 8, signed: boolean) {
-    this.id = "int";
+  constructor(flags: TypeFlags, size: 1 | 2 | 4 | 8, signed: boolean) {
+    super("int", flags);
     this.size = size;
     this.signed = signed;
+  }
+
+  isCompatible(other: Type): boolean {
+    return (other.id === "int" && this.size === other.size && this.signed === other.signed);
+  }
+
+  withFlags(flags: TypeFlags): IntType {
+    return new IntType(flags, this.size, this.signed);
   }
 
   toString(): string {
@@ -61,14 +84,21 @@ export class IntType<T = any> implements IType<T> {
   }
 }
 
-export class FloatType<T = any> implements IType<T> {
+export class FloatType extends BaseType {
   readonly id: "float";
   readonly size: 4 | 8;
-  readonly meta?: T;
 
-  constructor(size: 4 | 8) {
-    this.id = "float";
+  constructor(flags: TypeFlags, size: 4 | 8) {
+    super("float", flags);
     this.size = size;
+  }
+
+  isCompatible(other: Type): boolean {
+    return (other.id === "float" && this.size === other.size);
+  }
+
+  withFlags(flags: TypeFlags): FloatType {
+    return new FloatType(flags, this.size);
   }
 
   toString(): string {
@@ -76,14 +106,21 @@ export class FloatType<T = any> implements IType<T> {
   }
 }
 
-export class VarIntType<T = any> implements IType<T> {
+export class VarIntType extends BaseType {
   readonly id: "varint";
   readonly signed: boolean;
-  readonly meta?: T;
 
-  constructor(signed: boolean) {
-    this.id = "varint";
+  constructor(flags: TypeFlags, signed: boolean) {
+    super("varint", flags);
     this.signed = signed;
+  }
+
+  isCompatible(other: Type): boolean {
+    return (other.id === "varint" && this.signed === other.signed);
+  }
+
+  withFlags(flags: TypeFlags): VarIntType {
+    return new VarIntType(flags, this.signed);
   }
 
   toString(): string {
@@ -91,14 +128,21 @@ export class VarIntType<T = any> implements IType<T> {
   }
 }
 
-export class BytesType<T = any> implements IType<T> {
+export class BytesType extends BaseType {
   readonly id: "bytes";
   readonly length: number;
-  readonly meta?: T;
 
-  constructor(length = 0) {
-    this.id = "bytes";
+  constructor(flags: TypeFlags, length = 0) {
+    super("bytes", flags);
     this.length = length;
+  }
+
+  isCompatible(other: Type): boolean {
+    return (other.id === "bytes" && this.length === other.length);
+  }
+
+  withFlags(flags: TypeFlags): BytesType {
+    return new BytesType(flags, this.length);
   }
 
   toString(): string {
@@ -109,12 +153,15 @@ export class BytesType<T = any> implements IType<T> {
   }
 }
 
-export class Utf8Type<T = any> implements IType<T> {
+export class Utf8Type extends BaseType {
   readonly id: "utf8";
-  readonly meta?: T;
 
-  constructor() {
-    this.id = "utf8";
+  constructor(flags: TypeFlags) {
+    super("utf8", flags);
+  }
+
+  withFlags(flags: TypeFlags): Utf8Type {
+    return new Utf8Type(flags);
   }
 
   toString(): string {
@@ -122,14 +169,21 @@ export class Utf8Type<T = any> implements IType<T> {
   }
 }
 
-export class AsciiType<T = any> implements IType<T> {
+export class AsciiType extends BaseType {
   readonly id: "ascii";
   readonly length: number;
-  readonly meta?: T;
 
-  constructor(length = 0) {
-    this.id = "ascii";
+  constructor(flags: TypeFlags, length = 0) {
+    super("ascii", flags);
     this.length = length;
+  }
+
+  isCompatible(other: Type): boolean {
+    return (other.id === "ascii" && this.length === other.length);
+  }
+
+  withFlags(flags: TypeFlags): AsciiType {
+    return new AsciiType(flags, this.length);
   }
 
   toString(): string {
@@ -140,16 +194,23 @@ export class AsciiType<T = any> implements IType<T> {
   }
 }
 
-export class ArrayType<T = any> implements IType<T> {
+export class ArrayType extends BaseType {
   readonly id: "array";
   readonly valueType: Type;
   readonly length: number;
-  readonly meta?: T;
 
-  constructor(valueType: Type, length = 0) {
-    this.id = "array";
+  constructor(flags: TypeFlags, valueType: Type, length = 0) {
+    super("array", flags);
     this.valueType = valueType;
     this.length = length;
+  }
+
+  isCompatible(other: Type): boolean {
+    return (other.id === "array" && this.length === other.length && this.valueType.isCompatible(other.valueType));
+  }
+
+  withFlags(flags: TypeFlags): ArrayType {
+    return new ArrayType(flags, this.valueType, this.length);
   }
 
   toString(): string {
@@ -160,16 +221,27 @@ export class ArrayType<T = any> implements IType<T> {
   }
 }
 
-export class MapType<T = any> implements IType<T> {
+export class MapType extends BaseType {
   readonly id: "map";
   readonly keyType: Type;
   readonly valueType: Type;
-  readonly meta?: T;
 
-  constructor(keyType: Type, valueType: Type) {
-    this.id = "map";
+  constructor(flags: TypeFlags, keyType: Type, valueType: Type) {
+    super("map", flags);
     this.keyType = keyType;
     this.valueType = valueType;
+  }
+
+  isCompatible(other: Type): boolean {
+    return (
+      other.id === "map" &&
+      this.keyType.isCompatible(this.valueType) &&
+      this.valueType.isCompatible(other.valueType)
+    );
+  }
+
+  withFlags(flags: TypeFlags): MapType {
+    return new MapType(flags, this.keyType, this.valueType);
   }
 
   toString(): string {
@@ -177,14 +249,21 @@ export class MapType<T = any> implements IType<T> {
   }
 }
 
-export class SchemaType<T = any> implements IType<T> {
+export class SchemaType extends BaseType {
   readonly id: "schema";
   readonly symbol: symbol;
-  readonly meta?: T;
 
-  constructor(symbol: symbol) {
-    this.id = "schema";
+  constructor(flags: TypeFlags, symbol: symbol) {
+    super("schema", flags);
     this.symbol = symbol;
+  }
+
+  isCompatible(other: Type): boolean {
+    return (other.id === "schema" && this.symbol === other.symbol);
+  }
+
+  withFlags(flags: TypeFlags): SchemaType {
+    return new SchemaType(flags, this.symbol);
   }
 
   toString(): string {
@@ -192,29 +271,32 @@ export class SchemaType<T = any> implements IType<T> {
   }
 }
 
-export class RefType<T = any> implements IType<T> {
-  readonly id: "ref";
-  readonly symbol: symbol;
-  readonly meta?: T;
-
-  constructor(symbol: symbol) {
-    this.id = "ref";
-    this.symbol = symbol;
-  }
-
-  toString(): string {
-    return `<Type: ref<${this.symbol.toString()}>`;
-  }
-}
-
-export class UnionType<T = any> implements IType<T> {
+export class UnionType extends BaseType {
   readonly id: "union";
   readonly symbols: symbol[];
-  readonly meta?: T;
 
-  constructor(symbols: symbol[]) {
-    this.id = "union";
+  constructor(flags: TypeFlags, symbols: symbol[]) {
+    super("union", flags);
     this.symbols = symbols;
+  }
+
+  isCompatible(other: Type): boolean {
+    if (other.id !== "union") {
+      return false;
+    }
+    if (this.symbols.length !== other.symbols.length) {
+      for (let i = 0; i < this.symbols.length; i++) {
+        if (this.symbols[i] !== other.symbols[i]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  withFlags(flags: TypeFlags): UnionType {
+    return new UnionType(flags, this.symbols);
   }
 
   toString(): string {
@@ -241,22 +323,22 @@ export function isStringType(type: Type): boolean {
   return false;
 }
 
-const _BOOL = new BoolType();
-const _I8 = new IntType(1, true);
-const _U8 = new IntType(1, false);
-const _I16 = new IntType(2, true);
-const _U16 = new IntType(2, false);
-const _I32 = new IntType(4, true);
-const _U32 = new IntType(4, false);
-const _I64 = new IntType(8, true);
-const _U64 = new IntType(8, false);
-const _F32 = new FloatType(4);
-const _F64 = new FloatType(8);
-const _VARINT = new VarIntType(true);
-const _VARUINT = new VarIntType(false);
-const _BYTES = new BytesType();
-const _UTF8 = new Utf8Type();
-const _ASCII = new AsciiType();
+const _BOOL = new BoolType(0);
+const _I8 = new IntType(0, 1, true);
+const _U8 = new IntType(0, 1, false);
+const _I16 = new IntType(0, 2, true);
+const _U16 = new IntType(0, 2, false);
+const _I32 = new IntType(0, 4, true);
+const _U32 = new IntType(0, 4, false);
+const _I64 = new IntType(0, 8, true);
+const _U64 = new IntType(0, 8, false);
+const _F32 = new FloatType(0, 4);
+const _F64 = new FloatType(0, 8);
+const _VARINT = new VarIntType(0, true);
+const _VARUINT = new VarIntType(0, false);
+const _BYTES = new BytesType(0);
+const _UTF8 = new Utf8Type(0);
+const _ASCII = new AsciiType(0);
 
 export function BOOL(): BoolType {
   return _BOOL;
@@ -314,7 +396,7 @@ export function BYTES(length: number = 0): BytesType {
   if (length === 0) {
     return _BYTES;
   }
-  return new BytesType(length);
+  return new BytesType(0, length);
 }
 
 export function UTF8(): Utf8Type {
@@ -325,80 +407,21 @@ export function ASCII(length: number = 0): AsciiType {
   if (length === 0) {
     return _ASCII;
   }
-  return new AsciiType(length);
+  return new AsciiType(0, length);
 }
 
 export function ARRAY(valueType: Type, length = 0): ArrayType {
-  return new ArrayType(valueType, length);
+  return new ArrayType(0, valueType, length);
 }
 
 export function MAP(keyType: Type, valueType: Type): MapType {
-  return new MapType(keyType, valueType);
+  return new MapType(0, keyType, valueType);
 }
 
 export function SCHEMA(symbol: symbol): SchemaType {
-  return new SchemaType(symbol);
-}
-
-export function REF(symbol: symbol): RefType {
-  return new RefType(symbol);
+  return new SchemaType(0, symbol);
 }
 
 export function UNION(symbols: symbol[]): UnionType {
-  return new UnionType(symbols);
-}
-
-export function checkTypeCompatibility(a: Type, b: Type): "type" | "size" | "length" | "symbol" | null {
-  if (a.id !== b.id) {
-    switch (a.id) {
-      case "schema":
-      case "ref":
-        if (b.id === "schema" || b.id === "ref") {
-          break;
-        }
-      default:
-        return "type";
-    }
-  }
-
-  switch (a.id) {
-    case "int":
-    case "float":
-      if (a.size !== (b as IntType | FloatType).size) {
-        return "size";
-      }
-      break;
-    case "ascii":
-    case "bytes":
-      if (a.length !== (b as AsciiType | BytesType).length) {
-        return "length";
-      }
-      break;
-    case "array":
-      return checkTypeCompatibility(a.valueType, (b as ArrayType).valueType);
-    case "map":
-      const keyError = checkTypeCompatibility(a.keyType, (b as MapType).keyType);
-      if (keyError !== null) {
-        return keyError;
-      }
-      return checkTypeCompatibility(a.valueType, (b as MapType).valueType);
-    case "schema":
-    case "ref":
-      if (a.symbol !== (b as (SchemaType | RefType)).symbol) {
-        return "symbol";
-      }
-      break;
-    case "union":
-      const bSymbols = (b as UnionType).symbols;
-      if (a.symbols.length !== bSymbols.length) {
-        return "symbol";
-      }
-      for (const s of a.symbols) {
-        if (bSymbols.indexOf(s) === -1) {
-          return "symbol";
-        }
-      }
-  }
-
-  return null;
+  return new UnionType(0, symbols);
 }

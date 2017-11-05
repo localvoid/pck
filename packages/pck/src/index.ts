@@ -1,10 +1,8 @@
 export {
-  TypeId, Type, IType,
-  BoolType, IntType, FloatType, VarIntType, BytesType, Utf8Type, AsciiType, ArrayType, MapType, SchemaType,
-  RefType, UnionType,
+  TypeId, Type, BaseType,
+  BoolType, IntType, FloatType, VarIntType, BytesType, Utf8Type, AsciiType, ArrayType, MapType, SchemaType, UnionType,
   BOOL, INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT32, FLOAT64, VARINT, VARUINT,
-  BYTES, UTF8, ASCII, ARRAY, MAP, SCHEMA, REF, UNION,
-  checkTypeCompatibility,
+  BYTES, UTF8, ASCII, ARRAY, MAP, SCHEMA, UNION,
 } from "./type";
 export {
   FieldFlags, Field,

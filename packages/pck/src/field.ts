@@ -1,10 +1,8 @@
 import {
-  Type,
-  BoolType, IntType, FloatType, VarIntType, BytesType, Utf8Type, AsciiType, ArrayType, MapType, SchemaType,
-  RefType, UnionType,
+  Type, TypeFlags,
+  BoolType, IntType, FloatType, VarIntType, BytesType, Utf8Type, AsciiType, ArrayType, MapType, SchemaType, UnionType,
   BOOL, INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT32, FLOAT64, VARINT, VARUINT,
-  BYTES, UTF8, ASCII, ARRAY, MAP, SCHEMA, REF, UNION,
-  checkTypeCompatibility,
+  BYTES, UTF8, ASCII, ARRAY, MAP, SCHEMA, UNION,
 } from "./type";
 
 export class InvalidFieldDeclarationError extends Error { }
@@ -41,8 +39,8 @@ export function omitNull<T extends Type>(field: Field<T>): Field<T> {
   switch (field.type.id) {
     case "array":
     case "bytes":
-    case "ref":
-      return new Field(field.type, field.name, field.flags | FieldFlags.OmitNull);
+    case "schema":
+      return new Field<T>(field.type.withFlags(TypeFlags.Nullable) as T, field.name, field.flags | FieldFlags.OmitNull);
   }
   throw new InvalidFieldDeclarationError(
     `Unable to create omitNull field. Invalid field type: ${field.type.toString()}.`,

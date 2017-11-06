@@ -42,7 +42,7 @@ export abstract class BaseType {
   }
 
   isCompatible(other: Type): boolean {
-    return this.id === other.id;
+    return this.id === other.id && this.flags === other.flags;
   }
 
   abstract withFlags(flags: TypeFlags): Type;
@@ -72,7 +72,12 @@ export class IntType extends BaseType {
   }
 
   isCompatible(other: Type): boolean {
-    return (other.id === "int" && this.size === other.size && this.signed === other.signed);
+    return (
+      other.id === "int" &&
+      this.flags === other.flags &&
+      this.size === other.size &&
+      this.signed === other.signed
+    );
   }
 
   withFlags(flags: TypeFlags): IntType {
@@ -94,7 +99,11 @@ export class FloatType extends BaseType {
   }
 
   isCompatible(other: Type): boolean {
-    return (other.id === "float" && this.size === other.size);
+    return (
+      other.id === "float" &&
+      this.flags === other.flags &&
+      this.size === other.size
+    );
   }
 
   withFlags(flags: TypeFlags): FloatType {
@@ -116,7 +125,11 @@ export class VarIntType extends BaseType {
   }
 
   isCompatible(other: Type): boolean {
-    return (other.id === "varint" && this.signed === other.signed);
+    return (
+      other.id === "varint" &&
+      this.flags === other.flags &&
+      this.signed === other.signed
+    );
   }
 
   withFlags(flags: TypeFlags): VarIntType {
@@ -138,7 +151,11 @@ export class BytesType extends BaseType {
   }
 
   isCompatible(other: Type): boolean {
-    return (other.id === "bytes" && this.length === other.length);
+    return (
+      other.id === "bytes" &&
+      this.flags === other.flags &&
+      this.length === other.length
+    );
   }
 
   withFlags(flags: TypeFlags): BytesType {
@@ -179,7 +196,11 @@ export class AsciiType extends BaseType {
   }
 
   isCompatible(other: Type): boolean {
-    return (other.id === "ascii" && this.length === other.length);
+    return (
+      other.id === "ascii" &&
+      this.flags === other.flags &&
+      this.length === other.length
+    );
   }
 
   withFlags(flags: TypeFlags): AsciiType {
@@ -206,7 +227,12 @@ export class ArrayType extends BaseType {
   }
 
   isCompatible(other: Type): boolean {
-    return (other.id === "array" && this.length === other.length && this.valueType.isCompatible(other.valueType));
+    return (
+      other.id === "array" &&
+      this.flags === other.flags &&
+      this.length === other.length &&
+      this.valueType.isCompatible(other.valueType)
+    );
   }
 
   withFlags(flags: TypeFlags): ArrayType {
@@ -235,6 +261,7 @@ export class MapType extends BaseType {
   isCompatible(other: Type): boolean {
     return (
       other.id === "map" &&
+      this.flags === other.flags &&
       this.keyType.isCompatible(this.valueType) &&
       this.valueType.isCompatible(other.valueType)
     );
@@ -259,7 +286,11 @@ export class SchemaType extends BaseType {
   }
 
   isCompatible(other: Type): boolean {
-    return (other.id === "schema" && this.symbol === other.symbol);
+    return (
+      other.id === "schema" &&
+      this.flags === other.flags &&
+      this.symbol === other.symbol
+    );
   }
 
   withFlags(flags: TypeFlags): SchemaType {
@@ -281,10 +312,17 @@ export class UnionType extends BaseType {
   }
 
   isCompatible(other: Type): boolean {
+    if (this.flags !== other.flags) {
+      return false;
+    }
     if (other.id !== "union") {
       return false;
     }
-    if (this.symbols.length !== other.symbols.length) {
+    if (this.symbols !== other.symbols) {
+      if (this.symbols.length !== other.symbols.length) {
+        return false;
+      }
+
       for (let i = 0; i < this.symbols.length; i++) {
         if (this.symbols[i] !== other.symbols[i]) {
           return false;

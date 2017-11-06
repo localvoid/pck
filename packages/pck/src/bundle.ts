@@ -1,49 +1,50 @@
 import { Type } from "./type";
 import { Field } from "./field";
 import { Schema } from "./schema";
-import { Binder } from "./binder";
 
-export class Bundle<T extends Schema<F>, F extends Field> {
-  readonly binder: Binder<T, F>;
+export class Bundle {
+  readonly schemas: Schema<Field>[];
+  readonly schemaTags: Map<symbol, number>;
   readonly types: Set<Type>;
 
-  constructor(binder: Binder<T, F>, types: Set<Type>) {
-    this.binder = binder;
+  constructor(schemas: Schema<Field>[], schemaTags: Map<symbol, number>, types: Set<Type>) {
+    this.schemas = schemas;
+    this.schemaTags = schemaTags;
     this.types = types;
   }
 }
 
-export function bundle<T extends Schema<F>, F extends Field>(schemas: T[]): Bundle<T, F> {
-  const analyzeResult = analyzeSchemas(schemas);
-  const binder = new Binder<T, F>(analyzeResult.schemaIndex, analyzeResult.schemaTags);
-  return new Bundle<T, F>(binder, analyzeResult.types);
-}
-
-interface AnalyzeResult<T extends Schema<F>, F extends Field> {
-  readonly types: Set<Type>;
-  readonly schemaIndex: Map<symbol, T>;
-  readonly schemaTags: Map<symbol, number>;
-}
-
-function analyzeSchemas<T extends Schema<F>, F extends Field>(schemas: T[]): AnalyzeResult<T, F> {
-  const schemaIndex = new Map<symbol, T>();
+/**
+ * bundle creates a Bundle from an array of schemas.
+ *
+ * @param schemas An array of schemas to bundle.
+ */
+export function bundle(schemas: Schema<Field>[]): Bundle {
   const schemaTags = new Map<symbol, number>();
   const types = new Set<Type>();
-  let tagIndex = 0;
+  const taggedSchemas = new Set<symbol>();
 
+  // Schemas should be tagged by order of appearance in the array of schemas.
+  // With a first loop we are marking all schemas that appear in tagged unions and in the second loop we assigning
+  // tags.
   for (const schema of schemas) {
     for (const field of schema.fields) {
       types.add(field.type);
 
       if (field.type.id === "union") {
         for (const schemaId of field.type.symbols) {
-          if (!schemaTags.has(schemaId)) {
-            schemaTags.set(schemaId, tagIndex++);
-          }
+          taggedSchemas.add(schemaId);
         }
       }
     }
   }
 
-  return { schemaIndex, schemaTags, types };
+  let tagIndex = 0;
+  for (const schema of schemas) {
+    if (taggedSchemas.has(schema.id)) {
+      schemaTags.set(schema.id, tagIndex++);
+    }
+  }
+
+  return new Bundle(schemas, schemaTags, types);
 }

@@ -30,6 +30,16 @@ export class Field<T extends Type = Type> {
     return `<FieldDeclaration: ${this.name} = ${this.type.toString()}>`;
   }
 
+  isCompatible(other: Field<T>): boolean {
+    return (
+      this.type.isCompatible(other.type) &&
+      (
+        (this.flags & (FieldFlags.OmitNull | FieldFlags.OmitEmpty | FieldFlags.OmitZero)) ===
+        (other.flags & (FieldFlags.OmitNull | FieldFlags.OmitEmpty | FieldFlags.OmitZero))
+      )
+    );
+  }
+
   isOptional(): boolean {
     return ((this.flags & FieldFlags.Optional) !== 0);
   }
@@ -148,21 +158,6 @@ export function schema(name: string, symbol: symbol): Field<SchemaType> {
   return new Field(SCHEMA(symbol), name);
 }
 
-export function ref(name: string, symbol: symbol): Field<RefType> {
-  return new Field(REF(symbol), name);
-}
-
 export function union(name: string, symbols: symbol[]): Field<UnionType> {
   return new Field(UNION(symbols), name);
-}
-
-export function checkFieldCompatibility<T extends Field>(a: T, b: T): string | null {
-  const typeCheck = checkTypeCompatibility(a.type, b.type);
-  if (typeCheck !== null) {
-    return typeCheck;
-  }
-  if (a.flags !== b.flags) {
-    return "flags";
-  }
-  return null;
 }

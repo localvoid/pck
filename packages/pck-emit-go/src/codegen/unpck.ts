@@ -1,6 +1,6 @@
 import { TChildren, TNode, zone } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
-import { TypeFlags, Type, SchemaSize, SchemaDetails } from "pck";
+import { DYNAMIC_SIZE, TypeFlags, Type, SchemaSize, SchemaDetails } from "pck";
 import {
   declArgs, declVars, SELF, BUF, v, slice, boundCheckHint, callMethod,
   castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString,
@@ -276,34 +276,21 @@ function readDynamicType(
     case "array":
       const valueSize = binder.getTypeSize(type.valueType);
       if (type.length === 0) {
-        if (valueSize === -1) {
-          return [
-            line("{"),
+        return [
+          line("{"),
+          indent(
+            line(LENGTH, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
+            line(OFFSET, " += ", SIZE),
+            line("for ", I, " := 0; ", I, " < ", LENGTH, "; ", I, " += 1 {"),
             indent(
-              line(LENGTH, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
-              line(OFFSET, " += ", SIZE),
-              line("for ", I, " := 0; ", I, " < ", LENGTH, "; ", I, " += 1 {"),
-              indent(
-                readDynamicType(
+              (valueSize === DYNAMIC_SIZE)
+                ? readDynamicType(
                   binder,
                   type.valueType,
                   from,
                   [to, "[", I, "]"],
-                ),
-              ),
-              line("}"),
-            ),
-            line("}"),
-          ];
-        } else {
-          return [
-            line("{"),
-            indent(
-              line(LENGTH, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
-              line(OFFSET, " += ", SIZE),
-              line("for ", I, " := 0; ", I, " < ", LENGTH, "; ", I, " += 1 {"),
-              indent(
-                readFixedType(
+                )
+                : readFixedType(
                   binder,
                   type.valueType,
                   from,
@@ -311,12 +298,11 @@ function readDynamicType(
                   0,
                   OFFSET,
                 ),
-              ),
-              line("}"),
             ),
             line("}"),
-          ];
-        }
+          ),
+          line("}"),
+        ];
       } else {
         return [
           line("for ", I, " := 0; ", I, " < ", type.length, "; ", I, " += 1 {"),

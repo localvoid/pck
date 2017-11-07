@@ -6,6 +6,20 @@ import {
   castToUint8, castToUint16, castToUint32, castToUint64, castToInt16, castToInt32, castToInt64,
 } from "./utils";
 
+export function pckerInterface(): TChildren {
+  return [
+    line("type Pcker interface {"),
+    indent(
+      line("PckSize() int"),
+      line("PckTagSize() int"),
+      line("Pck(b []byte) int"),
+      line("PckTag(b []byte) int"),
+      line("Unpck(b []byte) int"),
+    ),
+    line("}"),
+  ];
+}
+
 export function writeUint16Function(): TChildren {
   return [
     line("func ", internal("writeUint16"), "(b []byte, v uint16) {"),
@@ -196,6 +210,7 @@ export function sizeIvarFunction(): TChildren {
 export function lib(): TChildren {
   return intersperse(
     [
+      pckerInterface(),
       writeUint16Function(),
       readUint16Function(),
       writeUint32Function(),
@@ -216,6 +231,7 @@ export function lib(): TChildren {
 export function declLibSymbols(...children: TChildren[]): TChildren {
   return declInternal(
     [
+      "Pcker",
       "writeUint16", "writeUint32", "writeUint64",
       "readUint16", "readUint32", "readUint64",
       "writeUvar", "writeIvar",

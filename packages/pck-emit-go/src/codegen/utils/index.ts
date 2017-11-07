@@ -6,6 +6,4 @@ export {
   castToInt64, castToFloat, castToDouble, castToString,
   SELF, BUF, boundCheckHint,
 } from "./lang";
-export { declInternal, declArgs, declVars, declOptionals, internal, arg, v, optional } from "./symbols";
-export { BINDER, getBinder } from "./binder";
-export { getSchema, enterSchema } from "./schema";
+export { declInternal, declArgs, declVars, internal, arg, v } from "./symbols";

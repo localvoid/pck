@@ -1,8 +1,8 @@
 import { TChildren } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
-import { FieldFlags, Type } from "pck";
+import { DYNAMIC_SIZE, FieldFlags, Type } from "pck";
 import { GoField, GoSchema, GoBinder } from "../schema";
-import { enterSchema, declArgs, declVars, v, SELF, callMethod, len } from "./utils";
+import { declArgs, declVars, v, SELF, callMethod, len } from "./utils";
 import { sizeIvar, sizeUvar } from "./lib";
 
 const SIZE = v("size");
@@ -12,35 +12,33 @@ export function sizeMethod(binder: GoBinder, schema: GoSchema): TChildren {
   const details = binder.getSchemaDetails(schema);
 
   return (
-    enterSchema(schema,
-      declArgs([declSymbol("self", schema.self)],
-        [
-          docComment(
-            line("Size is an automatically generated method for PCK serialized size calculation."),
-          ),
-          details.size.dynamic ?
-            declVars(["size", "length"],
-              [
-                line("func (", SELF(), " *", schema.struct, ") Size() (", SIZE, " int) {"),
-                indent(
-                  line("var ", LENGTH, " int"),
-                  line("_ = ", LENGTH),
-                  line(SIZE, " = ", details.size.fixedSize),
-                  details.dynamicFields.map((f) => incFieldSize(binder, f)),
-                  line("return"),
-                ),
-                line("}"),
-              ],
-            ) :
+    declArgs([declSymbol("self", schema.self)],
+      [
+        docComment(
+          line("Size is an automatically generated method for PCK serialized size calculation."),
+        ),
+        details.size.dynamic ?
+          declVars(["size", "length"],
             [
-              line("func (", SELF(), " *", schema.struct, ") Size() int {"),
+              line("func (", SELF(), " *", schema.struct, ") PckSize() (", SIZE, " int) {"),
               indent(
-                line("return ", details.size.fixedSize),
+                line("var ", LENGTH, " int"),
+                line("_ = ", LENGTH),
+                line(SIZE, " = ", details.size.fixedSize),
+                details.dynamicFields.map((f) => incFieldSize(binder, f)),
+                line("return"),
               ),
               line("}"),
             ],
-        ],
-      ),
+          ) :
+          [
+            line("func (", SELF(), " *", schema.struct, ") PckSize() int {"),
+            indent(
+              line("return ", details.size.fixedSize),
+            ),
+            line("}"),
+          ],
+      ],
     )
   );
 }
@@ -109,11 +107,11 @@ function incSizeValue(binder: GoBinder, type: Type, value?: TChildren): TChildre
         incSize(sizeUvar(LENGTH), " + ", LENGTH),
       ];
     case "schema":
-      return incSize(callMethod(value, "Size"));
+      return incSize(callMethod(value, "PckSize"));
     case "array":
       const valueSize = binder.getTypeSize(type.valueType);
       if (type.length === 0) {
-        if (valueSize === -1) {
+        if (valueSize === DYNAMIC_SIZE) {
           return declVars(
             ["item"],
             [
@@ -132,7 +130,7 @@ function incSizeValue(binder: GoBinder, type: Type, value?: TChildren): TChildre
           ];
         }
       } else {
-        if (valueSize === -1) {
+        if (valueSize === DYNAMIC_SIZE) {
           return declVars(
             ["item"],
             [

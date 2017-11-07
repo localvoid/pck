@@ -1,13 +1,14 @@
 import { TChildren, TNode, zone } from "osh";
-import { line, indent, docComment, declSymbol } from "osh-code";
+import { capitalizeTransformer } from "osh-text";
+import { line, indent, docComment, scope, declSymbol, sym } from "osh-code";
 import { FieldFlags, Field, SchemaDetails } from "pck";
 import {
-  enterSchema, declArgs, declVars, declOptionals, SELF, BUF, v, optional, len, slice, castToByte,
-  boundCheckHint, callFunc, callMethod,
+  declArgs, declVars, SELF, BUF, v, len, slice, castToByte, boundCheckHint, callFunc, callMethod,
 } from "./utils";
 import { writeUvar, writeIvar } from "./lib";
 import { GoSchema, GoField, GoBinder } from "../schema";
 
+const OPTIONALS = Symbol("Optionals");
 const OFFSET = v("offset");
 const BIT_SET_VALUE = v("bitSetValue");
 
@@ -16,31 +17,29 @@ export function pckMethod(binder: GoBinder, schema: GoSchema): TNode {
 
   return (
     zone(`pckMethod(${schema.struct})`,
-      enterSchema(schema,
-        declArgs(
-          [
-            declSymbol("self", schema.self),
-            declSymbol("buf", "b"),
-          ],
-          declVars(["offset", "bitSetValue"],
-            declOptionals(details.optionalFields,
-              [
-                docComment(
-                  line("Pck is an automatically generated method for PCK serialization."),
-                ),
-                line("func (", SELF(), " *", schema.struct, ") Pck(", BUF(), " []byte) int {"),
-                indent(
-                  (details.size.fixedSize > 1) ? boundCheckHint(details.size.fixedSize - 1) : null,
-                  (details.optionalFields.length > 0)
-                    ? details.optionalFields.map((f) => line(optional(f), " := ", checkOptional(f)))
-                    : null,
-                  writeBitSet(schema, details),
-                  writeFields(binder, schema, details),
-                  line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
-                ),
-                line("}"),
-              ],
-            ),
+      declArgs(
+        [
+          declSymbol("self", schema.self),
+          declSymbol("buf", "b"),
+        ],
+        declVars(["offset", "bitSetValue"],
+          declOptionals(details.optionalFields,
+            [
+              docComment(
+                line("Pck is an automatically generated method for PCK serialization."),
+              ),
+              line("func (", SELF(), " *", schema.struct, ") Pck(", BUF(), " []byte) int {"),
+              indent(
+                (details.size.fixedSize > 1) ? boundCheckHint(details.size.fixedSize - 1) : null,
+                (details.optionalFields.length > 0)
+                  ? details.optionalFields.map((f) => line(OPTIONAL(f), " := ", checkOptional(f)))
+                  : null,
+                writeBitSet(schema, details),
+                writeFields(binder, schema, details),
+                line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
+              ),
+              line("}"),
+            ],
           ),
         ),
       ),
@@ -53,7 +52,7 @@ function writeBitSet(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>
     if (details.bitStore.length === 1) {
       if (details.bitStore.optionals.length > 0) {
         return [
-          line("if ", optional(details.bitStore.optionals[0].field), " {"),
+          line("if ", OPTIONAL(details.bitStore.optionals[0].field), " {"),
           indent(line(BUF({ offset: 0 }, 1))),
           line("}"),
         ];
@@ -71,7 +70,7 @@ function writeBitSet(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>
       let i = 0;
       for (const bitField of details.bitStore.optionals) {
         result.push(
-          line("if ", optional(bitField.field), " {"),
+          line("if ", OPTIONAL(bitField.field), " {"),
           indent(
             (bitSetIndex === 0)
               ? line(BIT_SET_VALUE, " = 1")
@@ -141,7 +140,7 @@ function writeFields(binder: GoBinder, schema: GoSchema, details: SchemaDetails<
   for (const field of details.dynamicFields) {
     if (field.isOptional()) {
       r.push(
-        line("if ", optional(field), " {"),
+        line("if ", OPTIONAL(field), " {"),
         indent(putDynamicField(field)),
         line("}"),
       );
@@ -209,6 +208,18 @@ function putDynamicField(field: GoField): TChildren {
   }
 
   throw new Error(`Unable to emit dynamic writer for a field: ${field.toString()}.`);
+}
+
+function declOptionals(fields: Field<any>[], children: TChildren): TChildren {
+  return scope({
+    type: OPTIONALS,
+    symbols: fields.map((f) => declSymbol(f, `optional${capitalizeTransformer(f.name)}`)),
+    children: children,
+  });
+}
+
+function OPTIONAL(field: Field<any>): TNode {
+  return sym(OPTIONALS, field);
 }
 
 function checkOptional(field: Field<any>): TChildren {

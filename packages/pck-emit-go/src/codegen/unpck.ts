@@ -2,7 +2,7 @@ import { TChildren, TNode, zone } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
 import { TypeFlags, Type, SchemaSize, SchemaDetails } from "pck";
 import {
-  enterSchema, declArgs, declVars, SELF, BUF, v, slice, boundCheckHint, callMethod,
+  declArgs, declVars, SELF, BUF, v, slice, boundCheckHint, callMethod,
   castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString,
 } from "./utils";
 import {
@@ -30,37 +30,35 @@ export function unpckMethod(binder: GoBinder, schema: GoSchema): TNode {
 
   return (
     zone(`unpckMethod(${schema.struct})`,
-      enterSchema(schema,
-        declArgs(
+      declArgs(
+        [
+          declSymbol("self", schema.self),
+          declSymbol("buf", "b"),
+        ],
+        declVars(
           [
-            declSymbol("self", schema.self),
-            declSymbol("buf", "b"),
+            ...bitSetVars,
+            "offset",
+            "length",
+            "value",
+            "size",
+            "i",
           ],
-          declVars(
-            [
-              ...bitSetVars,
-              "offset",
-              "length",
-              "value",
-              "size",
-              "i",
-            ],
-            [
-              docComment(
-                line("Unpck is an automatically generated method for PCK deserialization."),
-              ),
-              line("func (", SELF(), " *", schema.struct, ") Unpck(", BUF(), " []byte) int {"),
-              indent(
-                (details.size.fixedSize > 1) ?
-                  boundCheckHint(details.size.fixedSize - 1) :
-                  null,
-                readBitSet(schema, details.size),
-                readFields(binder, schema, details),
-                line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
-              ),
-              line("}"),
-            ],
-          ),
+          [
+            docComment(
+              line("Unpck is an automatically generated method for PCK deserialization."),
+            ),
+            line("func (", SELF(), " *", schema.struct, ") Unpck(", BUF(), " []byte) int {"),
+            indent(
+              (details.size.fixedSize > 1) ?
+                boundCheckHint(details.size.fixedSize - 1) :
+                null,
+              readBitSet(schema, details.size),
+              readFields(binder, schema, details),
+              line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
+            ),
+            line("}"),
+          ],
         ),
       ),
     )

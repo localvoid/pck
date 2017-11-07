@@ -1,12 +1,9 @@
 import { TNode, TChildren } from "osh";
-import { capitalizeTransformer } from "osh-text";
 import { SymbolDeclaration, scope, declSymbol, sym } from "osh-code";
-import { Field } from "pck";
 
 const INTERNAL = Symbol("Internal");
 const ARGUMENTS = Symbol("Arguments");
 const VARS = Symbol("Variables");
-const OPTIONALS = Symbol("Optionals");
 
 export function declInternal(symbols: string[], children: TChildren): TChildren {
   return scope({
@@ -32,14 +29,6 @@ export function declVars(vars: string[], children: TChildren): TChildren {
   });
 }
 
-export function declOptionals(fields: Field<any>[], children: TChildren): TChildren {
-  return scope({
-    type: OPTIONALS,
-    symbols: fields.map((f) => declSymbol(f, `optional${capitalizeTransformer(f.name)}`)),
-    children: children,
-  });
-}
-
 export function internal(name: string): TNode {
   return sym(INTERNAL, name);
 }
@@ -50,8 +39,4 @@ export function arg(name: string): TNode {
 
 export function v(name: string): TNode {
   return sym(VARS, name);
-}
-
-export function optional(field: Field<any>): TNode {
-  return sym(OPTIONALS, field);
 }

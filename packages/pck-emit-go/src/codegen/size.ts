@@ -1,4 +1,4 @@
-import { TChildren } from "osh";
+import { TChildren, zone } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
 import { DYNAMIC_SIZE, FieldFlags, Type } from "pck";
 import { GoField, GoSchema, GoBinder } from "../schema";
@@ -12,33 +12,62 @@ export function sizeMethod(binder: GoBinder, schema: GoSchema): TChildren {
   const details = binder.getSchemaDetails(schema);
 
   return (
-    declArgs([declSymbol("self", schema.self)],
-      [
-        docComment(
-          line("Size is an automatically generated method for PCK serialized size calculation."),
-        ),
-        details.size.dynamic ?
-          declVars(["size", "length"],
+    zone(`sizeMethod(${schema.struct})`,
+      declArgs(
+        [
+          declSymbol("self", schema.self),
+        ],
+        [
+          docComment(
+            line("PckSize is an automatically generated method for PCK serialized size calculation."),
+          ),
+          details.size.dynamic ?
+            declVars(["size", "length"],
+              [
+                line("func (", SELF(), " *", schema.struct, ") PckSize() (", SIZE, " int) {"),
+                indent(
+                  line("var ", LENGTH, " int"),
+                  line("_ = ", LENGTH),
+                  line(SIZE, " = ", details.size.fixedSize),
+                  details.dynamicFields.map((f) => incFieldSize(binder, f)),
+                  line("return"),
+                ),
+                line("}"),
+              ],
+            ) :
             [
-              line("func (", SELF(), " *", schema.struct, ") PckSize() (", SIZE, " int) {"),
+              line("func (", SELF(), " *", schema.struct, ") PckSize() int {"),
               indent(
-                line("var ", LENGTH, " int"),
-                line("_ = ", LENGTH),
-                line(SIZE, " = ", details.size.fixedSize),
-                details.dynamicFields.map((f) => incFieldSize(binder, f)),
-                line("return"),
+                line("return ", details.size.fixedSize),
               ),
               line("}"),
             ],
-          ) :
-          [
-            line("func (", SELF(), " *", schema.struct, ") PckSize() int {"),
-            indent(
-              line("return ", details.size.fixedSize),
-            ),
-            line("}"),
-          ],
-      ],
+        ],
+      ),
+    )
+  );
+}
+
+export function tagSizeMethod(binder: GoBinder, schema: GoSchema): TChildren {
+  const details = binder.getSchemaDetails(schema);
+
+  return (
+    zone(`tagSizeMethod(${schema.struct})`,
+      declArgs(
+        [
+          declSymbol("self", schema.self),
+        ],
+        [
+          docComment(
+            line("PckTagSize is an automatically generated method for PCK serialized size calculation."),
+          ),
+          line("func (", SELF(), " *", schema.struct, ") PckTagSize() int {"),
+          indent(
+            line("return ", calcVarUintSize(details.tag)),
+          ),
+          line("}"),
+        ],
+      ),
     )
   );
 }
@@ -86,7 +115,6 @@ function incFieldSize(binder: GoBinder, field: GoField): TChildren {
 
 function incSizeValue(binder: GoBinder, type: Type, value?: TChildren): TChildren {
   switch (type.id) {
-    case "union":
     case "map":
     case "bool":
       return null;
@@ -106,8 +134,6 @@ function incSizeValue(binder: GoBinder, type: Type, value?: TChildren): TChildre
         line(LENGTH, " = ", len(value)),
         incSize(sizeUvar(LENGTH), " + ", LENGTH),
       ];
-    case "schema":
-      return incSize(callMethod(value, "PckSize"));
     case "array":
       const valueSize = binder.getTypeSize(type.valueType);
       if (type.length === 0) {
@@ -145,9 +171,22 @@ function incSizeValue(binder: GoBinder, type: Type, value?: TChildren): TChildre
           throw new Error("Unreachable code");
         }
       }
+    case "schema":
+      return incSize(callMethod(value, "PckSize"));
+    case "union":
+      return incSize(callMethod(value, "PckTagSize"), " + ", callMethod(value, "PckSize"));
   }
 }
 
 function incSize(...children: TChildren[]): TChildren {
-  return line(v("size"), " += ", children);
+  return line(SIZE, " += ", children);
+}
+
+function calcVarUintSize(n: number): number {
+  let i = 0;
+  do {
+    i++;
+    n >>= 7;
+  } while (n !== 0);
+  return i;
 }

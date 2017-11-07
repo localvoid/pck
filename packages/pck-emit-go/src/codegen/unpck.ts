@@ -14,6 +14,7 @@ const OFFSET = v("offset");
 const LENGTH = v("length");
 const VALUE = v("value");
 const SIZE = v("size");
+const TAG = v("tag");
 const I = v("i");
 
 function BITSET(i: number): TChildren {
@@ -42,6 +43,7 @@ export function unpckMethod(binder: GoBinder, schema: GoSchema): TNode {
             "length",
             "value",
             "size",
+            "tag",
             "i",
           ],
           [
@@ -63,6 +65,20 @@ export function unpckMethod(binder: GoBinder, schema: GoSchema): TNode {
       ),
     )
   );
+}
+
+export function taggedFactories(binder: GoBinder): TChildren {
+  const factories: TChildren = [];
+
+  binder.schemaTags.forEach((tag, id) => {
+    factories.push("func () Pcker { return ", binder.findSchemaById(id).factory, " }");
+  });
+
+  return [
+    line("TAGGED_FACTORIES", " := ["),
+    indent(factories),
+    line("]"),
+  ];
 }
 
 function readBitSet(schema: GoSchema, size: SchemaSize): TChildren {
@@ -275,7 +291,17 @@ function readDynamicType(
         ];
       }
     case "union":
-      break;
+      return [
+        line("{"),
+        indent(
+          line(TAG, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
+          line(OFFSET, " += ", SIZE),
+          line(VALUE, " := ", "TAGGED_FACTORIES[", TAG, "]()"),
+          line(LENGTH, " := ", VALUE, ".Unpck(", from({ start: OFFSET, offset: 0 }), ")"),
+          line(OFFSET, " += ", LENGTH),
+        ),
+        line("}"),
+      ];
   }
 
   throw new Error(`Invalid dynamic type: ${type}`);

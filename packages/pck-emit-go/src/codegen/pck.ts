@@ -47,6 +47,33 @@ export function pckMethod(binder: GoBinder, schema: GoSchema): TNode {
   );
 }
 
+export function pckTagMethod(binder: GoBinder, schema: GoSchema): TNode {
+  const details = binder.getSchemaDetails(schema);
+
+  return (
+    zone(`pckTagMethod(${schema.struct})`,
+      declArgs(
+        [
+          declSymbol("self", schema.self),
+          declSymbol("buf", "b"),
+        ],
+        [
+          docComment(
+            line("PckTag is an automatically generated method for PCK serialization."),
+          ),
+          line("func (", SELF(), " *", schema.struct, ") PckTag(", BUF(), " []byte) int {"),
+          indent(
+            details.tag === -1
+              ? line("return 0")
+              : line("return ", writeUvar(slice(BUF(), 0), details.tag)),
+          ),
+          line("}"),
+        ],
+      ),
+    )
+  );
+}
+
 function writeBitSet(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>): TChildren {
   if (details.bitStore.length > 0) {
     if (details.bitStore.length === 1) {
@@ -204,7 +231,10 @@ function putDynamicField(field: GoField): TChildren {
     case "schema":
       return line(OFFSET, " += ", callMethod(SELF(field.name), "Pck", [slice(BUF(), OFFSET)]));
     case "union":
-      return "TODO";
+      return [
+        line(OFFSET, " += ", callMethod(SELF(field.name), "PckTag", [slice(BUF(), OFFSET)])),
+        line(OFFSET, " += ", callMethod(SELF(field.name), "Pck", [slice(BUF(), OFFSET)])),
+      ];
   }
 
   throw new Error(`Unable to emit dynamic writer for a field: ${field.toString()}.`);

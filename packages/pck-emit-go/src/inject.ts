@@ -38,6 +38,12 @@ export function inject(options: EmitOptions, text: string): string {
         case "size":
           children = sizeMethod(binder, getSchema(binder, region.args[1]));
           break;
+        case "tagSize":
+          children = tagSizeMethod(binder, getSchema(binder, region.args[1]));
+          break;
+        case "pckTag":
+          children = pckTagMethod(binder, getSchema(binder, region.args[1]));
+          break;
         case "pck":
           children = pckMethod(binder, getSchema(binder, region.args[1]));
           break;

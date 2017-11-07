@@ -274,6 +274,63 @@ function readDynamicType(
         line("}"),
       ];
     case "array":
+      const valueSize = binder.getTypeSize(type.valueType);
+      if (type.length === 0) {
+        if (valueSize === -1) {
+          return [
+            line("{"),
+            indent(
+              line(LENGTH, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
+              line(OFFSET, " += ", SIZE),
+              line("for ", I, " := 0; ", I, " < ", LENGTH, "; ", I, " += 1 {"),
+              indent(
+                readDynamicType(
+                  binder,
+                  type.valueType,
+                  from,
+                  [to, "[", I, "]"],
+                ),
+              ),
+              line("}"),
+            ),
+            line("}"),
+          ];
+        } else {
+          return [
+            line("{"),
+            indent(
+              line(LENGTH, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
+              line(OFFSET, " += ", SIZE),
+              line("for ", I, " := 0; ", I, " < ", LENGTH, "; ", I, " += 1 {"),
+              indent(
+                readFixedType(
+                  binder,
+                  type.valueType,
+                  from,
+                  [to, "[", I, "]"],
+                  0,
+                  OFFSET,
+                ),
+              ),
+              line("}"),
+            ),
+            line("}"),
+          ];
+        }
+      } else {
+        return [
+          line("for ", I, " := 0; ", I, " < ", type.length, "; ", I, " += 1 {"),
+          indent(
+            readDynamicType(
+              binder,
+              type.valueType,
+              from,
+              [to, "[", I, "]"],
+            ),
+          ),
+          line("}"),
+        ];
+      }
     case "map":
       break;
     case "schema":

@@ -63,7 +63,9 @@ export function tagSizeMethod(binder: GoBinder, schema: GoSchema): TChildren {
           ),
           line("func (", SELF(), " *", schema.struct, ") PckTagSize() int {"),
           indent(
-            line("return ", calcVarUintSize(details.tag)),
+            details.tag === -1
+              ? line("return 0")
+              : line("return ", calcVarUintSize(details.tag)),
           ),
           line("}"),
         ],

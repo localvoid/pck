@@ -1,7 +1,7 @@
 import { createDirectiveMatcher, inject as _inject } from "incode";
 import { line } from "osh-code";
 import { GoSchema, GoBinder } from "./schema";
-import { lib, sizeMethod, pckMethod, unpckMethod } from "./codegen";
+import { lib, sizeMethod, tagSizeMethod, pckMethod, pckTagMethod, unpckMethod, taggedFactories } from "./codegen";
 import { EmitOptions, emit } from "./emit";
 
 const DIRECTIVE_MATCHER = createDirectiveMatcher("pck");
@@ -18,10 +18,17 @@ export function inject(options: EmitOptions, text: string): string {
         case "lib":
           children = lib();
           break;
+        case "taggedFactories":
+          children = taggedFactories(binder);
+          break;
         case "methods":
           const schema = getSchema(binder, region.args[1]);
           children = [
             sizeMethod(binder, schema),
+            line(),
+            tagSizeMethod(binder, schema),
+            line(),
+            pckTagMethod(binder, schema),
             line(),
             pckMethod(binder, schema),
             line(),

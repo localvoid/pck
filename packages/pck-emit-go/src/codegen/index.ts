@@ -1,4 +1,4 @@
 export { lib } from "./lib";
-export { sizeMethod } from "./size";
-export { pckMethod } from "./pck";
-export { unpckMethod } from "./unpck";
+export { sizeMethod, tagSizeMethod } from "./size";
+export { pckMethod, pckTagMethod } from "./pck";
+export { unpckMethod, taggedFactories } from "./unpck";

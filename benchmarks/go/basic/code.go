@@ -21,16 +21,32 @@ type User struct {
 	Attributes Attributes `json:"attributes"`
 }
 
+// pck:emit("taggedFactories")
+
+var taggedFactories = [0]func() unpcker{}
+
+// pck:end
+
 // pck:emit("methods", "Position")
 
-// Size is an automatically generated method for PCK serialized size calculation.
-func (position *Position) Size() (size int) {
+// PckSize is an automatically generated method for PCK serialized size calculation.
+func (position *Position) PckSize() (size int) {
 	var length int
 	_ = length
 	size = 0
 	size += sizeIvar(int64(position.X))
 	size += sizeIvar(int64(position.Y))
 	return
+}
+
+// PckTagSize is an automatically generated method for PCK serialized size calculation.
+func (position *Position) PckTagSize() int {
+	return 0
+}
+
+// PckTag is an automatically generated method for PCK serialization.
+func (position *Position) PckTag(b []byte) int {
+	return 0
 }
 
 // Pck is an automatically generated method for PCK serialization.
@@ -61,9 +77,19 @@ func (position *Position) Unpck(b []byte) int {
 
 // pck:emit("methods", "Attributes")
 
-// Size is an automatically generated method for PCK serialized size calculation.
-func (attributes *Attributes) Size() int {
+// PckSize is an automatically generated method for PCK serialized size calculation.
+func (attributes *Attributes) PckSize() int {
 	return 3
+}
+
+// PckTagSize is an automatically generated method for PCK serialized size calculation.
+func (attributes *Attributes) PckTagSize() int {
+	return 0
+}
+
+// PckTag is an automatically generated method for PCK serialization.
+func (attributes *Attributes) PckTag(b []byte) int {
+	return 0
 }
 
 // Pck is an automatically generated method for PCK serialization.
@@ -88,14 +114,24 @@ func (attributes *Attributes) Unpck(b []byte) int {
 
 // pck:emit("methods", "User")
 
-// Size is an automatically generated method for PCK serialized size calculation.
-func (user *User) Size() (size int) {
+// PckSize is an automatically generated method for PCK serialized size calculation.
+func (user *User) PckSize() (size int) {
 	var length int
 	_ = length
 	size = 4
 	size += sizeIvar(int64(user.Health))
-	size += user.Position.Size()
+	size += user.Position.PckSize()
 	return
+}
+
+// PckTagSize is an automatically generated method for PCK serialized size calculation.
+func (user *User) PckTagSize() int {
+	return 0
+}
+
+// PckTag is an automatically generated method for PCK serialization.
+func (user *User) PckTag(b []byte) int {
+	return 0
 }
 
 // Pck is an automatically generated method for PCK serialization.
@@ -130,6 +166,10 @@ func (user *User) Unpck(b []byte) int {
 // pck:end
 
 // pck:emit("lib")
+
+type unpcker interface {
+	Unpck(b []byte) int
+}
 
 func writeUint16(b []byte, v uint16) {
 	_ = b[1]

@@ -75,9 +75,9 @@ export function taggedFactories(binder: GoBinder): TChildren {
   });
 
   return [
-    line("TAGGED_FACTORIES", " := ["),
+    line("var taggedFactories", " = [", factories.length, "]func() unpcker {"),
     indent(factories),
-    line("]"),
+    line("}"),
   ];
 }
 
@@ -339,7 +339,7 @@ function readDynamicType(
         indent(
           line(TAG, ", ", SIZE, " := ", readUvar(from({ start: OFFSET, offset: 0 }))),
           line(OFFSET, " += ", SIZE),
-          line(VALUE, " := ", "TAGGED_FACTORIES[", TAG, "]()"),
+          line(VALUE, " := ", "taggedFactories[", TAG, "]()"),
           line(LENGTH, " := ", VALUE, ".Unpck(", from({ start: OFFSET, offset: 0 }), ")"),
           line(OFFSET, " += ", LENGTH),
         ),

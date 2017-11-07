@@ -17,13 +17,6 @@ export function callFunc(func: TChildren, args?: TChildren[]): TChildren {
   return [func, "(", intersperse(args, ", "), ")"];
 }
 
-export function slice(value: TChildren, start: TChildren, end?: TChildren): TChildren {
-  if (end === undefined) {
-    return [value, "[", start, ":]"];
-  }
-  return [value, "[", start, ":", end, "]"];
-}
-
 export function len(...children: TChildren[]): TChildren {
   return callFunc("len", [children]);
 }
@@ -88,6 +81,58 @@ export function castToString(...children: TChildren[]): TChildren {
   return castTo("string", children);
 }
 
+export class Value {
+  readonly value: TChildren;
+
+  constructor(value: TChildren) {
+    this.value = value;
+  }
+
+  assign(value: TChildren): TChildren {
+    return [this.value, " = ", value];
+  }
+
+  assignAt(offset: number, value: TChildren, start?: TChildren): TChildren {
+    return [this.at(offset, start), " = ", value];
+  }
+
+  at(offset: number, start?: TChildren): TChildren {
+    if (start !== undefined) {
+      if (offset === 0) {
+        return [this.value, "[", start, "]"];
+      } else {
+        return [this.value, "[", start, offset > 0 ? "+" : "-", offset, "]"];
+      }
+    }
+    return [this.value, "[", offset, "]"];
+  }
+
+  slice(opts: { start?: TChildren, end?: TChildren, startOffset?: number, endOffset?: number }): TChildren {
+    const r: TChildren = [this.value, "["];
+    if (opts.start !== undefined) {
+      r.push(opts.start);
+      if (opts.startOffset !== undefined && opts.startOffset !== 0) {
+        r.push((opts.startOffset > 0) ? "+" : "-");
+      }
+    }
+    if (opts.startOffset !== undefined && opts.startOffset !== 0) {
+      r.push(opts.startOffset);
+    }
+    r.push(":");
+    if (opts.end !== undefined) {
+      r.push(opts.end);
+      if (opts.endOffset !== undefined && opts.endOffset !== 0) {
+        r.push((opts.endOffset > 0) ? "+" : "-", opts.endOffset);
+      }
+    }
+    if (opts.endOffset !== undefined && opts.endOffset !== 0) {
+      r.push(opts.endOffset);
+    }
+    r.push("]");
+    return r;
+  }
+}
+
 const _SELF = arg("self");
 const _BUF = arg("buf");
 
@@ -101,23 +146,7 @@ export function SELF(property?: TChildren, value?: TChildren): TChildren {
   return [_SELF, ".", property, " = ", value];
 }
 
-export function BUF(pos?: { start?: TChildren, offset: number }, value?: TChildren): TChildren {
-  if (pos === undefined) {
-    return _BUF;
-  }
-  let v;
-  if (pos.start === undefined) {
-    v = [_BUF, "[", pos.offset, "]"];
-  } else if (pos.offset === 0) {
-    v = [_BUF, "[", pos.start, "]"];
-  } else {
-    v = [_BUF, "[", pos.start, "+", pos.offset, "]"];
-  }
-  if (value === undefined) {
-    return v;
-  }
-  return [v, " = ", value];
-}
+export const BUF = new Value(_BUF);
 
 /**
  * https://golang.org/src/encoding/binary/binary.go
@@ -126,5 +155,5 @@ export function BUF(pos?: { start?: TChildren, offset: number }, value?: TChildr
  * @param offset Bound check offset.
  */
 export function boundCheckHint(offset: number): TChildren {
-  return line("_ = ", BUF({ offset }));
+  return line("_ = ", BUF.at(offset));
 }

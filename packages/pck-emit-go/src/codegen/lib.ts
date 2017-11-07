@@ -2,8 +2,8 @@ import { TChildren } from "osh";
 import { intersperse } from "osh-text";
 import { line, indent } from "osh-code";
 import {
-  declInternal, internal, callFunc,
-  castToUint8, castToUint16, castToUint32, castToUint64, castToInt16, castToInt32, castToInt64,
+  declInternal, internal, callFunc, Value,
+  castToByte, castToUint8, castToUint16, castToUint32, castToUint64, castToInt16, castToInt32, castToInt64,
 } from "./utils";
 
 export function unpckerInterface(): TChildren {
@@ -311,8 +311,8 @@ export function sizeIvar(...value: TChildren[]): TChildren {
 }
 
 export interface InlineReadIntOptions {
-  from: (pos: { start?: TChildren, offset: number }) => TChildren;
-  to: TChildren;
+  from: Value;
+  to: Value;
   start?: TChildren;
   offset?: number;
   cast?: (...c: TChildren[]) => TChildren;
@@ -321,7 +321,7 @@ export interface InlineReadIntOptions {
 export function inlineReadUint8(opts: InlineReadIntOptions): TChildren {
   const offset = opts.offset === void 0 ? 0 : opts.offset;
   const cast = opts.cast === void 0 ? castToUint8 : opts.cast;
-  return line(opts.to, " = ", cast(opts.from({ start: opts.start, offset: offset + 0 })));
+  return line(opts.to.assign(cast(opts.from.at(offset + 0, opts.start))));
 }
 
 export function inlineReadUint16(opts: InlineReadIntOptions): TChildren {
@@ -329,14 +329,15 @@ export function inlineReadUint16(opts: InlineReadIntOptions): TChildren {
   const cast = opts.cast === void 0 ? castToUint16 : opts.cast;
   return (
     line(
-      opts.to, " = ",
-      cast(
-        intersperse(
-          [
-            [castToUint16(opts.from({ start: opts.start, offset: offset + 0 }))],
-            [castToUint16(opts.from({ start: opts.start, offset: offset + 1 })), "<<8"],
-          ],
-          " | ",
+      opts.to.assign(
+        cast(
+          intersperse(
+            [
+              [castToUint16(opts.from.at(offset + 0, opts.start))],
+              [castToUint16(opts.from.at(offset + 1, opts.start)), "<<8"],
+            ],
+            " | ",
+          ),
         ),
       ),
     )
@@ -348,16 +349,17 @@ export function inlineReadUint32(opts: InlineReadIntOptions): TChildren {
   const cast = opts.cast === void 0 ? castToUint16 : opts.cast;
   return (
     line(
-      opts.to, " = ",
-      cast(
-        intersperse(
-          [
-            [castToUint32(opts.from({ start: opts.start, offset: offset + 0 }))],
-            [castToUint32(opts.from({ start: opts.start, offset: offset + 1 })), "<<8"],
-            [castToUint32(opts.from({ start: opts.start, offset: offset + 2 })), "<<16"],
-            [castToUint32(opts.from({ start: opts.start, offset: offset + 3 })), "<<24"],
-          ],
-          " | ",
+      opts.to.assign(
+        cast(
+          intersperse(
+            [
+              [castToUint32(opts.from.at(offset + 0, opts.start))],
+              [castToUint32(opts.from.at(offset + 1, opts.start)), "<<8"],
+              [castToUint32(opts.from.at(offset + 2, opts.start)), "<<16"],
+              [castToUint32(opts.from.at(offset + 3, opts.start)), "<<24"],
+            ],
+            " | ",
+          ),
         ),
       ),
     )
@@ -369,16 +371,17 @@ export function inlineReadUint64(opts: InlineReadIntOptions): TChildren {
   const cast = opts.cast === void 0 ? castToUint16 : opts.cast;
   return [
     line(
-      opts.to, " = ",
-      cast(
-        intersperse(
-          [
-            [castToUint64(opts.from({ start: opts.start, offset: offset + 0 }))],
-            [castToUint64(opts.from({ start: opts.start, offset: offset + 1 })), "<<8"],
-            [castToUint64(opts.from({ start: opts.start, offset: offset + 2 })), "<<16"],
-            [castToUint64(opts.from({ start: opts.start, offset: offset + 3 })), "<<24"],
-          ],
-          " | ",
+      opts.to.assign(
+        cast(
+          intersperse(
+            [
+              [castToUint64(opts.from.at(offset + 0, opts.start))],
+              [castToUint64(opts.from.at(offset + 1, opts.start)), "<<8"],
+              [castToUint64(opts.from.at(offset + 2, opts.start)), "<<16"],
+              [castToUint64(opts.from.at(offset + 3, opts.start)), "<<24"],
+            ],
+            " | ",
+          ),
         ),
       ),
       " |",
@@ -387,14 +390,58 @@ export function inlineReadUint64(opts: InlineReadIntOptions): TChildren {
       cast(
         intersperse(
           [
-            [castToUint64(opts.from({ start: opts.start, offset: offset + 4 })), "<<32"],
-            [castToUint64(opts.from({ start: opts.start, offset: offset + 5 })), "<<40"],
-            [castToUint64(opts.from({ start: opts.start, offset: offset + 6 })), "<<48"],
-            [castToUint64(opts.from({ start: opts.start, offset: offset + 7 })), "<<56"],
+            [castToUint64(opts.from.at(offset + 4, opts.start)), "<<32"],
+            [castToUint64(opts.from.at(offset + 5, opts.start)), "<<40"],
+            [castToUint64(opts.from.at(offset + 6, opts.start)), "<<48"],
+            [castToUint64(opts.from.at(offset + 7, opts.start)), "<<56"],
           ],
           " | ",
         ),
       ),
     ),
+  ];
+}
+
+export interface InlineWriteIntOptions {
+  from: Value;
+  to: Value;
+  start?: TChildren;
+  offset?: number;
+}
+
+export function inlineWriteUint8(opts: InlineWriteIntOptions): TChildren {
+  const offset = opts.offset === undefined ? 0 : opts.offset;
+  return line(opts.to.assignAt(offset, castToByte(opts.from.value), opts.start));
+}
+
+export function inlineWriteUint16(opts: InlineWriteIntOptions): TChildren {
+  const offset = opts.offset === undefined ? 0 : opts.offset;
+  return [
+    line(opts.to.assignAt(offset + 0, castToByte(opts.from.value), opts.start)),
+    line(opts.to.assignAt(offset + 1, castToByte(opts.from.value, " >> 8"), opts.start)),
+  ];
+}
+
+export function inlineWriteUint32(opts: InlineWriteIntOptions): TChildren {
+  const offset = opts.offset === undefined ? 0 : opts.offset;
+  return [
+    line(opts.to.assignAt(offset + 0, castToByte(opts.from.value), opts.start)),
+    line(opts.to.assignAt(offset + 1, castToByte(opts.from.value, " >> 8"), opts.start)),
+    line(opts.to.assignAt(offset + 2, castToByte(opts.from.value, " >> 16"), opts.start)),
+    line(opts.to.assignAt(offset + 3, castToByte(opts.from.value, " >> 24"), opts.start)),
+  ];
+}
+
+export function inlineWriteUint64(opts: InlineWriteIntOptions): TChildren {
+  const offset = opts.offset === undefined ? 0 : opts.offset;
+  return [
+    line(opts.to.assignAt(offset + 0, castToByte(opts.from.value), opts.start)),
+    line(opts.to.assignAt(offset + 1, castToByte(opts.from.value, " >> 8"), opts.start)),
+    line(opts.to.assignAt(offset + 2, castToByte(opts.from.value, " >> 16"), opts.start)),
+    line(opts.to.assignAt(offset + 3, castToByte(opts.from.value, " >> 24"), opts.start)),
+    line(opts.to.assignAt(offset + 4, castToByte(opts.from.value, " >> 32"), opts.start)),
+    line(opts.to.assignAt(offset + 5, castToByte(opts.from.value, " >> 40"), opts.start)),
+    line(opts.to.assignAt(offset + 6, castToByte(opts.from.value, " >> 48"), opts.start)),
+    line(opts.to.assignAt(offset + 7, castToByte(opts.from.value, " >> 56"), opts.start)),
   ];
 }

@@ -2,7 +2,7 @@ import { TChildren, zone } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
 import { DYNAMIC_SIZE, FieldFlags, Type } from "pck";
 import { GoField, GoSchema, GoBinder } from "../schema";
-import { declArgs, declVars, v, SELF, callMethod, len } from "./utils";
+import { declArgs, declVars, v, SELF, callMethod, len, calcVarUintSize } from "./utils";
 import { sizeIvar, sizeUvar } from "./lib";
 
 const SIZE = v("size");
@@ -182,13 +182,4 @@ function incSizeValue(binder: GoBinder, type: Type, value?: TChildren): TChildre
 
 function incSize(...children: TChildren[]): TChildren {
   return line(SIZE, " += ", children);
-}
-
-function calcVarUintSize(n: number): number {
-  let i = 0;
-  do {
-    i++;
-    n >>= 7;
-  } while (n !== 0);
-  return i;
 }

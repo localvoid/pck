@@ -18,15 +18,15 @@ const TAG = v("tag");
 const I = v("i");
 
 function BIT_STORE(i: number): TChildren {
-  return v(`bitSet${i}`);
+  return v(`bitStore${i}`);
 }
 
 export function unpckMethod(binder: GoBinder, schema: GoSchema): TNode {
   const details = binder.getSchemaDetails(schema);
 
-  const bitSetVars = [];
+  const bitStoreVars = [];
   for (let i = 0; i < details.size.bitStoreSize; i++) {
-    bitSetVars.push(`bitSet${i}`);
+    bitStoreVars.push(`bitStore${i}`);
   }
 
   return (
@@ -38,7 +38,7 @@ export function unpckMethod(binder: GoBinder, schema: GoSchema): TNode {
         ],
         declVars(
           [
-            ...bitSetVars,
+            ...bitStoreVars,
             "offset",
             "length",
             "value",

@@ -1,7 +1,7 @@
 import { TChildren, TNode, zone } from "osh";
 import { capitalizeTransformer } from "osh-text";
 import { line, indent, docComment, scope, declSymbol, sym } from "osh-code";
-import { Type, FieldFlags, Field, SchemaDetails } from "pck";
+import { DYNAMIC_SIZE, Type, FieldFlags, Field, SchemaDetails } from "pck";
 import {
   declArgs, declVars, Value, SELF, BUF, v, len, boundCheckHint, callFunc, callMethod, calcVarUintSize,
 } from "./utils";
@@ -13,7 +13,8 @@ import { GoSchema, GoField, GoBinder } from "../schema";
 
 const OPTIONALS = Symbol("Optionals");
 const OFFSET = v("offset");
-const BIT_SET_VALUE = v("bitSetValue");
+const BIT_STORE_VALUE = v("bitStoreValue");
+const I = v("i");
 
 export function pckMethod(binder: GoBinder, schema: GoSchema): TNode {
   const details = binder.getSchemaDetails(schema);
@@ -25,7 +26,7 @@ export function pckMethod(binder: GoBinder, schema: GoSchema): TNode {
           declSymbol("self", schema.self),
           declSymbol("buf", "b"),
         ],
-        declVars(["offset", "bitSetValue"],
+        declVars(["offset", "bitStoreValue", "i"],
           declOptionals(details.optionalFields,
             [
               docComment(
@@ -37,7 +38,7 @@ export function pckMethod(binder: GoBinder, schema: GoSchema): TNode {
                 (details.optionalFields.length > 0)
                   ? details.optionalFields.map((f) => line(OPTIONAL(f), " := ", checkOptional(f)))
                   : null,
-                writeBitSet(schema, details),
+                writeBitStore(schema, details),
                 writeFields(binder, schema, details),
                 line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
               ),
@@ -79,7 +80,7 @@ export function pckTagMethod(binder: GoBinder, schema: GoSchema): TNode {
   );
 }
 
-function writeBitSet(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>): TChildren {
+function writeBitStore(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>): TChildren {
   if (details.bitStore.length > 0) {
     if (details.bitStore.length === 1) {
       if (details.bitStore.optionals.length > 0) {
@@ -97,26 +98,26 @@ function writeBitSet(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>
       }
     } else {
       const result = [];
-      let bitSetIndex = 0;
+      let bitStoreIndex = 0;
       let offset = 0;
       let i = 0;
       for (const bitField of details.bitStore.optionals) {
         result.push(
           line("if ", OPTIONAL(bitField.field), " {"),
           indent(
-            (bitSetIndex === 0)
-              ? line(BIT_SET_VALUE, " = 1")
-              : line(BIT_SET_VALUE, " |= 1 << ", bitSetIndex),
+            (bitStoreIndex === 0)
+              ? line(BIT_STORE_VALUE, " = 1")
+              : line(BIT_STORE_VALUE, " |= 1 << ", bitStoreIndex),
           ),
           line("}"),
         );
-        bitSetIndex++;
-        if (bitSetIndex === 8) {
-          bitSetIndex = 0;
+        bitStoreIndex++;
+        if (bitStoreIndex === 8) {
+          bitStoreIndex = 0;
           result.push(
-            line(BUF.assignAt(offset, BIT_SET_VALUE)),
+            line(BUF.assignAt(offset, BIT_STORE_VALUE)),
             (i < (details.bitStore.length - 1))
-              ? line(BIT_SET_VALUE, " = 0")
+              ? line(BIT_STORE_VALUE, " = 0")
               : null,
           );
           offset++;
@@ -127,27 +128,27 @@ function writeBitSet(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>
         result.push(
           line("if ", SELF(bitField.field.name), " {"),
           indent(
-            bitSetIndex === 0 ?
-              line(BIT_SET_VALUE, " = 1") :
-              line(BIT_SET_VALUE, " |= 1 << ", bitSetIndex),
+            bitStoreIndex === 0 ?
+              line(BIT_STORE_VALUE, " = 1") :
+              line(BIT_STORE_VALUE, " |= 1 << ", bitStoreIndex),
           ),
           line("}"),
         );
-        bitSetIndex++;
-        if (bitSetIndex === 8) {
-          bitSetIndex = 0;
+        bitStoreIndex++;
+        if (bitStoreIndex === 8) {
+          bitStoreIndex = 0;
           result.push(
-            line(BUF.assignAt(offset, BIT_SET_VALUE)),
+            line(BUF.assignAt(offset, BIT_STORE_VALUE)),
             (i < (details.bitStore.length - 1))
-              ? line(BIT_SET_VALUE, " = 0")
+              ? line(BIT_STORE_VALUE, " = 0")
               : null,
           );
           offset++;
         }
         i++;
       }
-      if (bitSetIndex > 0) {
-        result.push(line(BUF.assignAt(offset, BIT_SET_VALUE)));
+      if (bitStoreIndex > 0) {
+        result.push(line(BUF.assignAt(offset, BIT_STORE_VALUE)));
         offset++;
       }
       result.push(line(OFFSET, " += ", offset));
@@ -257,7 +258,22 @@ function writeDynamicType(
         line(OFFSET, " += ", writeUvar(to.slice({ start: OFFSET }), len(from.value))),
         line(OFFSET, " += ", callFunc("copy", [to.slice({ start: OFFSET }), from.value])),
       ];
-    case "array":
+    case "array": {
+      const valueSize = binder.getTypeSize(type.valueType);
+      return [
+        line(OFFSET, " += ", writeUvar(to.slice({ start: OFFSET }), len(from.value))),
+        line("for ", I, " := 0; ", I, " < ", len(from.value), "; ", I, "++ {"),
+        indent(
+          (valueSize === DYNAMIC_SIZE)
+            ? writeDynamicType(binder, type.valueType, new Value(from.at(0, I)), to)
+            : [
+              writeFixedType(binder, type.valueType, new Value(from.at(0, I)), to, 0, OFFSET),
+              line(OFFSET, " += ", valueSize),
+            ],
+        ),
+        line("}"),
+      ];
+    }
     case "map":
       return "TODO";
     case "schema":

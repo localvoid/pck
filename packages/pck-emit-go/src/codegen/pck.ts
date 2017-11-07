@@ -194,7 +194,7 @@ function writeFixedType(
   to: Value,
   offset: number,
   start?: TChildren,
-) {
+): TChildren {
   const size = binder.getTypeSize(type);
   switch (type.id) {
     case "int":
@@ -231,8 +231,28 @@ function writeFixedType(
     case "utf8":
     case "ascii":
       return line(callFunc("copy", [to.slice({ start: start, startOffset: offset }), from.value]));
-    case "array":
-      break;
+    case "array": {
+      const valueSize = binder.getTypeSize(type.valueType);
+      if (type.length > 4) {
+        return [
+          line(
+            "for ", I, ", ", OFFSET, " := 0, ", offset, "; ",
+            I, " < ", type.length, "; ",
+            I, ", ", OFFSET, " = ", I, " + 1, ", OFFSET, " + ", valueSize, " {",
+          ),
+          indent(
+            writeFixedType(binder, type.valueType, new Value(from.at(0, I)), to, 0, OFFSET),
+          ),
+          line("}"),
+        ];
+      } else {
+        const r = [];
+        for (let i = 0; i < type.length; i++) {
+          r.push(writeFixedType(binder, type.valueType, new Value(from.at(i)), to, offset + (i * valueSize)));
+        }
+        return r;
+      }
+    }
     case "schema":
       return line(callMethod(from.value, "Pck", [to.slice({ start: start, startOffset: offset })]));
   }

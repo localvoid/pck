@@ -21,20 +21,6 @@ export function inject(options: EmitOptions, text: string): string {
         case "taggedFactories":
           children = taggedFactories(binder);
           break;
-        case "methods":
-          const schema = getSchema(binder, region.args[1]);
-          children = [
-            sizeMethod(binder, schema),
-            line(),
-            tagSizeMethod(binder, schema),
-            line(),
-            pckTagMethod(binder, schema),
-            line(),
-            pckMethod(binder, schema),
-            line(),
-            unpckMethod(binder, schema),
-          ];
-          break;
         case "size":
           children = sizeMethod(binder, getSchema(binder, region.args[1]));
           break;
@@ -49,6 +35,20 @@ export function inject(options: EmitOptions, text: string): string {
           break;
         case "unpck":
           children = unpckMethod(binder, getSchema(binder, region.args[1]));
+          break;
+        case "methods":
+          const schema = getSchema(binder, region.args[1]);
+          children = [
+            sizeMethod(binder, schema),
+            line(),
+            tagSizeMethod(binder, schema),
+            line(),
+            pckTagMethod(binder, schema),
+            line(),
+            pckMethod(binder, schema),
+            line(),
+            unpckMethod(binder, schema),
+          ];
           break;
       }
 

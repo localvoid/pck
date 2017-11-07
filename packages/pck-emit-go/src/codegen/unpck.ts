@@ -196,8 +196,8 @@ function readFixedType(
         return [
           line(
             "for ", I, ", ", OFFSET, " := 0, ", offset, "; ",
-            OFFSET, " < ", offset + (type.length * valueSize), "; ",
-            I, ", ", OFFSET, " = ", I, ", ", OFFSET, " = ", I, " + 1, ", OFFSET, " + ", valueSize, " {",
+            I, " < ", type.length, "; ",
+            I, ", ", OFFSET, " = ", I, " + 1, ", OFFSET, " + ", valueSize, " {",
           ),
           indent(
             readFixedType(

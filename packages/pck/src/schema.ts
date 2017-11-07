@@ -1,10 +1,10 @@
 import { Field } from "./field";
 
 export class Schema<T extends Field> {
-  readonly id: symbol;
+  readonly id: string;
   readonly fields: T[];
 
-  constructor(id: symbol, fields: T[]) {
+  constructor(id: string, fields: T[]) {
     this.id = id;
     this.fields = fields;
   }
@@ -15,7 +15,7 @@ export type RecursiveFieldArray<T> = T | IRecursiveFieldArray<T> | null;
 export interface IRecursiveFieldArray<T> extends Array<RecursiveFieldArray<T>> { }
 /* tslint:enable:no-empty-interface */
 
-export function declareSchema<T extends Field>(id: symbol, fields: RecursiveFieldArray<T>[]): Schema<T> {
+export function declareSchema<T extends Field>(id: string, fields: RecursiveFieldArray<T>[]): Schema<T> {
   return new Schema(id, normalizeFields(fields));
 }
 

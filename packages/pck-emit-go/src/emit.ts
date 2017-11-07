@@ -1,13 +1,12 @@
 import { TChildren, renderToString, context } from "osh";
 import { PADDING } from "osh-code";
 import { goCode } from "osh-code-go";
-import { Bundle } from "pck";
-import { GoSchema, GoField } from "./schema";
-import { BUNDLE } from "./codegen/utils";
+import { GoBinder } from "./schema";
+import { BINDER } from "./codegen/utils";
 import { declLibSymbols } from "./codegen/lib";
 
 export interface EmitOptions {
-  readonly bundle: Bundle<GoSchema, GoField>;
+  readonly binder: GoBinder;
   readonly padding: string;
 }
 
@@ -24,7 +23,7 @@ export function emit(options: EmitOptions, ...children: TChildren[]): string {
       {},
       context(
         {
-          [BUNDLE]: options.bundle,
+          [BINDER]: options.binder,
           [PADDING]: options.padding,
         },
         declLibSymbols(

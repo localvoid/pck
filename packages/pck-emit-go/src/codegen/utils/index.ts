@@ -7,5 +7,5 @@ export {
   SELF, BUF, boundCheckHint,
 } from "./lang";
 export { declInternal, declArgs, declVars, declOptionals, internal, arg, v, optional } from "./symbols";
-export { BUNDLE, getBundle } from "./bundle";
+export { BINDER, getBinder } from "./binder";
 export { getSchema, enterSchema } from "./schema";

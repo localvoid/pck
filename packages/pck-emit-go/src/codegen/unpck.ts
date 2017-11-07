@@ -1,14 +1,14 @@
-import { Context, TChildren, TNode, component } from "osh";
+import { TChildren, TNode, zone } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
-import { Type, SchemaSize, SchemaDetails, Binder } from "pck";
+import { TypeFlags, Type, SchemaSize, SchemaDetails } from "pck";
 import {
-  getBundle, enterSchema, declArgs, declVars, SELF, BUF, v, slice, boundCheckHint, callMethod,
+  enterSchema, declArgs, declVars, SELF, BUF, v, slice, boundCheckHint, callMethod,
   castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString,
 } from "./utils";
 import {
   InlineReadIntOptions, inlineReadUint8, inlineReadUint16, inlineReadUint32, inlineReadUint64, readIvar, readUvar,
 } from "./lib";
-import { GoField, GoSchema } from "../schema";
+import { GoField, GoSchema, GoBinder } from "../schema";
 
 const OFFSET = v("offset");
 const LENGTH = v("length");
@@ -20,9 +20,8 @@ function BITSET(i: number): TChildren {
   return v(`bitSet${i}`);
 }
 
-export function UnpckMethod(ctx: Context, schema: GoSchema): TChildren {
-  const bundle = getBundle(ctx);
-  const details = bundle.binder.getSchemaDetails(schema);
+export function unpckMethod(binder: GoBinder, schema: GoSchema): TNode {
+  const details = binder.getSchemaDetails(schema);
 
   const bitSetVars = [];
   for (let i = 0; i < details.size.bitStoreSize; i++) {
@@ -30,44 +29,42 @@ export function UnpckMethod(ctx: Context, schema: GoSchema): TChildren {
   }
 
   return (
-    enterSchema(schema,
-      declArgs(
-        [
-          declSymbol("self", schema.self),
-          declSymbol("buf", "b"),
-        ],
-        declVars(
+    zone(`unpckMethod(${schema.struct})`,
+      enterSchema(schema,
+        declArgs(
           [
-            ...bitSetVars,
-            "offset",
-            "length",
-            "value",
-            "size",
-            "i",
+            declSymbol("self", schema.self),
+            declSymbol("buf", "b"),
           ],
-          [
-            docComment(
-              line("Unpck is an automatically generated method for PCK deserialization."),
-            ),
-            line("func (", SELF(), " *", schema.struct, ") Unpck(", BUF(), " []byte) int {"),
-            indent(
-              (details.size.fixedSize > 1) ?
-                boundCheckHint(details.size.fixedSize - 1) :
-                null,
-              readBitSet(schema, details.size),
-              readFields(bundle.binder, schema, details),
-              line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
-            ),
-            line("}"),
-          ],
+          declVars(
+            [
+              ...bitSetVars,
+              "offset",
+              "length",
+              "value",
+              "size",
+              "i",
+            ],
+            [
+              docComment(
+                line("Unpck is an automatically generated method for PCK deserialization."),
+              ),
+              line("func (", SELF(), " *", schema.struct, ") Unpck(", BUF(), " []byte) int {"),
+              indent(
+                (details.size.fixedSize > 1) ?
+                  boundCheckHint(details.size.fixedSize - 1) :
+                  null,
+                readBitSet(schema, details.size),
+                readFields(binder, schema, details),
+                line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
+              ),
+              line("}"),
+            ],
+          ),
         ),
       ),
     )
   );
-}
-
-export function unpckMethod(schema: GoSchema): TNode {
-  return component(UnpckMethod, schema);
 }
 
 function readBitSet(schema: GoSchema, size: SchemaSize): TChildren {
@@ -78,11 +75,7 @@ function readBitSet(schema: GoSchema, size: SchemaSize): TChildren {
   return r;
 }
 
-function readFields(
-  binder: Binder<GoSchema, GoField>,
-  schema: GoSchema,
-  details: SchemaDetails<GoSchema, GoField>,
-): TChildren {
+function readFields(binder: GoBinder, schema: GoSchema, details: SchemaDetails<GoSchema, GoField>): TChildren {
   const r = [];
   if (details.bitStore.length > 0) {
     if (details.bitStore.length === 1) {
@@ -121,7 +114,7 @@ function readFields(
 }
 
 function readFixedType(
-  binder: Binder<GoSchema, GoField>,
+  binder: GoBinder,
   type: Type,
   from: (pos: { start?: TChildren, offset: number }) => TChildren,
   to: TChildren,
@@ -196,24 +189,26 @@ function readFixedType(
         return r;
       }
     case "schema":
-      return line(callMethod(to, "Unpck", [slice(BUF(), offset)]));
-    case "ref":
-      return [
-        line("{"),
-        indent(
-          line(VALUE, " := ", binder.findSchemaById(type.symbol).factory),
-          line(VALUE, ".Unpck(", slice(BUF(), offset), ")"),
-          line(to, " = value"),
-        ),
-        line("}"),
-      ];
+      if ((type.flags & TypeFlags.Nullable) === 0) {
+        return line(callMethod(to, "Unpck", [slice(BUF(), offset)]));
+      } else {
+        return [
+          line("{"),
+          indent(
+            line(VALUE, " := ", binder.findSchemaById(type.schemaId).factory),
+            line(VALUE, ".Unpck(", slice(BUF(), offset), ")"),
+            line(to, " = value"),
+          ),
+          line("}"),
+        ];
+      }
   }
 
   throw new Error(`Invalid fixed type: ${type}.`);
 }
 
 function readDynamicType(
-  binder: Binder<GoSchema, GoField>,
+  binder: GoBinder,
   type: Type,
   from: (pos: { start: TChildren, offset: number }) => TChildren,
   to: TChildren,
@@ -268,17 +263,19 @@ function readDynamicType(
     case "map":
       break;
     case "schema":
-      return line(OFFSET, " += ", callMethod(to, "Unpck", [from({ start: OFFSET, offset: 0 })]));
-    case "ref":
-      return [
-        line("{"),
-        indent(
-          line(VALUE, " := ", binder.findSchemaById(type.symbol).factory),
-          line(LENGTH, " := ", VALUE, ".Unpck(", from({ start: OFFSET, offset: 0 }), ")"),
-          line(OFFSET, " += ", LENGTH),
-        ),
-        line("}"),
-      ];
+      if ((type.flags & TypeFlags.Nullable) === 0) {
+        return line(OFFSET, " += ", callMethod(to, "Unpck", [from({ start: OFFSET, offset: 0 })]));
+      } else {
+        return [
+          line("{"),
+          indent(
+            line(VALUE, " := ", binder.findSchemaById(type.schemaId).factory),
+            line(LENGTH, " := ", VALUE, ".Unpck(", from({ start: OFFSET, offset: 0 }), ")"),
+            line(OFFSET, " += ", LENGTH),
+          ),
+          line("}"),
+        ];
+      }
     case "union":
       break;
   }

@@ -1,5 +1,5 @@
 export {
-  TypeId, Type, BaseType,
+  TypeId, TypeFlags, Type, BaseType,
   BoolType, IntType, FloatType, VarIntType, BytesType, Utf8Type, AsciiType, ArrayType, MapType, SchemaType, UnionType,
   isNumberType, isStringType,
   BOOL, INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT32, FLOAT64, VARINT, VARUINT,

@@ -1,16 +1,15 @@
-import { Context, TChildren, TNode, component } from "osh";
+import { TChildren } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
-import { FieldFlags, Type, Binder } from "pck";
-import { GoField, GoSchema } from "../schema";
-import { getBundle, enterSchema, declArgs, declVars, v, SELF, callMethod, len } from "./utils";
+import { FieldFlags, Type } from "pck";
+import { GoField, GoSchema, GoBinder } from "../schema";
+import { enterSchema, declArgs, declVars, v, SELF, callMethod, len } from "./utils";
 import { sizeIvar, sizeUvar } from "./lib";
 
 const SIZE = v("size");
 const LENGTH = v("length");
 
-export function SizeMethod(ctx: Context, schema: GoSchema): TChildren {
-  const bundle = getBundle(ctx);
-  const details = bundle.binder.getSchemaDetails(schema);
+export function sizeMethod(binder: GoBinder, schema: GoSchema): TChildren {
+  const details = binder.getSchemaDetails(schema);
 
   return (
     enterSchema(schema,
@@ -27,7 +26,7 @@ export function SizeMethod(ctx: Context, schema: GoSchema): TChildren {
                   line("var ", LENGTH, " int"),
                   line("_ = ", LENGTH),
                   line(SIZE, " = ", details.size.fixedSize),
-                  details.dynamicFields.map((f) => incFieldSize(bundle.binder, f)),
+                  details.dynamicFields.map((f) => incFieldSize(binder, f)),
                   line("return"),
                 ),
                 line("}"),
@@ -46,11 +45,7 @@ export function SizeMethod(ctx: Context, schema: GoSchema): TChildren {
   );
 }
 
-export function sizeMethod(schema: GoSchema): TNode {
-  return component(SizeMethod, schema);
-}
-
-function incFieldSize(binder: Binder<GoSchema, GoField>, field: GoField): TChildren {
+function incFieldSize(binder: GoBinder, field: GoField): TChildren {
   if (field.isOptional()) {
     switch (field.type.id) {
       case "array":
@@ -91,7 +86,7 @@ function incFieldSize(binder: Binder<GoSchema, GoField>, field: GoField): TChild
   return incSizeValue(binder, field.type, SELF(field.name));
 }
 
-function incSizeValue(binder: Binder<GoSchema, GoField>, type: Type, value?: TChildren): TChildren {
+function incSizeValue(binder: GoBinder, type: Type, value?: TChildren): TChildren {
   switch (type.id) {
     case "union":
     case "map":
@@ -114,7 +109,6 @@ function incSizeValue(binder: Binder<GoSchema, GoField>, type: Type, value?: TCh
         incSize(sizeUvar(LENGTH), " + ", LENGTH),
       ];
     case "schema":
-    case "ref":
       return incSize(callMethod(value, "Size"));
     case "array":
       const valueSize = binder.getTypeSize(type.valueType);

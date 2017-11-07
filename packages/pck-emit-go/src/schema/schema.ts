@@ -1,36 +1,13 @@
 import { capitalizeTransformer } from "osh-text";
-import { Schema, Field, FieldFlags, Type } from "pck";
-
-export type GoFieldTransformer = (field: GoField) => GoField;
-
-export const enum GoFieldFlags {
-  Skip = 1,
-  Embed = 1 << 1,
-}
-
-export class GoField<T extends Type = Type> extends Field<T> {
-  readonly gFlags: GoFieldFlags;
-
-  constructor(type: T, name: string, flags: FieldFlags, gFlags: GoFieldFlags) {
-    super(type, name, flags);
-    this.gFlags = gFlags;
-  }
-}
-
-export function skip<T extends Type>(field: GoField<T>): GoField<T> {
-  return new GoField<T>(field.type, field.name, field.flags, field.gFlags | GoFieldFlags.Skip);
-}
-
-export function embed<T extends Type>(field: GoField<T>): GoField<T> {
-  return new GoField<T>(field.type, field.name, field.flags, field.gFlags | GoFieldFlags.Embed);
-}
+import { Schema, Field } from "pck";
+import { GoField, GoFieldTransformer } from "./field";
 
 export class GoSchema extends Schema<GoField> {
   readonly struct: string;
   readonly self: string;
   readonly factory: string;
 
-  constructor(id: symbol, fields: GoField[], struct: string, self: string, factory: string) {
+  constructor(id: string, fields: GoField[], struct: string, self: string, factory: string) {
     super(id, fields);
     this.struct = struct;
     this.self = self;
@@ -40,7 +17,7 @@ export class GoSchema extends Schema<GoField> {
 
 export interface GoSchemaOptions {
   readonly schema: Schema<Field>;
-  readonly struct: string;
+  readonly struct?: string;
   readonly self?: string;
   readonly factory?: string;
   readonly fields?: GoFieldTransformer | GoFieldTransformer[];
@@ -48,7 +25,7 @@ export interface GoSchemaOptions {
 
 export function goSchema(options: GoSchemaOptions): GoSchema {
   const schema = options.schema;
-  const struct = options.struct;
+  const struct = options.struct === undefined ? schema.id : options.struct;
   const self = options.self === undefined ? struct.toLowerCase() : options.self;
   const factory = options.factory === undefined ? `&${struct}{}` : options.factory;
 

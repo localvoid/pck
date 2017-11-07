@@ -54,20 +54,26 @@ export class SchemaDetails<T extends Schema<F>, F extends Field> {
 }
 
 export class Binder<T extends Schema<F>, F extends Field> {
-  readonly schemas: Map<symbol, T>;
-  readonly schemaTags: Map<symbol, number>;
-  readonly details: Map<symbol, SchemaDetails<T, F>>;
+  readonly schemas: T[];
+  readonly schemaIdIndex: Map<string, T>;
+  readonly schemaTags: Map<string, number>;
+  readonly details: Map<string, SchemaDetails<T, F>>;
 
-  constructor(schemas: Map<symbol, T>, schemaTags: Map<symbol, number>) {
+  constructor(schemas: T[], schemaTags: Map<string, number>) {
     this.schemas = schemas;
+    this.schemaIdIndex = new Map<string, T>();
     this.schemaTags = schemaTags;
-    this.details = new Map<symbol, SchemaDetails<T, F>>();
+    this.details = new Map<string, SchemaDetails<T, F>>();
+
+    for (const schema of schemas) {
+      this.schemaIdIndex.set(schema.id, schema);
+    }
   }
 
-  findSchemaById(id: symbol): T {
-    const schema = this.schemas.get(id);
+  findSchemaById(id: string): T {
+    const schema = this.schemaIdIndex.get(id);
     if (schema === undefined) {
-      throw new Error(`Unable to find schema with ${id.toString()} id.`);
+      throw new Error(`Unable to find schema with id "${id}".`);
     }
     return schema;
   }
@@ -75,20 +81,20 @@ export class Binder<T extends Schema<F>, F extends Field> {
   getSchemaDetails(schema: T): SchemaDetails<T, F> {
     let details = this.details.get(schema.id);
     if (details === undefined) {
-      details = analyzeSchema(this, new Set<symbol>(), schema);
+      details = analyzeSchema(this, new Set<string>(), schema);
       this.details.set(schema.id, details);
     }
     return details;
   }
 
   getTypeSize(type: Type): number {
-    return getTypeSize(this, new Set<symbol>(), type);
+    return getTypeSize(this, new Set<string>(), type);
   }
 }
 
 function analyzeSchema<T extends Schema<F>, F extends Field>(
   binder: Binder<T, F>,
-  visitedSchemas: Set<symbol>,
+  visitedSchemas: Set<string>,
   schema: T,
 ): SchemaDetails<T, F> {
   visitedSchemas.add(schema.id);
@@ -129,13 +135,13 @@ function analyzeSchema<T extends Schema<F>, F extends Field>(
 
 function getSchemaSize<T extends Schema<F>, F extends Field>(
   binder: Binder<T, F>,
-  visitedSchemas: Set<symbol>,
+  visitedSchemas: Set<string>,
   schema: T,
 ): number {
   let details = binder.details.get(schema.id);
   if (details === undefined) {
     if (visitedSchemas.has(schema.id)) {
-      throw new Error(`Unable to to calculate schema size.Schema ${schema.id.toString()} has circular references.`);
+      throw new Error(`Unable to to calculate schema size.Schema ${schema.id} has circular references.`);
     }
     details = analyzeSchema(binder, visitedSchemas, schema);
     binder.details.set(schema.id, details);
@@ -148,7 +154,7 @@ function getSchemaSize<T extends Schema<F>, F extends Field>(
 
 function getTypeSize<T extends Schema<F>, F extends Field>(
   binder: Binder<T, F>,
-  visitedSchemas: Set<symbol>,
+  visitedSchemas: Set<string>,
   type: Type,
 ): number {
   switch (type.id) {
@@ -187,7 +193,7 @@ function getTypeSize<T extends Schema<F>, F extends Field>(
     case "map":
       return -1;
     case "schema":
-      return getSchemaSize(binder, visitedSchemas, binder.findSchemaById(type.symbol));
+      return getSchemaSize(binder, visitedSchemas, binder.findSchemaById(type.schemaId));
     case "union":
       return -1;
   }
@@ -200,7 +206,7 @@ function getTypeSize<T extends Schema<F>, F extends Field>(
  */
 function sortFields<T extends Schema<F>, F extends Field>(
   binder: Binder<T, F>,
-  visitedSchemas: Set<symbol>,
+  visitedSchemas: Set<string>,
 ): (a: Field, b: Field) => number {
   return (a: Field, b: Field) => {
     if (a.isOptional()) {

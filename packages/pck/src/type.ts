@@ -278,37 +278,37 @@ export class MapType extends BaseType {
 
 export class SchemaType extends BaseType {
   readonly id: "schema";
-  readonly symbol: symbol;
+  readonly schemaId: string;
 
-  constructor(flags: TypeFlags, symbol: symbol) {
+  constructor(flags: TypeFlags, schemaId: string) {
     super("schema", flags);
-    this.symbol = symbol;
+    this.schemaId = schemaId;
   }
 
   isCompatible(other: Type): boolean {
     return (
       other.id === "schema" &&
       this.flags === other.flags &&
-      this.symbol === other.symbol
+      this.schemaId === other.schemaId
     );
   }
 
   withFlags(flags: TypeFlags): SchemaType {
-    return new SchemaType(flags, this.symbol);
+    return new SchemaType(flags, this.schemaId);
   }
 
   toString(): string {
-    return `<Type: schema<${this.symbol.toString()}>`;
+    return `<Type: schema<${this.schemaId}>`;
   }
 }
 
 export class UnionType extends BaseType {
   readonly id: "union";
-  readonly symbols: symbol[];
+  readonly schemaIds: string[];
 
-  constructor(flags: TypeFlags, symbols: symbol[]) {
+  constructor(flags: TypeFlags, symbols: string[]) {
     super("union", flags);
-    this.symbols = symbols;
+    this.schemaIds = symbols;
   }
 
   isCompatible(other: Type): boolean {
@@ -318,13 +318,13 @@ export class UnionType extends BaseType {
     if (other.id !== "union") {
       return false;
     }
-    if (this.symbols !== other.symbols) {
-      if (this.symbols.length !== other.symbols.length) {
+    if (this.schemaIds !== other.schemaIds) {
+      if (this.schemaIds.length !== other.schemaIds.length) {
         return false;
       }
 
-      for (let i = 0; i < this.symbols.length; i++) {
-        if (this.symbols[i] !== other.symbols[i]) {
+      for (let i = 0; i < this.schemaIds.length; i++) {
+        if (this.schemaIds[i] !== other.schemaIds[i]) {
           return false;
         }
       }
@@ -334,11 +334,11 @@ export class UnionType extends BaseType {
   }
 
   withFlags(flags: TypeFlags): UnionType {
-    return new UnionType(flags, this.symbols);
+    return new UnionType(flags, this.schemaIds);
   }
 
   toString(): string {
-    return `<Type: union<${this.symbols.map((s) => s.toString()).join("|")}>`;
+    return `<Type: union<${this.schemaIds.join("|")}>`;
   }
 }
 
@@ -456,10 +456,10 @@ export function MAP(keyType: Type, valueType: Type): MapType {
   return new MapType(0, keyType, valueType);
 }
 
-export function SCHEMA(symbol: symbol): SchemaType {
-  return new SchemaType(0, symbol);
+export function SCHEMA(schemaId: string): SchemaType {
+  return new SchemaType(0, schemaId);
 }
 
-export function UNION(symbols: symbol[]): UnionType {
-  return new UnionType(0, symbols);
+export function UNION(schemaIds: string[]): UnionType {
+  return new UnionType(0, schemaIds);
 }

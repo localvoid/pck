@@ -154,10 +154,10 @@ export function map(name: string, keyType: Type, valueType: Type): Field<MapType
   return new Field(MAP(keyType, valueType), name);
 }
 
-export function schema(name: string, symbol: symbol): Field<SchemaType> {
-  return new Field(SCHEMA(symbol), name);
+export function schema(name: string, schemaId: string): Field<SchemaType> {
+  return new Field(SCHEMA(schemaId), name);
 }
 
-export function union(name: string, symbols: symbol[]): Field<UnionType> {
-  return new Field(UNION(symbols), name);
+export function union(name: string, schemaIds: string[]): Field<UnionType> {
+  return new Field(UNION(schemaIds), name);
 }

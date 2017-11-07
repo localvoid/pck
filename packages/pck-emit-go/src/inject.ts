@@ -1,17 +1,13 @@
 import { createDirectiveMatcher, inject as _inject } from "incode";
 import { line } from "osh-code";
-import { Bundle } from "pck";
-import { lib } from "./codegen/lib";
-import { sizeMethod } from "./codegen/size";
-import { pckMethod } from "./codegen/pck";
-import { unpckMethod } from "./codegen/unpck";
+import { GoSchema, GoBinder } from "./schema";
+import { lib, sizeMethod, pckMethod, unpckMethod } from "./codegen";
 import { EmitOptions, emit } from "./emit";
-import { GoField, GoSchema } from "./schema";
 
 const DIRECTIVE_MATCHER = createDirectiveMatcher("pck");
 
 export function inject(options: EmitOptions, text: string): string {
-  const bundle = options.bundle;
+  const binder = options.binder;
 
   return _inject(
     text,
@@ -23,23 +19,23 @@ export function inject(options: EmitOptions, text: string): string {
           children = lib();
           break;
         case "methods":
-          const schema = getSchema(bundle, region.args[1]);
+          const schema = getSchema(binder, region.args[1]);
           children = [
-            sizeMethod(schema),
+            sizeMethod(binder, schema),
             line(),
-            pckMethod(schema),
+            pckMethod(binder, schema),
             line(),
-            unpckMethod(schema),
+            unpckMethod(binder, schema),
           ];
           break;
         case "size":
-          children = sizeMethod(getSchema(bundle, region.args[1]));
+          children = sizeMethod(binder, getSchema(binder, region.args[1]));
           break;
         case "pck":
-          children = pckMethod(getSchema(bundle, region.args[1]));
+          children = pckMethod(binder, getSchema(binder, region.args[1]));
           break;
         case "unpck":
-          children = unpckMethod(getSchema(bundle, region.args[1]));
+          children = unpckMethod(binder, getSchema(binder, region.args[1]));
           break;
       }
 
@@ -60,23 +56,9 @@ export function inject(options: EmitOptions, text: string): string {
   );
 }
 
-function getSchema(bundle: Bundle<GoSchema, GoField>, schemaName: any): GoSchema {
-  let schema;
-  if (schemaName === void 0) {
-    throw new Error(`Unable to find schema.`);
-  }
+function getSchema(binder: GoBinder, schemaName: any): GoSchema {
   if (typeof schemaName !== "string") {
     throw new Error(`Invalid schema name. Invalid type: ${typeof schemaName}.`);
   }
-  for (const s of bundle.schemas) {
-    if (s.struct === schemaName) {
-      schema = s;
-      break;
-    }
-  }
-  if (schema === void 0) {
-    throw new Error(`Unable to find schema with a name "${schemaName}".`);
-  }
-
-  return schema;
+  return binder.findSchemaByName(schemaName);
 }

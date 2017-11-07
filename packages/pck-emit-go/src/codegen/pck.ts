@@ -1,54 +1,51 @@
-import { Context, TChildren, TNode, component } from "osh";
+import { TChildren, TNode, zone } from "osh";
 import { line, indent, docComment, declSymbol } from "osh-code";
-import { FieldFlags, Field, SchemaDetails, Binder } from "pck";
+import { FieldFlags, Field, SchemaDetails } from "pck";
 import {
-  getBundle, enterSchema, declArgs, declVars, declOptionals, SELF, BUF, v, optional, len, slice, castToByte,
+  enterSchema, declArgs, declVars, declOptionals, SELF, BUF, v, optional, len, slice, castToByte,
   boundCheckHint, callFunc, callMethod,
 } from "./utils";
 import { writeUvar, writeIvar } from "./lib";
-import { GoSchema, GoField } from "../schema";
+import { GoSchema, GoField, GoBinder } from "../schema";
 
 const OFFSET = v("offset");
 const BIT_SET_VALUE = v("bitSetValue");
 
-export function PckMethod(ctx: Context, schema: GoSchema): TChildren {
-  const bundle = getBundle(ctx);
-  const details = bundle.binder.getSchemaDetails(schema);
+export function pckMethod(binder: GoBinder, schema: GoSchema): TNode {
+  const details = binder.getSchemaDetails(schema);
 
   return (
-    enterSchema(schema,
-      declArgs(
-        [
-          declSymbol("self", schema.self),
-          declSymbol("buf", "b"),
-        ],
-        declVars(["offset", "bitSetValue"],
-          declOptionals(details.optionalFields,
-            [
-              docComment(
-                line("Pck is an automatically generated method for PCK serialization."),
-              ),
-              line("func (", SELF(), " *", schema.struct, ") Pck(", BUF(), " []byte) int {"),
-              indent(
-                (details.size.fixedSize > 1) ? boundCheckHint(details.size.fixedSize - 1) : null,
-                (details.optionalFields.length > 0)
-                  ? details.optionalFields.map((f) => line(optional(f), " := ", checkOptional(f)))
-                  : null,
-                writeBitSet(schema, details),
-                writeFields(bundle.binder, schema, details),
-                line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
-              ),
-              line("}"),
-            ],
+    zone(`pckMethod(${schema.struct})`,
+      enterSchema(schema,
+        declArgs(
+          [
+            declSymbol("self", schema.self),
+            declSymbol("buf", "b"),
+          ],
+          declVars(["offset", "bitSetValue"],
+            declOptionals(details.optionalFields,
+              [
+                docComment(
+                  line("Pck is an automatically generated method for PCK serialization."),
+                ),
+                line("func (", SELF(), " *", schema.struct, ") Pck(", BUF(), " []byte) int {"),
+                indent(
+                  (details.size.fixedSize > 1) ? boundCheckHint(details.size.fixedSize - 1) : null,
+                  (details.optionalFields.length > 0)
+                    ? details.optionalFields.map((f) => line(optional(f), " := ", checkOptional(f)))
+                    : null,
+                  writeBitSet(schema, details),
+                  writeFields(binder, schema, details),
+                  line("return ", details.size.dynamic ? OFFSET : details.size.fixedSize),
+                ),
+                line("}"),
+              ],
+            ),
           ),
         ),
       ),
     )
   );
-}
-
-export function pckMethod(schema: GoSchema): TNode {
-  return component(PckMethod, schema);
 }
 
 function writeBitSet(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>): TChildren {
@@ -131,11 +128,7 @@ function writeBitSet(schema: GoSchema, details: SchemaDetails<GoSchema, GoField>
   return null;
 }
 
-function writeFields(
-  binder: Binder<GoSchema, GoField>,
-  schema: GoSchema,
-  details: SchemaDetails<GoSchema, GoField>,
-): TChildren {
+function writeFields(binder: GoBinder, schema: GoSchema, details: SchemaDetails<GoSchema, GoField>): TChildren {
   const r = [];
   let offset = details.size.bitStoreSize;
   for (const field of details.fixedFields) {
@@ -160,7 +153,7 @@ function writeFields(
   return r;
 }
 
-function putFixedField(binder: Binder<GoSchema, GoField>, field: GoField, offset: number): TChildren {
+function putFixedField(binder: GoBinder, field: GoField, offset: number): TChildren {
   switch (field.type.id) {
     case "int":
       switch (field.type.size) {
@@ -187,7 +180,6 @@ function putFixedField(binder: Binder<GoSchema, GoField>, field: GoField, offset
     case "array":
       break;
     case "schema":
-    case "ref":
       return line(callMethod(SELF(field.name), "Pck", [slice(BUF(), offset)]));
   }
 
@@ -211,7 +203,6 @@ function putDynamicField(field: GoField): TChildren {
     case "map":
       return "TODO";
     case "schema":
-    case "ref":
       return line(OFFSET, " += ", callMethod(SELF(field.name), "Pck", [slice(BUF(), OFFSET)]));
     case "union":
       return "TODO";

@@ -2,7 +2,7 @@ import { TChildren, TNode, zone } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
 import { DYNAMIC_SIZE, TypeFlags, Type, SchemaSize, SchemaDetails } from "pck";
 import {
-  declArgs, declVars, SELF, BUF, v, boundCheckHint, callMethod, Value,
+  declArgs, declVars, SELF, BUF, v, boundCheckHint, callFunc, callMethod, Value,
   castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString,
 } from "./utils";
 import {
@@ -183,7 +183,7 @@ function readFixedType(
         startOffset: offset,
         endOffset: offset + size,
       })));
-    case "ascii":
+    case "string":
       return line(to.assign(castToString(from.slice({
         start: start,
         end: start,
@@ -277,8 +277,7 @@ function readDynamicType(
         ),
         line("}"),
       ];
-    case "utf8":
-    case "ascii":
+    case "string":
       return [
         line("{"),
         indent(
@@ -297,6 +296,8 @@ function readDynamicType(
           indent(
             line(LENGTH, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
             line(OFFSET, " += ", SIZE),
+            line(VALUE, " := ", callFunc("make", [goType(binder, type)])),
+            line(to.assign(VALUE)),
             line("for ", I, " := 0; ", I, " < ", LENGTH, "; ", I, " += 1 {"),
             indent(
               (valueSize === DYNAMIC_SIZE)
@@ -304,13 +305,13 @@ function readDynamicType(
                   binder,
                   type.valueType,
                   from,
-                  new Value(to.at(0, I)),
+                  new Value([VALUE, "[", I, "]"]),
                 )
                 : readFixedType(
                   binder,
                   type.valueType,
                   from,
-                  new Value(to.at(0, I)),
+                  new Value([VALUE, "[", I, "]"]),
                   0,
                   OFFSET,
                 ),
@@ -364,4 +365,43 @@ function readDynamicType(
   }
 
   throw new Error(`Invalid dynamic type: ${type}`);
+}
+
+function goType(binder: GoBinder, type: Type): string {
+  switch (type.id) {
+    case "bool":
+      return "bool";
+    case "int":
+      switch (type.size) {
+        case 1:
+          return type.signed ? "int8" : "uint8";
+        case 2:
+          return type.signed ? "int16" : "uint16";
+        case 4:
+          return type.signed ? "int32" : "uint32";
+        case 8:
+          return type.signed ? "int64" : "uint64";
+      }
+    case "float":
+      switch (type.size) {
+        case 4:
+          return "float";
+        case 8:
+          return "double";
+      }
+    case "varint":
+      return type.signed ? "int64" : "uint64";
+    case "bytes":
+      return "[]byte";
+    case "string":
+      return "string";
+    case "array":
+      return "[]" + goType(binder, type.valueType);
+    case "map":
+      return `map[${goType(binder, type.keyType)}]${goType(binder, type.valueType)}`;
+    case "schema":
+      return ((type.flags & TypeFlags.Nullable) !== 0 ? "*" : "") + binder.findSchemaById(type.schemaId).struct;
+    case "union":
+      return "unpcker";
+  }
 }

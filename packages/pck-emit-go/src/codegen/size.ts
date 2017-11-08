@@ -48,24 +48,24 @@ export function sizeMethod(binder: GoBinder, schema: GoSchema): TChildren {
   );
 }
 
-export function tagSizeMethod(binder: GoBinder, schema: GoSchema): TChildren {
+export function sizeWithTagMethod(binder: GoBinder, schema: GoSchema): TChildren {
   const details = binder.getSchemaDetails(schema);
 
   return (
-    zone(`tagSizeMethod(${schema.struct})`,
+    zone(`sizeWithTagMethod(${schema.struct})`,
       declArgs(
         [
           declSymbol("self", schema.self),
         ],
         [
           docComment(
-            line("PckTagSize is an automatically generated method for PCK serialized size calculation."),
+            line("PckSizeWithTag is an automatically generated method for PCK serialized size calculation."),
           ),
-          line("func (", SELF(), " *", schema.struct, ") PckTagSize() int {"),
+          line("func (", SELF(), " *", schema.struct, ") PckSizeWithTag() int {"),
           indent(
             details.tag === -1
-              ? line("return 0")
-              : line("return ", calcVarUintSize(details.tag)),
+              ? line(`panic("${schema.struct} doesn't support tagged serialization")`)
+              : line("return ", calcVarUintSize(details.tag), " + ", callMethod(SELF(), "PckSize", [])),
           ),
           line("}"),
         ],
@@ -129,8 +129,7 @@ function incSizeValue(binder: GoBinder, type: Type, value?: TChildren): TChildre
       } else {
         return incSize(sizeUvar(value));
       }
-    case "utf8":
-    case "ascii":
+    case "string":
     case "bytes":
       return [
         line(LENGTH, " = ", len(value)),

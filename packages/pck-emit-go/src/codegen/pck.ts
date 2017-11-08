@@ -3,7 +3,7 @@ import { capitalizeTransformer } from "osh-text";
 import { line, indent, docComment, scope, declSymbol, sym } from "osh-code";
 import { DYNAMIC_SIZE, Type, FieldFlags, Field, SchemaDetails } from "pck";
 import {
-  declArgs, declVars, Value, SELF, BUF, v, len, boundCheckHint, callFunc, callMethod, calcVarUintSize,
+  declArgs, declVars, Value, SELF, BUF, v, len, boundCheckHint, callFunc, callMethod, varUintBytes,
 } from "./utils";
 import {
   InlineWriteIntOptions, inlineWriteUint8, inlineWriteUint16, inlineWriteUint32, inlineWriteUint64,
@@ -51,12 +51,12 @@ export function pckMethod(binder: GoBinder, schema: GoSchema): TNode {
   );
 }
 
-export function pckTagMethod(binder: GoBinder, schema: GoSchema): TNode {
+export function pckWithTagMethod(binder: GoBinder, schema: GoSchema): TNode {
   const details = binder.getSchemaDetails(schema);
-  const size = details.tag > 0 ? calcVarUintSize(details.tag) : 1;
+  const bytes = details.tag >= 0 ? varUintBytes(details.tag) : [];
 
   return (
-    zone(`pckTagMethod(${schema.struct})`,
+    zone(`pckWithTagMethod(${schema.struct})`,
       declArgs(
         [
           declSymbol("self", schema.self),
@@ -64,14 +64,20 @@ export function pckTagMethod(binder: GoBinder, schema: GoSchema): TNode {
         ],
         [
           docComment(
-            line("PckTag is an automatically generated method for PCK serialization."),
+            line("PckWithTag is an automatically generated method for PCK serialization."),
           ),
-          line("func (", SELF(), " *", schema.struct, ") PckTag(", BUF.value, " []byte) int {"),
+          line("func (", SELF(), " *", schema.struct, ") PckWithTag(", BUF.value, " []byte) int {"),
           indent(
-            (size > 1) ? boundCheckHint(size) : null,
+            (bytes.length > 1) ? boundCheckHint(bytes.length) : null,
             (details.tag === -1)
-              ? line("return 0")
-              : line("return ", writeUvar(BUF.value, details.tag)),
+              ? line(`panic("${schema.struct} doesn't support tagged serialization")`)
+              : [
+                bytes.map((b, i) => line(BUF.assignAt(i, b))),
+                line(
+                  "return ", bytes.length, " + ",
+                  callMethod(SELF(), "Pck", [BUF.slice({ startOffset: bytes.length })]),
+                ),
+              ],
           ),
           line("}"),
         ],
@@ -228,8 +234,7 @@ function writeFixedType(
       }
     }
     case "bytes":
-    case "utf8":
-    case "ascii":
+    case "string":
       return line(callFunc("copy", [to.slice({ start: start, startOffset: offset }), from.value]));
     case "array": {
       const valueSize = binder.getTypeSize(type.valueType);
@@ -272,8 +277,7 @@ function writeDynamicType(
         ? line(OFFSET, " += ", writeIvar(to.slice({ start: OFFSET }), from.value))
         : line(OFFSET, " += ", writeUvar(to.slice({ start: OFFSET }), from.value));
     case "bytes":
-    case "utf8":
-    case "ascii":
+    case "string":
       return [
         line(OFFSET, " += ", writeUvar(to.slice({ start: OFFSET }), len(from.value))),
         line(OFFSET, " += ", callFunc("copy", [to.slice({ start: OFFSET }), from.value])),

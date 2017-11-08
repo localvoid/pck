@@ -1,4 +1,9 @@
-export { GoField, GoFieldFlags, GoFieldTransformer, skip, ref } from "./field";
-export { GoSchema, GoSchemaOptions, goSchema } from "./schema";
+export {
+  GoType, GoBoolType, GoIntType, GoFloatType, GoVarIntType, GoBytesType, GoStringType, GoArrayType, GoMapType,
+  GoSchemaType, GoUnionType,
+  convertToGoType,
+} from "./type";
+export { GoField, GoFieldFlags, GoFieldTransformer, transformGoField } from "./field";
+export { GoSchema, GoSchemaTransformOptions, transformGoSchema } from "./schema";
 export { GoBundle, GoBundleOptions, goBundle } from "./bundle";
 export { GoBinder, createGoBinder } from "./binder";

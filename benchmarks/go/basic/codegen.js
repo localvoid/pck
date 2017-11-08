@@ -11,7 +11,7 @@ try {
     FILE,
     goEmit.inject(
       {
-        binder: goEmit.createGoBinder(goEmit.goBundle({ bundle })),
+        binder: goEmit.createGoBinder(goEmit.goBundle(bundle)),
       },
       fs.readFileSync(FILE).toString(),
     ),

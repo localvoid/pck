@@ -1,4 +1,4 @@
-export { calcVarUintSize } from "./varint";
+export { calcVarUintSize, varUintBytes } from "./varint";
 export {
   callMethod, callFunc,
   len,

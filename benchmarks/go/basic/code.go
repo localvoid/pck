@@ -23,7 +23,8 @@ type User struct {
 
 // pck:emit("taggedFactories")
 
-var taggedFactories = [0]func() unpcker{}
+var taggedFactories = [0]func() unpcker {
+}
 
 // pck:end
 
@@ -39,14 +40,9 @@ func (position *Position) PckSize() (size int) {
 	return
 }
 
-// PckTagSize is an automatically generated method for PCK serialized size calculation.
-func (position *Position) PckTagSize() int {
-	return 0
-}
-
-// PckTag is an automatically generated method for PCK serialization.
-func (position *Position) PckTag(b []byte) int {
-	return 0
+// PckSizeWithTag is an automatically generated method for PCK serialized size calculation.
+func (position *Position) PckSizeWithTag() int {
+	panic("Position doesn't support tagged serialization")
 }
 
 // Pck is an automatically generated method for PCK serialization.
@@ -55,6 +51,11 @@ func (position *Position) Pck(b []byte) int {
 	offset += writeIvar(b[offset:], int64(position.X))
 	offset += writeIvar(b[offset:], int64(position.Y))
 	return offset
+}
+
+// PckWithTag is an automatically generated method for PCK serialization.
+func (position *Position) PckWithTag(b []byte) int {
+	panic("Position doesn't support tagged serialization")
 }
 
 // Unpck is an automatically generated method for PCK deserialization.
@@ -82,14 +83,9 @@ func (attributes *Attributes) PckSize() int {
 	return 3
 }
 
-// PckTagSize is an automatically generated method for PCK serialized size calculation.
-func (attributes *Attributes) PckTagSize() int {
-	return 0
-}
-
-// PckTag is an automatically generated method for PCK serialization.
-func (attributes *Attributes) PckTag(b []byte) int {
-	return 0
+// PckSizeWithTag is an automatically generated method for PCK serialized size calculation.
+func (attributes *Attributes) PckSizeWithTag() int {
+	panic("Attributes doesn't support tagged serialization")
 }
 
 // Pck is an automatically generated method for PCK serialization.
@@ -99,6 +95,11 @@ func (attributes *Attributes) Pck(b []byte) int {
 	b[1] = byte(attributes.Agi)
 	b[2] = byte(attributes.Int)
 	return 3
+}
+
+// PckWithTag is an automatically generated method for PCK serialization.
+func (attributes *Attributes) PckWithTag(b []byte) int {
+	panic("Attributes doesn't support tagged serialization")
 }
 
 // Unpck is an automatically generated method for PCK deserialization.
@@ -124,14 +125,9 @@ func (user *User) PckSize() (size int) {
 	return
 }
 
-// PckTagSize is an automatically generated method for PCK serialized size calculation.
-func (user *User) PckTagSize() int {
-	return 0
-}
-
-// PckTag is an automatically generated method for PCK serialization.
-func (user *User) PckTag(b []byte) int {
-	return 0
+// PckSizeWithTag is an automatically generated method for PCK serialized size calculation.
+func (user *User) PckSizeWithTag() int {
+	panic("User doesn't support tagged serialization")
 }
 
 // Pck is an automatically generated method for PCK serialization.
@@ -147,11 +143,16 @@ func (user *User) Pck(b []byte) int {
 	return offset
 }
 
+// PckWithTag is an automatically generated method for PCK serialization.
+func (user *User) PckWithTag(b []byte) int {
+	panic("User doesn't support tagged serialization")
+}
+
 // Unpck is an automatically generated method for PCK deserialization.
 func (user *User) Unpck(b []byte) int {
 	_ = b[3]
-	bitSet0 := b[0]
-	user.Jumping = bitSet0 != 0
+	bitStore0 := b[0]
+	user.Jumping = bitStore0 != 0
 	user.Attributes.Unpck(b[1:])
 	offset := 4
 	{

@@ -1,5 +1,6 @@
 import { capitalizeTransformer } from "osh-text";
 import { Schema, Field } from "pck";
+import { convertToGoType } from "./type";
 import { GoField, GoFieldTransformer } from "./field";
 
 export class GoSchema extends Schema<GoField> {
@@ -15,21 +16,19 @@ export class GoSchema extends Schema<GoField> {
   }
 }
 
-export interface GoSchemaOptions {
-  readonly schema: Schema<Field>;
+export interface GoSchemaTransformOptions {
   readonly struct?: string;
   readonly self?: string;
   readonly factory?: string;
   readonly fields?: GoFieldTransformer | GoFieldTransformer[];
 }
 
-export function goSchema(options: GoSchemaOptions): GoSchema {
-  const schema = options.schema;
+export function transformGoSchema(schema: GoSchema, options: GoSchemaTransformOptions): GoSchema {
   const struct = options.struct === undefined ? schema.id : options.struct;
-  const self = options.self === undefined ? struct.toLowerCase() : options.self;
-  const factory = options.factory === undefined ? `&${struct}{}` : options.factory;
+  const self = options.self === undefined ? schema.self : options.self;
+  const factory = options.factory === undefined ? schema.factory : options.factory;
 
-  let fields = schema.fields.map(goFieldTransformer);
+  let fields = schema.fields;
   if (options.fields !== undefined) {
     if (typeof options.fields === "function") {
       fields = fields.map(options.fields);
@@ -49,9 +48,19 @@ export function goSchema(options: GoSchemaOptions): GoSchema {
   );
 }
 
-function goFieldTransformer(field: Field): GoField {
+export function convertToGoSchema(schema: Schema<Field>): GoSchema {
+  return new GoSchema(
+    schema.id,
+    schema.fields.map(convertToGoField),
+    schema.id,
+    schema.id.toLowerCase(),
+    `&${schema.id}{}`,
+  );
+}
+
+function convertToGoField(field: Field): GoField {
   return new GoField(
-    field.type,
+    convertToGoType(field.type),
     capitalizeTransformer(field.name),
     field.flags,
     0,

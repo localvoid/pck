@@ -346,7 +346,7 @@ export function inlineReadUint16(opts: InlineReadIntOptions): TChildren {
 
 export function inlineReadUint32(opts: InlineReadIntOptions): TChildren {
   const offset = opts.offset === void 0 ? 0 : opts.offset;
-  const cast = opts.cast === void 0 ? castToUint16 : opts.cast;
+  const cast = opts.cast === void 0 ? castToUint32 : opts.cast;
   return (
     line(
       opts.to.assign(
@@ -368,7 +368,7 @@ export function inlineReadUint32(opts: InlineReadIntOptions): TChildren {
 
 export function inlineReadUint64(opts: InlineReadIntOptions): TChildren {
   const offset = opts.offset === void 0 ? 0 : opts.offset;
-  const cast = opts.cast === void 0 ? castToUint16 : opts.cast;
+  const cast = opts.cast === void 0 ? castToUint64 : opts.cast;
   return [
     line(
       opts.to.assign(

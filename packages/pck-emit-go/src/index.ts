@@ -4,4 +4,4 @@ export {
   GoFieldTransformer, GoFieldFlags, GoField, GoSchema, GoSchemaTransformOptions, GoBundle, GoBundleOptions, GoBinder,
   goBundle, createGoBinder, transformGoSchema, transformGoField,
 } from "./schema";
-export { inject } from "./inject";
+export { InjectOptions, inject } from "./inject";

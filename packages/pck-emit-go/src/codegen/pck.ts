@@ -107,6 +107,7 @@ function writeBitStore(schema: GoSchema, details: SchemaDetails<GoSchema, GoFiel
       let bitStoreIndex = 0;
       let offset = 0;
       let i = 0;
+      result.push(line("var ", BIT_STORE_VALUE, " byte"));
       for (const bitField of details.bitStore.optionals) {
         result.push(
           line("if ", OPTIONAL(bitField.field), " {"),
@@ -157,7 +158,6 @@ function writeBitStore(schema: GoSchema, details: SchemaDetails<GoSchema, GoFiel
         result.push(line(BUF.assignAt(offset, BIT_STORE_VALUE)));
         offset++;
       }
-      result.push(line(OFFSET, " += ", offset));
 
       return result;
     }

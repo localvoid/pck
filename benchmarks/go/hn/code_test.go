@@ -1,27 +1,23 @@
-package basic
+package hn
 
-import "testing"
-import "encoding/json"
-import "fmt"
+import (
+	"encoding/json"
+	"io/ioutil"
+	"testing"
+)
 
-var Data = &User{
-	Health:  100,
-	Jumping: true,
-	Position: Position{
-		X: 10,
-		Y: 20,
-	},
-	Attributes: Attributes{
-		Str: 100,
-		Agi: 50,
-		Int: 10,
-	},
-}
-var PckRaw = pckEncode()
-var JSONRaw = jsonEncode()
+var Data *TopStories
+var PckRaw []byte
+var JSONRaw []byte
 
 func init() {
-	fmt.Printf("%s\n", JSONRaw)
+	d, _ := ioutil.ReadFile("../../../examples/hn/data/top_stories.json")
+
+	Data = &TopStories{}
+	json.Unmarshal(d, Data)
+
+	PckRaw = pckEncode()
+	JSONRaw = jsonEncode()
 }
 
 func pckEncode() (buf []byte) {
@@ -30,8 +26,8 @@ func pckEncode() (buf []byte) {
 	return
 }
 
-func pckDecode() *User {
-	u := &User{}
+func pckDecode() *TopStories {
+	u := &TopStories{}
 	u.Unpck(PckRaw)
 	return u
 }
@@ -41,8 +37,8 @@ func jsonEncode() (buf []byte) {
 	return
 }
 
-func jsonDecode() *User {
-	u := &User{}
+func jsonDecode() *TopStories {
+	u := &TopStories{}
 	json.Unmarshal(JSONRaw, u)
 	return u
 }

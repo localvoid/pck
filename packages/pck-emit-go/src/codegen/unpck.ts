@@ -3,7 +3,7 @@ import { docComment, line, indent, declSymbol } from "osh-code";
 import { DYNAMIC_SIZE, TypeFlags, SchemaSize, SchemaDetails } from "pck";
 import {
   declArgs, declVars, SELF, BUF, v, boundCheckHint, callFunc, callMethod, Value,
-  castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString,
+  castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString, castToInt,
 } from "./utils";
 import {
   InlineReadIntOptions, inlineReadUint8, inlineReadUint16, inlineReadUint32, inlineReadUint64, readIvar, readUvar,
@@ -121,12 +121,28 @@ function readFields(binder: GoBinder, schema: GoSchema, details: SchemaDetails<G
     r.push(line(OFFSET, " := ", offset));
 
     for (const field of details.dynamicFields) {
-      r.push(readDynamicType(
-        binder,
-        field.type,
-        BUF,
-        new Value(SELF(field.name)),
-      ));
+      if (field.isOptional()) {
+        const optField = details.bitStore.findOptionalField(field);
+        r.push(
+          line("if ", BIT_STORE(optField.offset), "&(1<<", optField.index % 8, ") != 0 {"),
+          indent(
+            readDynamicType(
+              binder,
+              field.type,
+              BUF,
+              new Value(SELF(field.name)),
+            ),
+          ),
+          line("}"),
+        );
+      } else {
+        r.push(readDynamicType(
+          binder,
+          field.type,
+          BUF,
+          new Value(SELF(field.name)),
+        ));
+      }
     }
   }
 
@@ -272,8 +288,8 @@ function readDynamicType(
         indent(
           line(LENGTH, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
           line(OFFSET, " += ", SIZE),
-          line(to.assign(from.slice({ start: OFFSET, end: [OFFSET, " + ", LENGTH] }))),
-          line(OFFSET, " += ", LENGTH),
+          line(to.assign(from.slice({ start: OFFSET, end: [OFFSET, " + ", castToInt(LENGTH)] }))),
+          line(OFFSET, " += ", castToInt(LENGTH)),
         ),
         line("}"),
       ];
@@ -283,8 +299,8 @@ function readDynamicType(
         indent(
           line(LENGTH, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
           line(OFFSET, " += ", SIZE),
-          line(to.assign(castToString(from.slice({ start: OFFSET, end: [OFFSET, " + ", LENGTH] })))),
-          line(OFFSET, " += ", LENGTH),
+          line(to.assign(castToString(from.slice({ start: OFFSET, end: [OFFSET, " + ", castToInt(LENGTH)] })))),
+          line(OFFSET, " += ", castToInt(LENGTH)),
         ),
         line("}"),
       ];
@@ -296,9 +312,9 @@ function readDynamicType(
           indent(
             line(LENGTH, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
             line(OFFSET, " += ", SIZE),
-            line(VALUE, " := ", callFunc("make", [goType(binder, type)])),
+            line(VALUE, " := ", callFunc("make", [goType(binder, type), LENGTH])),
             line(to.assign(VALUE)),
-            line("for ", I, " := 0; ", I, " < ", LENGTH, "; ", I, " += 1 {"),
+            line("for ", I, " := 0; ", I, " < ", castToInt(LENGTH), "; ", I, "++ {"),
             indent(
               (valueSize === DYNAMIC_SIZE)
                 ? readDynamicType(
@@ -337,7 +353,7 @@ function readDynamicType(
     case "map":
       break;
     case "schema":
-      if ((type.flags & TypeFlags.Nullable) === 0) {
+      if (((type.flags & TypeFlags.Nullable) === 0) && !type.ref) {
         return line(OFFSET, " += ", callMethod(to.value, "Unpck", [from.slice({ start: OFFSET })]));
       } else {
         return [
@@ -402,7 +418,8 @@ function goType(binder: GoBinder, type: GoType): string {
     case "map":
       return `map[${goType(binder, type.keyType)}]${goType(binder, type.valueType)}`;
     case "schema":
-      return ((type.flags & TypeFlags.Nullable) !== 0 ? "*" : "") + binder.findSchemaById(type.schemaId).struct;
+      return ((((type.flags & TypeFlags.Nullable) !== 0) || type.ref) ? "*" : "") +
+        binder.findSchemaById(type.schemaId).struct;
     case "union":
       return "unpcker";
   }

@@ -4,11 +4,15 @@ import { GoSchema, GoBinder } from "./schema";
 import {
   lib, sizeMethod, sizeWithTagMethod, pckMethod, pckWithTagMethod, unpckMethod, taggedFactories,
 } from "./codegen";
-import { EmitOptions, emit } from "./emit";
+import { emit } from "./emit";
 
 const DIRECTIVE_MATCHER = createDirectiveMatcher("pck");
 
-export function inject(options: EmitOptions, text: string): string {
+export interface InjectOptions {
+  readonly binder: GoBinder;
+}
+
+export function inject(options: InjectOptions, text: string): string {
   const binder = options.binder;
 
   return _inject(

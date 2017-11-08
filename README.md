@@ -91,10 +91,10 @@ json:decode x 132,055 ops/sec ±0.71% (55 runs sampled)
 #### Go 1.9 (i5 4570k, Linux)
 
 ```txt
-BenchmarkPckEncode-4    	200000000	        67.1 ns/op
-BenchmarkPckDecode-4    	100000000	       101 ns/op
-BenchmarkJsonEncode-4   	10000000	      1372 ns/op
-BenchmarkJsonDecode-4   	 3000000	      4815 ns/op
+BenchmarkPckEncode-4    	200000000	        65.9 ns/op
+BenchmarkPckDecode-4    	200000000	        92.6 ns/op
+BenchmarkJsonEncode-4   	10000000	      1380 ns/op
+BenchmarkJsonDecode-4   	 3000000	      4624 ns/op
 ```
 
 ### HackerNews Data
@@ -150,6 +150,15 @@ pck:encode x 102 ops/sec ±6.51% (45 runs sampled)
 pck:decode x 511 ops/sec ±2.95% (54 runs sampled)
 json:encode x 238 ops/sec ±3.76% (51 runs sampled)
 json:decode x 71 ops/sec ±7.94% (44 runs sampled)
+```
+
+#### Go 1.9 (i5 4570k, Linux)
+
+```txt
+BenchmarkPckEncode-4    	  100000	    197485 ns/op
+BenchmarkPckDecode-4    	   50000	    308749 ns/op
+BenchmarkJsonEncode-4   	   10000	   1292727 ns/op
+BenchmarkJsonDecode-4   	    3000	   4856830 ns/op
 ```
 
 ## Data Types

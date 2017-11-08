@@ -39,7 +39,14 @@ export class GoMapType extends MapType {
   }
 }
 
-export class GoSchemaType extends SchemaType { }
+export class GoSchemaType extends SchemaType {
+  readonly ref: boolean;
+
+  constructor(flags: TypeFlags, schemaId: string, ref: boolean) {
+    super(flags, schemaId);
+    this.ref = ref;
+  }
+}
 
 export class GoUnionType extends UnionType {
   readonly interface: string;
@@ -69,7 +76,7 @@ export function convertToGoType(type: Type): GoType {
     case "map":
       return new GoMapType(type.flags, convertToGoType(type.keyType), convertToGoType(type.valueType));
     case "schema":
-      return new GoSchemaType(type.flags, type.schemaId);
+      return new GoSchemaType(type.flags, type.schemaId, false);
     case "union":
       return new GoUnionType(type.flags, type.schemaIds, "unpcker");
   }

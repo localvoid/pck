@@ -81,6 +81,10 @@ export function castToString(...children: TChildren[]): TChildren {
   return castTo("string", children);
 }
 
+export function castToInt(...children: TChildren[]): TChildren {
+  return castTo("int", children);
+}
+
 export class Value {
   readonly value: TChildren;
 

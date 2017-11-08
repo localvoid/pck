@@ -51,6 +51,26 @@ export class BitStore {
     this.booleans = booleans;
     this.length = optionals.length + booleans.length;
   }
+
+  findBoolField(field: Field): BoolBitField {
+    for (const f of this.booleans) {
+      if (f.field === field) {
+        return f;
+      }
+    }
+
+    throw new Error(`Unable to find boolean BitField for a field: ${field.toString()}.`);
+  }
+
+  findOptionalField(field: Field): OptionalBitField {
+    for (const f of this.optionals) {
+      if (f.field === field) {
+        return f;
+      }
+    }
+
+    throw new Error(`Unable to find optional BitField for a field: ${field.toString()}.`);
+  }
 }
 
 export function createBitStoreFromSchema<T extends Field>(schema: Schema<T>): BitStore {

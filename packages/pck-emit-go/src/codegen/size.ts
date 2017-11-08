@@ -76,11 +76,6 @@ export function sizeWithTagMethod(binder: GoBinder, schema: GoSchema): TChildren
 
 function incFieldSize(binder: GoBinder, field: GoField): TChildren {
   if (field.isOptional()) {
-    switch (field.type.id) {
-      case "array":
-        return incSizeValue(binder, field.type, SELF(field.name));
-    }
-
     if ((field.flags & (FieldFlags.OmitNull | FieldFlags.OmitEmpty)) === (FieldFlags.OmitNull | FieldFlags.OmitEmpty)) {
       return [
         line("if ", SELF(field.name), " != nil && ", len(SELF(field.name)), " > 0 {"),

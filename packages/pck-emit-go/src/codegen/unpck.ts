@@ -1,6 +1,6 @@
 import { TChildren, TNode, zone } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
-import { DYNAMIC_SIZE, TypeFlags, Type, SchemaSize, SchemaDetails } from "pck";
+import { DYNAMIC_SIZE, TypeFlags, SchemaSize, SchemaDetails } from "pck";
 import {
   declArgs, declVars, SELF, BUF, v, boundCheckHint, callFunc, callMethod, Value,
   castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString,
@@ -8,7 +8,7 @@ import {
 import {
   InlineReadIntOptions, inlineReadUint8, inlineReadUint16, inlineReadUint32, inlineReadUint64, readIvar, readUvar,
 } from "./lib";
-import { GoField, GoSchema, GoBinder } from "../schema";
+import { GoType, GoField, GoSchema, GoBinder } from "../schema";
 
 const OFFSET = v("offset");
 const LENGTH = v("length");
@@ -135,7 +135,7 @@ function readFields(binder: GoBinder, schema: GoSchema, details: SchemaDetails<G
 
 function readFixedType(
   binder: GoBinder,
-  type: Type,
+  type: GoType,
   from: Value,
   to: Value,
   offset: number,
@@ -239,7 +239,7 @@ function readFixedType(
 
 function readDynamicType(
   binder: GoBinder,
-  type: Type,
+  type: GoType,
   from: Value,
   to: Value,
 ): TChildren {
@@ -356,7 +356,9 @@ function readDynamicType(
         indent(
           line(TAG, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
           line(OFFSET, " += ", SIZE),
-          line(VALUE, " := ", "taggedFactories[", TAG, "]()"),
+          type.interface === "unpcker"
+            ? line(VALUE, " := ", "taggedFactories[", TAG, "]()")
+            : line(VALUE, ", _ := ", "taggedFactories[", TAG, "]().(", type.interface, ")"),
           line(LENGTH, " := ", callMethod(VALUE, "Unpck(", [from.slice({ start: OFFSET })])),
           line(OFFSET, " += ", LENGTH),
         ),
@@ -367,7 +369,7 @@ function readDynamicType(
   throw new Error(`Invalid dynamic type: ${type}`);
 }
 
-function goType(binder: GoBinder, type: Type): string {
+function goType(binder: GoBinder, type: GoType): string {
   switch (type.id) {
     case "bool":
       return "bool";

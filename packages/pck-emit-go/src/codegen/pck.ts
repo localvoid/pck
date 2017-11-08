@@ -1,7 +1,7 @@
 import { TChildren, TNode, zone } from "osh";
 import { capitalizeTransformer } from "osh-text";
 import { line, indent, docComment, scope, declSymbol, sym } from "osh-code";
-import { DYNAMIC_SIZE, Type, FieldFlags, Field, SchemaDetails } from "pck";
+import { DYNAMIC_SIZE, FieldFlags, Field, SchemaDetails } from "pck";
 import {
   declArgs, declVars, Value, SELF, BUF, v, len, boundCheckHint, callFunc, callMethod, varUintBytes,
 } from "./utils";
@@ -9,7 +9,7 @@ import {
   InlineWriteIntOptions, inlineWriteUint8, inlineWriteUint16, inlineWriteUint32, inlineWriteUint64,
   writeUvar, writeIvar,
 } from "./lib";
-import { GoSchema, GoField, GoBinder } from "../schema";
+import { GoType, GoSchema, GoField, GoBinder } from "../schema";
 
 const OPTIONALS = Symbol("Optionals");
 const OFFSET = v("offset");
@@ -195,7 +195,7 @@ function writeFields(binder: GoBinder, schema: GoSchema, details: SchemaDetails<
 
 function writeFixedType(
   binder: GoBinder,
-  type: Type,
+  type: GoType,
   from: Value,
   to: Value,
   offset: number,
@@ -267,7 +267,7 @@ function writeFixedType(
 
 function writeDynamicType(
   binder: GoBinder,
-  type: Type,
+  type: GoType,
   from: Value,
   to: Value,
 ): TChildren {

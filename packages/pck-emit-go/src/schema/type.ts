@@ -1,5 +1,6 @@
 import {
-  Type, BoolType, IntType, FloatType, VarIntType, BytesType, StringType, ArrayType, MapType, SchemaType, UnionType,
+  TypeFlags, Type, BoolType, IntType, FloatType, VarIntType, BytesType, StringType, ArrayType, MapType, SchemaType,
+  UnionType,
 } from "pck";
 
 export type GoType =
@@ -20,10 +21,34 @@ export class GoFloatType extends FloatType { }
 export class GoVarIntType extends VarIntType { }
 export class GoBytesType extends BytesType { }
 export class GoStringType extends StringType { }
-export class GoArrayType extends ArrayType { }
-export class GoMapType extends MapType { }
+
+export class GoArrayType extends ArrayType {
+  readonly valueType: GoType;
+
+  constructor(flags: TypeFlags, valueType: GoType, length?: number) {
+    super(flags, valueType, length);
+  }
+}
+
+export class GoMapType extends MapType {
+  readonly keyType: GoType;
+  readonly valueType: GoType;
+
+  constructor(flags: TypeFlags, keyType: GoType, valueType: GoType) {
+    super(flags, keyType, valueType);
+  }
+}
+
 export class GoSchemaType extends SchemaType { }
-export class GoUnionType extends UnionType { }
+
+export class GoUnionType extends UnionType {
+  readonly interface: string;
+
+  constructor(flags: TypeFlags, schemaIds: string[], iface: string) {
+    super(flags, schemaIds);
+    this.interface = iface;
+  }
+}
 
 export function convertToGoType(type: Type): GoType {
   switch (type.id) {
@@ -40,12 +65,12 @@ export function convertToGoType(type: Type): GoType {
     case "string":
       return new GoStringType(type.flags, type.encoding, type.length);
     case "array":
-      return new GoArrayType(type.flags, type.valueType, type.length);
+      return new GoArrayType(type.flags, convertToGoType(type.valueType), type.length);
     case "map":
-      return new GoMapType(type.flags, type.keyType, type.valueType);
+      return new GoMapType(type.flags, convertToGoType(type.keyType), convertToGoType(type.valueType));
     case "schema":
       return new GoSchemaType(type.flags, type.schemaId);
     case "union":
-      return new GoUnionType(type.flags, type.schemaIds);
+      return new GoUnionType(type.flags, type.schemaIds, "unpcker");
   }
 }

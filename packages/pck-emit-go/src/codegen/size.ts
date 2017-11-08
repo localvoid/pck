@@ -1,7 +1,7 @@
 import { TChildren, zone } from "osh";
 import { docComment, line, indent, declSymbol } from "osh-code";
-import { DYNAMIC_SIZE, FieldFlags, Type } from "pck";
-import { GoField, GoSchema, GoBinder } from "../schema";
+import { DYNAMIC_SIZE, FieldFlags } from "pck";
+import { GoType, GoField, GoSchema, GoBinder } from "../schema";
 import { declArgs, declVars, v, SELF, callMethod, len, calcVarUintSize } from "./utils";
 import { sizeIvar, sizeUvar } from "./lib";
 
@@ -115,7 +115,7 @@ function incFieldSize(binder: GoBinder, field: GoField): TChildren {
   return incSizeValue(binder, field.type, SELF(field.name));
 }
 
-function incSizeValue(binder: GoBinder, type: Type, value?: TChildren): TChildren {
+function incSizeValue(binder: GoBinder, type: GoType, value?: TChildren): TChildren {
   switch (type.id) {
     case "map":
     case "bool":

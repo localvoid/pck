@@ -282,9 +282,9 @@ export class UnionType extends BaseType {
   readonly id: "union";
   readonly schemaIds: string[];
 
-  constructor(flags: TypeFlags, symbols: string[]) {
+  constructor(flags: TypeFlags, schemaIds: string[]) {
     super("union", flags);
-    this.schemaIds = symbols;
+    this.schemaIds = schemaIds;
   }
 
   isCompatible(other: Type): boolean {

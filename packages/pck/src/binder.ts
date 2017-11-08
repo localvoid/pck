@@ -1,4 +1,4 @@
-import { Type, IntType, FloatType, VarIntType } from "./type";
+import { Type, IntType, FloatType, VarIntType, StringType } from "./type";
 import { Field } from "./field";
 import { Schema } from "./schema";
 import { BitStore, createBitStoreFromSchema } from "./bitstore";
@@ -171,9 +171,7 @@ function getTypeSize<T extends Schema<F>, F extends Field>(
       } else {
         return type.length;
       }
-    case "utf8":
-      return DYNAMIC_SIZE;
-    case "ascii":
+    case "string":
       if (type.length === 0) {
         return DYNAMIC_SIZE;
       } else {
@@ -239,6 +237,12 @@ function sortFields<T extends Schema<F>, F extends Field>(
         return (b.type as IntType).size - a.type.size;
       } else if (a.type.id === "float") {
         return (b.type as FloatType).size - a.type.size;
+      } else if (a.type.id === "string") {
+        if (a.type.encoding === "ascii") {
+          if ((b.type as StringType).encoding !== "ascii") {
+            return -1;
+          }
+        }
       }
 
       return 0;
@@ -276,25 +280,12 @@ function sortFields<T extends Schema<F>, F extends Field>(
       return 1;
     }
 
-    if (a.type.id === "ascii") {
+    if (a.type.id === "string") {
       if (
         b.type.id === "map" ||
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "schema"
-      ) {
-        return -1;
-      }
-      return 1;
-    }
-
-    if (a.type.id === "utf8") {
-      if (
-        b.type.id === "map" ||
-        b.type.id === "array" ||
-        b.type.id === "union" ||
-        b.type.id === "schema" ||
-        b.type.id === "ascii"
       ) {
         return -1;
       }
@@ -307,8 +298,7 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "schema" ||
-        b.type.id === "ascii" ||
-        b.type.id === "utf8"
+        b.type.id === "string"
       ) {
         return -1;
       }
@@ -321,8 +311,7 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "schema" ||
-        b.type.id === "ascii" ||
-        b.type.id === "utf8" ||
+        b.type.id === "string" ||
         b.type.id === "bytes"
       ) {
         return -1;
@@ -336,8 +325,7 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "schema" ||
-        b.type.id === "ascii" ||
-        b.type.id === "utf8" ||
+        b.type.id === "string" ||
         b.type.id === "bytes" ||
         b.type.id === "varint"
       ) {
@@ -352,8 +340,7 @@ function sortFields<T extends Schema<F>, F extends Field>(
         b.type.id === "array" ||
         b.type.id === "union" ||
         b.type.id === "schema" ||
-        b.type.id === "ascii" ||
-        b.type.id === "utf8" ||
+        b.type.id === "string" ||
         b.type.id === "bytes" ||
         b.type.id === "varint" ||
         b.type.id === "float"

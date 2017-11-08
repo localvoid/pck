@@ -4,8 +4,7 @@ export type TypeId =
   | "float"
   | "varint"
   | "bytes"
-  | "utf8"
-  | "ascii"
+  | "string"
   | "array"
   | "map"
   | "schema"
@@ -21,8 +20,7 @@ export type Type =
   | FloatType
   | VarIntType
   | BytesType
-  | Utf8Type
-  | AsciiType
+  | StringType
   | ArrayType
   | MapType
   | SchemaType
@@ -170,48 +168,26 @@ export class BytesType extends BaseType {
   }
 }
 
-export class Utf8Type extends BaseType {
-  readonly id: "utf8";
-
-  constructor(flags: TypeFlags) {
-    super("utf8", flags);
-  }
-
-  withFlags(flags: TypeFlags): Utf8Type {
-    return new Utf8Type(flags);
-  }
-
-  toString(): string {
-    return `<Type: utf8>`;
-  }
-}
-
-export class AsciiType extends BaseType {
-  readonly id: "ascii";
+export class StringType extends BaseType {
+  readonly id: "string";
+  readonly encoding: "ascii" | "utf8";
   readonly length: number;
 
-  constructor(flags: TypeFlags, length = 0) {
-    super("ascii", flags);
+  constructor(flags: TypeFlags, encoding: "ascii" | "utf8", length: number) {
+    super("string", flags);
+    this.encoding = encoding;
     this.length = length;
   }
 
-  isCompatible(other: Type): boolean {
-    return (
-      other.id === "ascii" &&
-      this.flags === other.flags &&
-      this.length === other.length
-    );
-  }
-
-  withFlags(flags: TypeFlags): AsciiType {
-    return new AsciiType(flags, this.length);
+  withFlags(flags: TypeFlags): StringType {
+    return new StringType(flags, this.encoding, this.length);
   }
 
   toString(): string {
     if (this.length > 0) {
-      return `<Type: ascii[${this.length}]>`;
+      return `<Type: string<${this.encoding}>[${this.length}]>`;
     }
-    return `<Type: ascii>`;
+    return `<Type: string<${this.encoding}>>`;
   }
 }
 
@@ -352,15 +328,6 @@ export function isNumberType(type: Type): boolean {
   return false;
 }
 
-export function isStringType(type: Type): boolean {
-  switch (type.id) {
-    case "utf8":
-    case "ascii":
-      return true;
-  }
-  return false;
-}
-
 const _BOOL = new BoolType(0);
 const _I8 = new IntType(0, 1, true);
 const _U8 = new IntType(0, 1, false);
@@ -375,8 +342,8 @@ const _F64 = new FloatType(0, 8);
 const _VARINT = new VarIntType(0, true);
 const _VARUINT = new VarIntType(0, false);
 const _BYTES = new BytesType(0);
-const _UTF8 = new Utf8Type(0);
-const _ASCII = new AsciiType(0);
+const _UTF8 = new StringType(0, "utf8", 0);
+const _ASCII = new StringType(0, "ascii", 0);
 
 export function BOOL(): BoolType {
   return _BOOL;
@@ -437,15 +404,15 @@ export function BYTES(length: number = 0): BytesType {
   return new BytesType(0, length);
 }
 
-export function UTF8(): Utf8Type {
+export function UTF8(): StringType {
   return _UTF8;
 }
 
-export function ASCII(length: number = 0): AsciiType {
+export function ASCII(length: number = 0): StringType {
   if (length === 0) {
     return _ASCII;
   }
-  return new AsciiType(0, length);
+  return new StringType(0, "ascii", length);
 }
 
 export function ARRAY(valueType: Type, length = 0): ArrayType {

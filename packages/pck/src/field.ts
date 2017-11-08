@@ -1,6 +1,6 @@
 import {
   Type, TypeFlags,
-  BoolType, IntType, FloatType, VarIntType, BytesType, Utf8Type, AsciiType, ArrayType, MapType, SchemaType, UnionType,
+  BoolType, IntType, FloatType, VarIntType, BytesType, StringType, ArrayType, MapType, SchemaType, UnionType,
   BOOL, INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT32, FLOAT64, VARINT, VARUINT,
   BYTES, UTF8, ASCII, ARRAY, MAP, SCHEMA, UNION,
 } from "./type";
@@ -59,8 +59,7 @@ export function omitNull<T extends Type>(field: Field<T>): Field<T> {
 
 export function omitEmpty<T extends Type>(field: Field<T>): Field<T> {
   switch (field.type.id) {
-    case "utf8":
-    case "ascii":
+    case "string":
     case "array":
     case "bytes":
       return new Field(field.type, field.name, field.flags | FieldFlags.OmitEmpty);
@@ -138,11 +137,11 @@ export function bytes(name: string, size = 0): Field<BytesType> {
   return new Field(BYTES(size), name);
 }
 
-export function utf8(name: string): Field<Utf8Type> {
+export function utf8(name: string): Field<StringType> {
   return new Field(UTF8(), name);
 }
 
-export function ascii(name: string, size?: number): Field<AsciiType> {
+export function ascii(name: string, size?: number): Field<StringType> {
   return new Field(ASCII(size), name);
 }
 

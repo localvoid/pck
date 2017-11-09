@@ -23,8 +23,7 @@ type User struct {
 
 // pck:emit("taggedFactories")
 
-var taggedFactories = [0]func() unpcker {
-}
+var taggedFactories = [0]func() unpcker{}
 
 // pck:end
 

@@ -3,5 +3,6 @@ export {
   GoSchemaType, GoUnionType,
   GoFieldTransformer, GoFieldFlags, GoField, GoSchema, GoSchemaTransformOptions, GoBundle, GoBundleOptions, GoBinder,
   goBundle, createGoBinder, transformGoSchema, transformGoField,
+  REF,
 } from "./schema";
 export { InjectOptions, inject } from "./inject";

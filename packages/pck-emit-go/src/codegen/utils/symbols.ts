@@ -21,10 +21,10 @@ export function declArgs(args: (string | SymbolDeclaration)[], children: TChildr
   });
 }
 
-export function declVars(vars: string[], children: TChildren): TChildren {
+export function declVars(vars: (string | SymbolDeclaration)[], children: TChildren): TChildren {
   return scope({
     type: VARS,
-    symbols: vars.map((a) => declSymbol(a, a)),
+    symbols: vars.map((a) => typeof a === "string" ? declSymbol(a, a) : a),
     children: children,
   });
 }

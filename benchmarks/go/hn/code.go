@@ -4,12 +4,12 @@ package hn
 type Item struct {
 	By          string   `json:"by"`
 	Descendants uint64   `json:"descendants"`
-	Id          uint64   `json:"id"`
+	ID          uint64   `json:"id"`
 	Kids        []uint64 `json:"kids"`
 	Score       uint64   `json:"score"`
 	Time        uint32   `json:"time"`
 	Title       string   `json:"title"`
-	Url         string   `json:"url,omitempty"`
+	URL         string   `json:"url,omitempty"`
 }
 
 // TopStories is top stories
@@ -31,14 +31,14 @@ func (item *Item) PckSize() (size int) {
 	_ = length
 	size = 5
 	size += sizeUvar(uint64(item.Descendants))
-	size += sizeUvar(uint64(item.Id))
+	size += sizeUvar(uint64(item.ID))
 	size += sizeUvar(uint64(item.Score))
 	length = len(item.By)
 	size += sizeUvar(uint64(length)) + length
 	length = len(item.Title)
 	size += sizeUvar(uint64(length)) + length
-	if len(item.Url) > 0 {
-		length = len(item.Url)
+	if len(item.URL) > 0 {
+		length = len(item.URL)
 		size += sizeUvar(uint64(length)) + length
 	}
 	if item.Kids != nil && len(item.Kids) > 0 {
@@ -58,13 +58,13 @@ func (item *Item) PckSizeWithTag() int {
 // Pck is an automatically generated method for PCK serialization.
 func (item *Item) Pck(b []byte) int {
 	_ = b[4]
-	optionalUrl := len(item.Url) > 0
+	optionalURL := len(item.URL) > 0
 	optionalKids := item.Kids != nil && len(item.Kids) > 0
 	var bitStoreValue byte
 	if optionalKids {
 		bitStoreValue = 1
 	}
-	if optionalUrl {
+	if optionalURL {
 		bitStoreValue |= 1 << 1
 	}
 	b[0] = bitStoreValue
@@ -74,15 +74,15 @@ func (item *Item) Pck(b []byte) int {
 	b[4] = byte(item.Time >> 24)
 	offset := 5
 	offset += writeUvar(b[offset:], uint64(item.Descendants))
-	offset += writeUvar(b[offset:], uint64(item.Id))
+	offset += writeUvar(b[offset:], uint64(item.ID))
 	offset += writeUvar(b[offset:], uint64(item.Score))
 	offset += writeUvar(b[offset:], uint64(len(item.By)))
 	offset += copy(b[offset:], item.By)
 	offset += writeUvar(b[offset:], uint64(len(item.Title)))
 	offset += copy(b[offset:], item.Title)
-	if optionalUrl {
-		offset += writeUvar(b[offset:], uint64(len(item.Url)))
-		offset += copy(b[offset:], item.Url)
+	if optionalURL {
+		offset += writeUvar(b[offset:], uint64(len(item.URL)))
+		offset += copy(b[offset:], item.URL)
 	}
 	if optionalKids {
 		offset += writeUvar(b[offset:], uint64(len(item.Kids)))
@@ -111,7 +111,7 @@ func (item *Item) Unpck(b []byte) int {
 	}
 	{
 		value, size := readUvar(b[offset:])
-		item.Id = value
+		item.ID = value
 		offset += size
 	}
 	{
@@ -135,7 +135,7 @@ func (item *Item) Unpck(b []byte) int {
 		{
 			length, size := readUvar(b[offset:])
 			offset += size
-			item.Url = string(b[offset : offset+int(length)])
+			item.URL = string(b[offset : offset+int(length)])
 			offset += int(length)
 		}
 	}
@@ -202,9 +202,11 @@ func (topstories *TopStories) Unpck(b []byte) int {
 		value := make([]*Item, length)
 		topstories.Items = value
 		for i := 0; i < int(length); i++ {
-			v := &Item{}
-			offset += v.Unpck(b[offset:])
-			value[i] = v
+			{
+				value2 := &Item{}
+				length := value2.Unpck(b[offset:])
+				offset += length
+			}
 		}
 	}
 	return offset

@@ -12,10 +12,13 @@ import { GoType, GoField, GoSchema, GoBinder } from "../schema";
 
 const OFFSET = v("offset");
 const LENGTH = v("length");
-const VALUE = v("value");
 const SIZE = v("size");
 const TAG = v("tag");
 const I = v("i");
+
+function VALUE(depth: number): TChildren {
+  return v("value" + depth);
+}
 
 function BIT_STORE(i: number): TChildren {
   return v(`bitStore${i}`);
@@ -41,7 +44,6 @@ export function unpckMethod(binder: GoBinder, schema: GoSchema): TNode {
             ...bitStoreVars,
             "offset",
             "length",
-            "value",
             "size",
             "tag",
             "i",
@@ -126,6 +128,20 @@ function readFields(binder: GoBinder, schema: GoSchema, details: SchemaDetails<G
         r.push(
           line("if ", BIT_STORE(optField.offset), "&(1<<", optField.index % 8, ") != 0 {"),
           indent(
+            declVars([declSymbol("value1", "value")],
+              readDynamicType(
+                binder,
+                field.type,
+                BUF,
+                new Value(SELF(field.name)),
+              ),
+            ),
+          ),
+          line("}"),
+        );
+      } else {
+        r.push(
+          declVars([declSymbol("value1", "value")],
             readDynamicType(
               binder,
               field.type,
@@ -133,15 +149,7 @@ function readFields(binder: GoBinder, schema: GoSchema, details: SchemaDetails<G
               new Value(SELF(field.name)),
             ),
           ),
-          line("}"),
         );
-      } else {
-        r.push(readDynamicType(
-          binder,
-          field.type,
-          BUF,
-          new Value(SELF(field.name)),
-        ));
       }
     }
   }
@@ -155,6 +163,7 @@ function readFixedType(
   from: Value,
   to: Value,
   offset: number,
+  depth = 1,
   start?: TChildren,
 ): TChildren {
   const size = binder.getTypeSize(type);
@@ -216,13 +225,16 @@ function readFixedType(
             I, ", ", OFFSET, " = ", I, " + 1, ", OFFSET, " + ", valueSize, " {",
           ),
           indent(
-            readFixedType(
-              binder,
-              type.valueType,
-              from,
-              new Value(to.at(0, I)),
-              0,
-              OFFSET,
+            declVars([`value${depth + 1}`],
+              readFixedType(
+                binder,
+                type.valueType,
+                from,
+                new Value(to.at(0, I)),
+                0,
+                depth + 1,
+                OFFSET,
+              ),
             ),
           ),
           line("}"),
@@ -230,7 +242,11 @@ function readFixedType(
       } else {
         const r = [];
         for (let i = 0; i < type.length; i++) {
-          r.push(readFixedType(binder, type.valueType, from, new Value(to.at(i)), offset + (i * valueSize)));
+          r.push(
+            declVars([`value${depth + 1}`],
+              readFixedType(binder, type.valueType, from, new Value(to.at(i)), offset + (i * valueSize), depth + 1),
+            ),
+          );
         }
         return r;
       }
@@ -241,9 +257,9 @@ function readFixedType(
         return [
           line("{"),
           indent(
-            line(VALUE, " := ", binder.findSchemaById(type.schemaId).factory),
-            line(callMethod(VALUE, "Unpck", [from.slice({ start: start, startOffset: offset })])),
-            line(to.assign(VALUE)),
+            line(VALUE(depth), " := ", binder.findSchemaById(type.schemaId).factory),
+            line(callMethod(VALUE(depth), "Unpck", [from.slice({ start: start, startOffset: offset })])),
+            line(to.assign(VALUE(depth))),
           ),
           line("}"),
         ];
@@ -258,6 +274,7 @@ function readDynamicType(
   type: GoType,
   from: Value,
   to: Value,
+  depth = 1,
 ): TChildren {
   switch (type.id) {
     case "varint":
@@ -265,8 +282,8 @@ function readDynamicType(
         return [
           line("{"),
           indent(
-            line(VALUE, ", ", SIZE, " := ", readIvar(from.slice({ start: OFFSET }))),
-            line(to.assign(VALUE)),
+            line(VALUE(depth), ", ", SIZE, " := ", readIvar(from.slice({ start: OFFSET }))),
+            line(to.assign(VALUE(depth))),
             line(OFFSET, " += ", SIZE),
           ),
           line("}"),
@@ -275,8 +292,8 @@ function readDynamicType(
         return [
           line("{"),
           indent(
-            line(VALUE, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
-            line(to.assign(VALUE)),
+            line(VALUE(depth), ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
+            line(to.assign(VALUE(depth))),
             line(OFFSET, " += ", SIZE),
           ),
           line("}"),
@@ -312,25 +329,29 @@ function readDynamicType(
           indent(
             line(LENGTH, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
             line(OFFSET, " += ", SIZE),
-            line(VALUE, " := ", callFunc("make", [goType(binder, type), LENGTH])),
-            line(to.assign(VALUE)),
+            line(VALUE(depth), " := ", callFunc("make", [goType(binder, type), LENGTH])),
+            line(to.assign(VALUE(depth))),
             line("for ", I, " := 0; ", I, " < ", castToInt(LENGTH), "; ", I, "++ {"),
             indent(
-              (valueSize === DYNAMIC_SIZE)
-                ? readDynamicType(
-                  binder,
-                  type.valueType,
-                  from,
-                  new Value([VALUE, "[", I, "]"]),
-                )
-                : readFixedType(
-                  binder,
-                  type.valueType,
-                  from,
-                  new Value([VALUE, "[", I, "]"]),
-                  0,
-                  OFFSET,
-                ),
+              declVars([`value${depth + 1}`],
+                (valueSize === DYNAMIC_SIZE)
+                  ? readDynamicType(
+                    binder,
+                    type.valueType,
+                    from,
+                    new Value([VALUE(depth), "[", I, "]"]),
+                    depth + 1,
+                  )
+                  : readFixedType(
+                    binder,
+                    type.valueType,
+                    from,
+                    new Value([VALUE(depth), "[", I, "]"]),
+                    0,
+                    depth + 1,
+                    OFFSET,
+                  ),
+              ),
             ),
             line("}"),
           ),
@@ -340,11 +361,14 @@ function readDynamicType(
         return [
           line("for ", I, " := 0; ", I, " < ", type.length, "; ", I, " += 1 {"),
           indent(
-            readDynamicType(
-              binder,
-              type.valueType,
-              from,
-              new Value(to.at(0, I)),
+            declVars([`value${depth + 1}`],
+              readDynamicType(
+                binder,
+                type.valueType,
+                from,
+                new Value(to.at(0, I)),
+                depth + 1,
+              ),
             ),
           ),
           line("}"),
@@ -359,8 +383,8 @@ function readDynamicType(
         return [
           line("{"),
           indent(
-            line(VALUE, " := ", binder.findSchemaById(type.schemaId).factory),
-            line(LENGTH, " := ", callMethod(VALUE, "Unpck(", [from.slice({ start: OFFSET })])),
+            line(VALUE(depth), " := ", binder.findSchemaById(type.schemaId).factory),
+            line(LENGTH, " := ", callMethod(VALUE(depth), "Unpck", [from.slice({ start: OFFSET })])),
             line(OFFSET, " += ", LENGTH),
           ),
           line("}"),
@@ -373,9 +397,9 @@ function readDynamicType(
           line(TAG, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
           line(OFFSET, " += ", SIZE),
           type.interface === "unpcker"
-            ? line(VALUE, " := ", "taggedFactories[", TAG, "]()")
-            : line(VALUE, ", _ := ", "taggedFactories[", TAG, "]().(", type.interface, ")"),
-          line(LENGTH, " := ", callMethod(VALUE, "Unpck(", [from.slice({ start: OFFSET })])),
+            ? line(VALUE(depth), " := ", "taggedFactories[", TAG, "]()")
+            : line(VALUE(depth), ", _ := ", "taggedFactories[", TAG, "]().(", type.interface, ")"),
+          line(LENGTH, " := ", callMethod(VALUE(depth), "Unpck", [from.slice({ start: OFFSET })])),
           line(OFFSET, " += ", LENGTH),
         ),
         line("}"),
@@ -421,6 +445,6 @@ function goType(binder: GoBinder, type: GoType): string {
       return ((((type.flags & TypeFlags.Nullable) !== 0) || type.ref) ? "*" : "") +
         binder.findSchemaById(type.schemaId).struct;
     case "union":
-      return "unpcker";
+      return type.interface;
   }
 }

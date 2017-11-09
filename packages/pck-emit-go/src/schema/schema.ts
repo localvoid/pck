@@ -1,5 +1,6 @@
 import { capitalizeTransformer } from "osh-text";
 import { Schema, Field } from "pck";
+import { goName } from "../codegen/utils";
 import { convertToGoType } from "./type";
 import { GoField, GoFieldTransformer } from "./field";
 
@@ -61,7 +62,7 @@ export function convertToGoSchema(schema: Schema<Field>): GoSchema {
 function convertToGoField(field: Field): GoField {
   return new GoField(
     convertToGoType(field.type),
-    capitalizeTransformer(field.name),
+    goName(capitalizeTransformer(field.name)),
     field.flags,
     0,
   );

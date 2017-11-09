@@ -1,4 +1,5 @@
 export { calcVarUintSize, varUintBytes } from "./varint";
+export { goName } from "./name";
 export {
   callMethod, callFunc,
   len,

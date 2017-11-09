@@ -28,6 +28,10 @@ export class GoArrayType extends ArrayType {
   constructor(flags: TypeFlags, valueType: GoType, length?: number) {
     super(flags, valueType, length);
   }
+
+  withValueType(valueType: GoType): GoArrayType {
+    return new GoArrayType(this.flags, valueType, this.length);
+  }
 }
 
 export class GoMapType extends MapType {
@@ -36,6 +40,14 @@ export class GoMapType extends MapType {
 
   constructor(flags: TypeFlags, keyType: GoType, valueType: GoType) {
     super(flags, keyType, valueType);
+  }
+
+  withKeyType(keyType: GoType): GoMapType {
+    return new GoMapType(this.flags, keyType, this.valueType);
+  }
+
+  withValueType(valueType: GoType): GoMapType {
+    return new GoMapType(this.flags, this.keyType, valueType);
   }
 }
 
@@ -80,4 +92,13 @@ export function convertToGoType(type: Type): GoType {
     case "union":
       return new GoUnionType(type.flags, type.schemaIds, "unpcker");
   }
+}
+
+export function REF(type: GoType): GoType {
+  switch (type.id) {
+    case "schema":
+      return new GoSchemaType(type.flags, type.schemaId, true);
+  }
+
+  throw new Error(`REF cannot be applied to ${type.id} type.`);
 }

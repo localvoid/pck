@@ -12,6 +12,6 @@ export {
   bytes, utf8, ascii, array, map, schema, union,
 } from "./field";
 export { Schema, RecursiveFieldArray, IRecursiveFieldArray, declareSchema } from "./schema";
-export { BitFieldType, BitField, OptionalBitField, BoolBitField, BitStore, createBitStoreFromSchema } from "./bitstore";
+export { BitFieldType, BitField, OptionalBitField, BoolBitField, BitStore, createBitStore } from "./bitstore";
 export { DYNAMIC_SIZE, SchemaSize, SchemaDetails, Binder } from "./binder";
 export { Bundle, bundle } from "./bundle";

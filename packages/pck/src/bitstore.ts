@@ -1,6 +1,5 @@
 import { BoolType } from "./type";
 import { Field } from "./field";
-import { Schema } from "./schema";
 
 export type BitFieldType = "optional" | "bool";
 export type BitField = OptionalBitField | BoolBitField;
@@ -73,11 +72,11 @@ export class BitStore {
   }
 }
 
-export function createBitStoreFromSchema<T extends Field>(schema: Schema<T>): BitStore {
+export function createBitStore<T extends Field>(fields: T[]): BitStore {
   const optionals = [];
   const booleans = [];
 
-  for (const field of schema.fields) {
+  for (const field of fields) {
     if (field.isOptional()) {
       optionals.push(field);
     }

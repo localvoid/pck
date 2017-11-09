@@ -7,7 +7,7 @@ import {
 } from "./utils";
 import {
   InlineWriteIntOptions, inlineWriteUint8, inlineWriteUint16, inlineWriteUint32, inlineWriteUint64,
-  writeUvar, writeIvar,
+  writeVarUint, writeVarInt,
 } from "./lib";
 import { GoType, GoSchema, GoField, GoBinder } from "../schema";
 
@@ -274,18 +274,18 @@ function writeDynamicType(
   switch (type.id) {
     case "varint":
       return type.signed
-        ? line(OFFSET, " += ", writeIvar(to.slice({ start: OFFSET }), from.value))
-        : line(OFFSET, " += ", writeUvar(to.slice({ start: OFFSET }), from.value));
+        ? line(OFFSET, " += ", writeVarInt(to.slice({ start: OFFSET }), from.value))
+        : line(OFFSET, " += ", writeVarUint(to.slice({ start: OFFSET }), from.value));
     case "bytes":
     case "string":
       return [
-        line(OFFSET, " += ", writeUvar(to.slice({ start: OFFSET }), len(from.value))),
+        line(OFFSET, " += ", writeVarUint(to.slice({ start: OFFSET }), len(from.value))),
         line(OFFSET, " += ", callFunc("copy", [to.slice({ start: OFFSET }), from.value])),
       ];
     case "array": {
       const valueSize = binder.getTypeSize(type.valueType);
       return [
-        line(OFFSET, " += ", writeUvar(to.slice({ start: OFFSET }), len(from.value))),
+        line(OFFSET, " += ", writeVarUint(to.slice({ start: OFFSET }), len(from.value))),
         line("for ", I, " := 0; ", I, " < ", len(from.value), "; ", I, "++ {"),
         indent(
           (valueSize === DYNAMIC_SIZE)
@@ -303,10 +303,7 @@ function writeDynamicType(
     case "schema":
       return line(OFFSET, " += ", callMethod(from.value, "Pck", [to.slice({ start: OFFSET })]));
     case "union":
-      return [
-        line(OFFSET, " += ", callMethod(from.value, "PckTag", [to.slice({ start: OFFSET })])),
-        line(OFFSET, " += ", callMethod(from.value, "Pck", [to.slice({ start: OFFSET })])),
-      ];
+      return line(OFFSET, " += ", callMethod(from.value, "PckWithTag", [to.slice({ start: OFFSET })]));
   }
 
   throw new Error(`Invalid dynamic type: ${type}.`);

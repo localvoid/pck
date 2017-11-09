@@ -94,9 +94,9 @@ export function readUint64Function(): TChildren {
   ];
 }
 
-export function writeUvarFunction(): TChildren {
+export function writeVarUintFunction(): TChildren {
   return [
-    line("func ", internal("writeUvar"), "(b []byte, v uint64) int {"),
+    line("func ", internal("writeVarUint"), "(b []byte, v uint64) int {"),
     indent(
       line("i := 0"),
       line("for v >= 0x80 {"),
@@ -113,9 +113,9 @@ export function writeUvarFunction(): TChildren {
   ];
 }
 
-export function readUvarFunction(): TChildren {
+export function readVarUintFunction(): TChildren {
   return [
-    line("func ", internal("readUvar"), "(b []byte) (v uint64, i int) {"),
+    line("func ", internal("readVarUint"), "(b []byte) (v uint64, i int) {"),
     indent(
       line("for shift := uint(0); ; shift += 7 {"),
       indent(
@@ -134,9 +134,9 @@ export function readUvarFunction(): TChildren {
   ];
 }
 
-export function writeIvarFunction(): TChildren {
+export function writeVarIntFunction(): TChildren {
   return [
-    line("func ", internal("writeIvar"), "(b []byte, v int64) int {"),
+    line("func ", internal("writeVarInt"), "(b []byte, v int64) int {"),
     indent(
       line("uv := uint64(v) << 1"),
       line("if v < 0 {"),
@@ -144,17 +144,17 @@ export function writeIvarFunction(): TChildren {
         line("uv ^= uv"),
       ),
       line("}"),
-      line("return ", internal("writeUvar"), "(b, uv)"),
+      line("return ", internal("writeVarUint"), "(b, uv)"),
     ),
     line("}"),
   ];
 }
 
-export function readIvarFunction(): TChildren {
+export function readVarIntFunction(): TChildren {
   return [
-    line("func ", internal("readIvar"), "(b []byte) (int64, int) {"),
+    line("func ", internal("readVarInt"), "(b []byte) (int64, int) {"),
     indent(
-      line("uv, i := ", internal("readUvar"), "(b)"),
+      line("uv, i := ", internal("readVarUint"), "(b)"),
       line("v := int64(uv >> 1)"),
       line("if uv&1 != 0 {"),
       indent(
@@ -167,9 +167,9 @@ export function readIvarFunction(): TChildren {
   ];
 }
 
-export function sizeUvarFunction(): TChildren {
+export function sizeVarUintFunction(): TChildren {
   return [
-    line("func ", internal("sizeUvar"), "(v uint64) (n int) {"),
+    line("func ", internal("sizeVarUint"), "(v uint64) (n int) {"),
     indent(
       line("for {"),
       indent(
@@ -187,9 +187,9 @@ export function sizeUvarFunction(): TChildren {
   ];
 }
 
-export function sizeIvarFunction(): TChildren {
+export function sizeVarIntFunction(): TChildren {
   return [
-    line("func ", internal("sizeIvar"), "(v int64) int {"),
+    line("func ", internal("sizeVarInt"), "(v int64) int {"),
     indent(
       line("uv := uint64(v) << 1"),
       line("if v < 0 {"),
@@ -197,7 +197,7 @@ export function sizeIvarFunction(): TChildren {
         line("uv ^= uv"),
       ),
       line("}"),
-      line("return ", internal("sizeUvar"), "(uv)"),
+      line("return ", internal("sizeVarUint"), "(uv)"),
     ),
     line("}"),
   ];
@@ -213,12 +213,12 @@ export function lib(): TChildren {
       readUint32Function(),
       writeUint64Function(),
       readUint64Function(),
-      writeUvarFunction(),
-      readUvarFunction(),
-      writeIvarFunction(),
-      readIvarFunction(),
-      sizeUvarFunction(),
-      sizeIvarFunction(),
+      writeVarUintFunction(),
+      readVarUintFunction(),
+      writeVarIntFunction(),
+      readVarIntFunction(),
+      sizeVarUintFunction(),
+      sizeVarIntFunction(),
     ],
     line(),
   );
@@ -230,9 +230,9 @@ export function declLibSymbols(...children: TChildren[]): TChildren {
       "Pcker",
       "writeUint16", "writeUint32", "writeUint64",
       "readUint16", "readUint32", "readUint64",
-      "writeUvar", "writeIvar",
-      "readUvar", "readIvar",
-      "sizeUvar", "sizeIvar",
+      "writeVarUint", "writeVarInt",
+      "readVarUint", "readVarInt",
+      "sizeVarUint", "sizeVarInt",
     ],
     children,
   );
@@ -286,28 +286,28 @@ export function readInt64(buf: TChildren): TChildren {
   return castToInt64(callFunc(internal("readUint64"), [buf]));
 }
 
-export function writeUvar(buf: TChildren, value: TChildren): TChildren {
-  return callFunc(internal("writeUvar"), [buf, castToUint64(value)]);
+export function writeVarUint(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeVarUint"), [buf, castToUint64(value)]);
 }
 
-export function writeIvar(buf: TChildren, value: TChildren): TChildren {
-  return callFunc(internal("writeIvar"), [buf, castToInt64(value)]);
+export function writeVarInt(buf: TChildren, value: TChildren): TChildren {
+  return callFunc(internal("writeVarInt"), [buf, castToInt64(value)]);
 }
 
-export function readUvar(buf: TChildren): TChildren {
-  return callFunc(internal("readUvar"), [buf]);
+export function readVarUint(buf: TChildren): TChildren {
+  return callFunc(internal("readVarUint"), [buf]);
 }
 
-export function readIvar(buf: TChildren): TChildren {
-  return callFunc(internal("readIvar"), [buf]);
+export function readVarInt(buf: TChildren): TChildren {
+  return callFunc(internal("readVarInt"), [buf]);
 }
 
-export function sizeUvar(...value: TChildren[]): TChildren {
-  return callFunc(internal("sizeUvar"), [castToUint64(value)]);
+export function sizeVarUint(...value: TChildren[]): TChildren {
+  return callFunc(internal("sizeVarUint"), [castToUint64(value)]);
 }
 
-export function sizeIvar(...value: TChildren[]): TChildren {
-  return callFunc(internal("sizeIvar"), [castToInt64(value)]);
+export function sizeVarInt(...value: TChildren[]): TChildren {
+  return callFunc(internal("sizeVarInt"), [castToInt64(value)]);
 }
 
 export interface InlineReadIntOptions {

@@ -1,7 +1,7 @@
 import { Type, IntType, FloatType, VarIntType, StringType } from "./type";
 import { Field } from "./field";
 import { Schema } from "./schema";
-import { BitStore, createBitStoreFromSchema } from "./bitstore";
+import { BitStore, createBitStore } from "./bitstore";
 
 export const DYNAMIC_SIZE = -1;
 
@@ -99,7 +99,8 @@ function analyzeSchema<T extends Schema<F>, F extends Field>(
 ): SchemaDetails<T, F> {
   visitedSchemas.add(schema.id);
 
-  const bitStore = createBitStoreFromSchema(schema);
+  const fields = schema.fields.slice().sort(sortFields(binder, visitedSchemas));
+  const bitStore = createBitStore(fields);
   const fixedFields = [];
   const dynamicFields = [];
   const optionalFields = [];
@@ -111,7 +112,7 @@ function analyzeSchema<T extends Schema<F>, F extends Field>(
   let fixedFieldsSize = 0;
   let dynamic = false;
 
-  for (const field of schema.fields.slice().sort(sortFields(binder, visitedSchemas))) {
+  for (const field of fields) {
     if (field.isOptional()) {
       optionalFields.push(field);
       dynamicFields.push(field);

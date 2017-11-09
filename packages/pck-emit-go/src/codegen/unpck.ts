@@ -6,7 +6,7 @@ import {
   castToInt8, castToInt16, castToInt32, castToFloat, castToDouble, castToString, castToInt,
 } from "./utils";
 import {
-  InlineReadIntOptions, inlineReadUint8, inlineReadUint16, inlineReadUint32, inlineReadUint64, readIvar, readUvar,
+  InlineReadIntOptions, inlineReadUint8, inlineReadUint16, inlineReadUint32, inlineReadUint64, readVarInt, readVarUint,
 } from "./lib";
 import { GoType, GoField, GoSchema, GoBinder } from "../schema";
 
@@ -17,7 +17,7 @@ const TAG = v("tag");
 const I = v("i");
 
 function VALUE(depth: number): TChildren {
-  return v("value" + depth);
+  return v(`value${depth}`);
 }
 
 function BIT_STORE(i: number): TChildren {
@@ -42,6 +42,7 @@ export function unpckMethod(binder: GoBinder, schema: GoSchema): TNode {
         declVars(
           [
             ...bitStoreVars,
+            declSymbol("value1", "value"),
             "offset",
             "length",
             "size",
@@ -128,26 +129,22 @@ function readFields(binder: GoBinder, schema: GoSchema, details: SchemaDetails<G
         r.push(
           line("if ", BIT_STORE(optField.offset), "&(1<<", optField.index % 8, ") != 0 {"),
           indent(
-            declVars([declSymbol("value1", "value")],
-              readDynamicType(
-                binder,
-                field.type,
-                BUF,
-                new Value(SELF(field.name)),
-              ),
-            ),
-          ),
-          line("}"),
-        );
-      } else {
-        r.push(
-          declVars([declSymbol("value1", "value")],
             readDynamicType(
               binder,
               field.type,
               BUF,
               new Value(SELF(field.name)),
             ),
+          ),
+          line("}"),
+        );
+      } else {
+        r.push(
+          readDynamicType(
+            binder,
+            field.type,
+            BUF,
+            new Value(SELF(field.name)),
           ),
         );
       }
@@ -282,7 +279,7 @@ function readDynamicType(
         return [
           line("{"),
           indent(
-            line(VALUE(depth), ", ", SIZE, " := ", readIvar(from.slice({ start: OFFSET }))),
+            line(VALUE(depth), ", ", SIZE, " := ", readVarInt(from.slice({ start: OFFSET }))),
             line(to.assign(VALUE(depth))),
             line(OFFSET, " += ", SIZE),
           ),
@@ -292,7 +289,7 @@ function readDynamicType(
         return [
           line("{"),
           indent(
-            line(VALUE(depth), ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
+            line(VALUE(depth), ", ", SIZE, " := ", readVarUint(from.slice({ start: OFFSET }))),
             line(to.assign(VALUE(depth))),
             line(OFFSET, " += ", SIZE),
           ),
@@ -303,7 +300,7 @@ function readDynamicType(
       return [
         line("{"),
         indent(
-          line(LENGTH, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
+          line(LENGTH, ", ", SIZE, " := ", readVarUint(from.slice({ start: OFFSET }))),
           line(OFFSET, " += ", SIZE),
           line(to.assign(from.slice({ start: OFFSET, end: [OFFSET, " + ", castToInt(LENGTH)] }))),
           line(OFFSET, " += ", castToInt(LENGTH)),
@@ -314,7 +311,7 @@ function readDynamicType(
       return [
         line("{"),
         indent(
-          line(LENGTH, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
+          line(LENGTH, ", ", SIZE, " := ", readVarUint(from.slice({ start: OFFSET }))),
           line(OFFSET, " += ", SIZE),
           line(to.assign(castToString(from.slice({ start: OFFSET, end: [OFFSET, " + ", castToInt(LENGTH)] })))),
           line(OFFSET, " += ", castToInt(LENGTH)),
@@ -327,7 +324,7 @@ function readDynamicType(
         return [
           line("{"),
           indent(
-            line(LENGTH, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
+            line(LENGTH, ", ", SIZE, " := ", readVarUint(from.slice({ start: OFFSET }))),
             line(OFFSET, " += ", SIZE),
             line(VALUE(depth), " := ", callFunc("make", [goType(binder, type), LENGTH])),
             line(to.assign(VALUE(depth))),
@@ -384,8 +381,8 @@ function readDynamicType(
           line("{"),
           indent(
             line(VALUE(depth), " := ", binder.findSchemaById(type.schemaId).factory),
-            line(LENGTH, " := ", callMethod(VALUE(depth), "Unpck", [from.slice({ start: OFFSET })])),
-            line(OFFSET, " += ", LENGTH),
+            line(to.assign(VALUE(depth))),
+            line(OFFSET, " += ", callMethod(VALUE(depth), "Unpck", [from.slice({ start: OFFSET })])),
           ),
           line("}"),
         ];
@@ -394,13 +391,13 @@ function readDynamicType(
       return [
         line("{"),
         indent(
-          line(TAG, ", ", SIZE, " := ", readUvar(from.slice({ start: OFFSET }))),
+          line(TAG, ", ", SIZE, " := ", readVarUint(from.slice({ start: OFFSET }))),
           line(OFFSET, " += ", SIZE),
           type.interface === "unpcker"
             ? line(VALUE(depth), " := ", "taggedFactories[", TAG, "]()")
             : line(VALUE(depth), ", _ := ", "taggedFactories[", TAG, "]().(", type.interface, ")"),
-          line(LENGTH, " := ", callMethod(VALUE(depth), "Unpck", [from.slice({ start: OFFSET })])),
-          line(OFFSET, " += ", LENGTH),
+          line(to.assign(VALUE(depth))),
+          line(OFFSET, " += ", callMethod(VALUE(depth), "Unpck", [from.slice({ start: OFFSET })])),
         ),
         line("}"),
       ];

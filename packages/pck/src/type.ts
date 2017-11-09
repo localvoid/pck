@@ -39,6 +39,10 @@ export abstract class BaseType {
     return `<Type: ${this.id}>`;
   }
 
+  isNullable(): boolean {
+    return (this.flags & TypeFlags.Nullable) !== 0;
+  }
+
   isCompatible(other: Type): boolean {
     return this.id === other.id && this.flags === other.flags;
   }

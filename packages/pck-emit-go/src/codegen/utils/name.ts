@@ -42,9 +42,22 @@ const COMMON_INITIALISMS: { [key: string]: boolean } = {
 const ALL_LOWER_RE = /^[a-z_]+$/;
 const LOWER_RE = /^[a-z]$/;
 
-export function goName(name: string): string {
+export function goName(name: string, publicName?: boolean): string {
   if (name === "_") {
     return name;
+  }
+  if (publicName) {
+    if (name.length === 1) {
+      return name.toUpperCase();
+    } else {
+      name = name[0].toUpperCase() + name.substring(1);
+    }
+  } else {
+    if (name.length === 1) {
+      return name.toLowerCase();
+    } else {
+      name = name[0].toLowerCase() + name.substring(1);
+    }
   }
   if (ALL_LOWER_RE.test(name)) {
     return name;
